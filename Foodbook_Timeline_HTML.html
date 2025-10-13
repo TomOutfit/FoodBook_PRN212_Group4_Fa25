@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foodbook Development Timeline</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2d3748;
+            font-size: 2.5em;
+            margin-bottom: 50px;
+            position: relative;
+            padding-bottom: 20px;
+        }
+
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .timeline-line {
+            position: absolute;
+            top: 50px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #f5576c);
+            z-index: 1;
+        }
+
+        .weeks-container {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            z-index: 2;
+            margin-bottom: 60px;
+        }
+
+        .week {
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+
+        .week-marker {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border: 4px solid #667eea;
+            border-radius: 50%;
+            margin: 40px auto 10px;
+            position: relative;
+            z-index: 3;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .week:hover .week-marker {
+            transform: scale(1.3);
+            border-color: #764ba2;
+        }
+
+        .week-label {
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.9em;
+        }
+
+        .phase-section {
+            margin-bottom: 50px;
+        }
+
+        .phase-title {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .tasks-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .task-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 20px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .task-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: rgba(255,255,255,0.3);
+        }
+
+        .task-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .task-card.purple { background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); }
+        .task-card.yellow { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); }
+        .task-card.green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .task-card.pink { background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); }
+        .task-card.red { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .task-card.orange { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
+        .task-card.cyan { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); }
+        .task-card.blue { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .task-card.indigo { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); }
+        .task-card.lime { background: linear-gradient(135deg, #84cc16 0%, #65a30d 100%); }
+
+        .task-week {
+            font-size: 0.75em;
+            font-weight: 600;
+            opacity: 0.9;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .task-title {
+            font-size: 1.1em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .task-description {
+            font-size: 0.85em;
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+
+        .milestone {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border: 3px solid #fff;
+            box-shadow: 0 0 20px rgba(240, 147, 251, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .weeks-container {
+                flex-wrap: wrap;
+            }
+
+            .week {
+                min-width: 60px;
+            }
+
+            .tasks-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍔 Foodbook Development Timeline</h1>
+        
+        <div class="timeline">
+            <div class="timeline-line"></div>
+            <div class="weeks-container">
+                <div class="week"><div class="week-marker"></div><div class="week-label">Week 1</div></div>
+                <div class="week"><div class="week-marker"></div><div class="week-label">Week 2</div></div>
+                <div class="week"><div class="week-marker"></div><div class="week-label">Week 3</div></div>
+                <div class="week"><div class="week-marker"></div><div class="week-label">Week 4</div></div>
+                <div class="week"><div class="week-marker"></div><div class="week-label">Week 5</div></div>
+                <div class="week"><div class="week-marker"></div><div class="week-label">Week 6</div></div>
+                <div class="week"><div class="week-marker"></div><div class="week-label">Week 7</div></div>
+                <div class="week"><div class="week-marker"></div><div class="week-label">Week 8</div></div>
+                <div class="week"><div class="week-marker"></div><div class="week-label">Week 9</div></div>
+                <div class="week"><div class="week-marker"></div><div class="week-label">Week 10</div></div>
+            </div>
+        </div>
+
+        <!-- Phase 1: Foundation (Weeks 1-2) -->
+        <div class="phase-section">
+            <div class="phase-title">🏗️ Phase 1: Foundation (Weeks 1-2)</div>
+            <div class="tasks-container">
+                <div class="task-card purple">
+                    <div class="task-week">Week 1</div>
+                    <div class="task-title">Initialize Git Repository</div>
+                    <div class="task-description">Tạo repository, setup .gitignore, README.md, và cấu trúc thư mục dự án</div>
+                </div>
+
+                <div class="task-card yellow">
+                    <div class="task-week">Week 1</div>
+                    <div class="task-title">Setup .NET 9 Solution</div>
+                    <div class="task-description">Tạo solution với các projects: Business, Data, Presentation, Tests</div>
+                </div>
+
+                <div class="task-card green">
+                    <div class="task-week">Week 1</div>
+                    <div class="task-title">Configure EF Core & Database</div>
+                    <div class="task-description">Setup Entity Framework Core, tạo DbContext, và cấu hình connection string</div>
+                </div>
+
+                <div class="task-card pink">
+                    <div class="task-week">Week 1</div>
+                    <div class="task-title">Integrate Gemini API</div>
+                    <div class="task-description">Cấu hình Google Gemini Pro 2.5 API key và HttpClient setup</div>
+                </div>
+
+                <div class="task-card red">
+                    <div class="task-week">Week 2</div>
+                    <div class="task-title">Basic WPF Structure</div>
+                    <div class="task-description">Tạo MainWindow, App.xaml, và cấu trúc MVVM cơ bản</div>
+                </div>
+
+                <div class="task-card orange">
+                    <div class="task-week">Week 2</div>
+                    <div class="task-title">User Authentication System</div>
+                    <div class="task-description">Implement login/register với password hashing và session management</div>
+                </div>
+
+                <div class="task-card cyan milestone">
+                    <div class="task-week">Week 2</div>
+                    <div class="task-title">🎯 Milestone: Basic Project Scaffolding</div>
+                    <div class="task-description">Hoàn thành cấu trúc dự án cơ bản và authentication system</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phase 2: Core Features (Weeks 3-5) -->
+        <div class="phase-section">
+            <div class="phase-title">⚙️ Phase 2: Core Features (Weeks 3-5)</div>
+            <div class="tasks-container">
+                <div class="task-card purple">
+                    <div class="task-week">Week 3</div>
+                    <div class="task-title">Recipe CRUD Operations</div>
+                    <div class="task-description">Create, Read, Update, Delete recipes với full validation</div>
+                </div>
+
+                <div class="task-card yellow">
+                    <div class="task-week">Week 3</div>
+                    <div class="task-title">Ingredient Management</div>
+                    <div class="task-description">Quản lý ingredients với categories, units, và nutrition data</div>
+                </div>
+
+                <div class="task-card green">
+                    <div class="task-week">Week 3</div>
+                    <div class="task-title">Basic UI/UX Implementation</div>
+                    <div class="task-description">Design và implement các screens chính của ứng dụng</div>
+                </div>
+
+                <div class="task-card pink">
+                    <div class="task-week">Week 4</div>
+                    <div class="task-title">Search & Filtering</div>
+                    <div class="task-description">Tìm kiếm recipes theo tên, ingredients, categories với advanced filters</div>
+                </div>
+
+                <div class="task-card red">
+                    <div class="task-week">Week 4</div>
+                    <div class="task-title">User Profile Management</div>
+                    <div class="task-description">Profile settings, preferences, và user data management</div>
+                </div>
+
+                <div class="task-card orange">
+                    <div class="task-week">Week 4</div>
+                    <div class="task-title">Settings Page</div>
+                    <div class="task-description">Theme selection, language settings, notifications, và app preferences</div>
+                </div>
+
+                <div class="task-card cyan">
+                    <div class="task-week">Week 5</div>
+                    <div class="task-title">Recipe Rating & Review</div>
+                    <div class="task-description">Hệ thống đánh giá và bình luận cho recipes</div>
+                </div>
+
+                <div class="task-card blue milestone">
+                    <div class="task-week">Week 5</div>
+                    <div class="task-title">🎯 Milestone: Functional Core Features</div>
+                    <div class="task-description">Hoàn thành tất cả tính năng cốt lõi với UX tốt</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phase 3: AI Integration (Weeks 6-8) -->
+        <div class="phase-section">
+            <div class="phase-title">🤖 Phase 3: AI Integration (Weeks 6-8)</div>
+            <div class="tasks-container">
+                <div class="task-card purple">
+                    <div class="task-week">Week 6</div>
+                    <div class="task-title">AI Recipe Generation</div>
+                    <div class="task-description">Tích hợp Gemini API để generate recipes từ ingredients</div>
+                </div>
+
+                <div class="task-card yellow">
+                    <div class="task-week">Week 6</div>
+                    <div class="task-title">Chef Judge (Computer Vision)</div>
+                    <div class="task-description">AI đánh giá món ăn từ hình ảnh với 2 modes: Casual/Strict</div>
+                </div>
+
+                <div class="task-card green">
+                    <div class="task-week">Week 6</div>
+                    <div class="task-title">Google Gemini Pro 2.5 Integration</div>
+                    <div class="task-description">Setup và test Gemini API với vision và text generation</div>
+                </div>
+
+                <div class="task-card pink">
+                    <div class="task-week">Week 7</div>
+                    <div class="task-title">Smart Shopping List</div>
+                    <div class="task-description">Tự động tạo shopping list từ recipes với stock management</div>
+                </div>
+
+                <div class="task-card red">
+                    <div class="task-week">Week 7</div>
+                    <div class="task-title">Nutrition Analysis (Structured)</div>
+                    <div class="task-description">Phân tích dinh dưỡng từ database recipes với health insights</div>
+                </div>
+
+                <div class="task-card orange">
+                    <div class="task-week">Week 7</div>
+                    <div class="task-title">AI Ingredient Suggestions</div>
+                    <div class="task-description">Gợi ý ingredients thông minh và substitutions</div>
+                </div>
+
+                <div class="task-card cyan">
+                    <div class="task-week">Week 8</div>
+                    <div class="task-title">Nutrition Analysis (Unstructured)</div>
+                    <div class="task-description">AI parsing text recipes và phân tích dinh dưỡng</div>
+                </div>
+
+                <div class="task-card blue">
+                    <div class="task-week">Week 8</div>
+                    <div class="task-title">Advanced AI Features Testing</div>
+                    <div class="task-description">Test và optimize tất cả AI features với real data</div>
+                </div>
+
+                <div class="task-card indigo milestone">
+                    <div class="task-week">Week 8</div>
+                    <div class="task-title">🎯 Milestone: AI Features Fully Functional</div>
+                    <div class="task-description">Tất cả tính năng AI hoạt động ổn định và chính xác</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phase 4: Testing & Deployment (Weeks 9-10) -->
+        <div class="phase-section">
+            <div class="phase-title">🚀 Phase 4: Testing & Deployment (Weeks 9-10)</div>
+            <div class="tasks-container">
+                <div class="task-card purple">
+                    <div class="task-week">Week 9</div>
+                    <div class="task-title">Comprehensive Testing</div>
+                    <div class="task-description">Unit tests, Integration tests, UI tests với high coverage</div>
+                </div>
+
+                <div class="task-card yellow">
+                    <div class="task-week">Week 9</div>
+                    <div class="task-title">Performance Optimization</div>
+                    <div class="task-description">Optimize database queries, memory usage, và response times</div>
+                </div>
+
+                <div class="task-card green">
+                    <div class="task-week">Week 9</div>
+                    <div class="task-title">Bug Fixes & Error Handling</div>
+                    <div class="task-description">Fix bugs, improve error handling, và user experience</div>
+                </div>
+
+                <div class="task-card pink">
+                    <div class="task-week">Week 10</div>
+                    <div class="task-title">Documentation Completion</div>
+                    <div class="task-description">API docs, user manual, developer guide, và deployment guide</div>
+                </div>
+
+                <div class="task-card red">
+                    <div class="task-week">Week 10</div>
+                    <div class="task-title">Final Deployment Preparation</div>
+                    <div class="task-description">Setup CI/CD pipeline, production environment, và monitoring</div>
+                </div>
+
+                <div class="task-card orange">
+                    <div class="task-week">Week 10</div>
+                    <div class="task-title">Final Testing & Validation</div>
+                    <div class="task-description">End-to-end testing, user acceptance testing, và security audit</div>
+                </div>
+
+                <div class="task-card cyan milestone">
+                    <div class="task-week">Week 10</div>
+                    <div class="task-title">🎯 Milestone: Production-Ready Release</div>
+                    <div class="task-description">Ứng dụng sẵn sàng cho production deployment</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
