@@ -4,11 +4,16 @@
 -- Description: Complete database schema for FoodBook application
 -- =============================================
 
--- Create Database
-IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'FoodBook')
+-- Drop existing database if it exists
+IF EXISTS (SELECT * FROM sys.databases WHERE name = 'FoodBook')
 BEGIN
-    CREATE DATABASE [FoodBook]
+    ALTER DATABASE [FoodBook] SET SINGLE_USER WITH ROLLBACK IMMEDIATE
+    DROP DATABASE [FoodBook]
 END
+GO
+
+-- Create Database
+CREATE DATABASE [FoodBook]
 GO
 
 USE [FoodBook]
@@ -537,7 +542,115 @@ BEGIN
         ('Cannellini Beans', 'Legume', 'Iron, 114 cal/100g', 'kg', 0.5, 1, GETUTCDATE()),
         ('Split Peas', 'Legume', 'Fiber, 118 cal/100g', 'kg', 0.5, 1, GETUTCDATE()),
         ('Mung Beans', 'Legume', 'Protein, 105 cal/100g', 'kg', 0.4, 1, GETUTCDATE()),
-        ('Adzuki Beans', 'Legume', 'Antioxidants, 128 cal/100g', 'kg', 0.3, 1, GETUTCDATE())
+        ('Adzuki Beans', 'Legume', 'Antioxidants, 128 cal/100g', 'kg', 0.3, 1, GETUTCDATE()),
+        
+        -- Additional Proteins (20 more)
+        ('Turkey Breast', 'Protein', 'Lean protein, 135 cal/100g', 'kg', 0.8, 1, GETUTCDATE()),
+        ('Ground Beef', 'Protein', 'Iron-rich, 254 cal/100g', 'kg', 1.0, 1, GETUTCDATE()),
+        ('Ground Pork', 'Protein', 'Versatile protein, 263 cal/100g', 'kg', 0.8, 1, GETUTCDATE()),
+        ('Ground Lamb', 'Protein', 'Rich flavor, 282 cal/100g', 'kg', 0.6, 1, GETUTCDATE()),
+        ('Bacon', 'Protein', 'Smoky flavor, 541 cal/100g', 'kg', 0.5, 1, GETUTCDATE()),
+        ('Ham', 'Protein', 'Cured meat, 145 cal/100g', 'kg', 0.7, 1, GETUTCDATE()),
+        ('Sausage', 'Protein', 'Seasoned meat, 301 cal/100g', 'kg', 0.6, 1, GETUTCDATE()),
+        ('Lobster', 'Protein', 'Luxury seafood, 89 cal/100g', 'kg', 0.3, 1, GETUTCDATE()),
+        ('Mussels', 'Protein', 'Iron-rich, 86 cal/100g', 'kg', 0.4, 1, GETUTCDATE()),
+        ('Oysters', 'Protein', 'Zinc-rich, 68 cal/100g', 'kg', 0.2, 1, GETUTCDATE()),
+        ('Scallops', 'Protein', 'Sweet seafood, 69 cal/100g', 'kg', 0.3, 1, GETUTCDATE()),
+        ('Squid', 'Protein', 'Tender seafood, 92 cal/100g', 'kg', 0.4, 1, GETUTCDATE()),
+        ('Octopus', 'Protein', 'Chewy texture, 82 cal/100g', 'kg', 0.2, 1, GETUTCDATE()),
+        ('Calamari', 'Protein', 'Crispy seafood, 175 cal/100g', 'kg', 0.3, 1, GETUTCDATE()),
+        ('Sea Bass', 'Protein', 'Mild fish, 97 cal/100g', 'kg', 0.5, 1, GETUTCDATE()),
+        ('Tuna', 'Protein', 'Omega-3 rich, 144 cal/100g', 'kg', 0.6, 1, GETUTCDATE()),
+        ('Cod', 'Protein', 'White fish, 82 cal/100g', 'kg', 0.7, 1, GETUTCDATE()),
+        ('Halibut', 'Protein', 'Firm texture, 111 cal/100g', 'kg', 0.4, 1, GETUTCDATE()),
+        ('Mackerel', 'Protein', 'Oily fish, 205 cal/100g', 'kg', 0.3, 1, GETUTCDATE()),
+        ('Sardines', 'Protein', 'Small fish, 208 cal/100g', 'kg', 0.2, 1, GETUTCDATE()),
+        
+        -- Additional Vegetables (15 more)
+        ('Cauliflower', 'Vegetable', 'Vitamin C, 25 cal/100g', 'kg', 1.0, 1, GETUTCDATE()),
+        ('Cabbage', 'Vegetable', 'Fiber-rich, 25 cal/100g', 'kg', 1.2, 1, GETUTCDATE()),
+        ('Brussels Sprouts', 'Vegetable', 'Vitamin K, 43 cal/100g', 'kg', 0.6, 1, GETUTCDATE()),
+        ('Artichoke', 'Vegetable', 'Antioxidants, 47 cal/100g', 'kg', 0.4, 1, GETUTCDATE()),
+        ('Fennel', 'Vegetable', 'Anise flavor, 31 cal/100g', 'kg', 0.5, 1, GETUTCDATE()),
+        ('Radish', 'Vegetable', 'Crunchy, 16 cal/100g', 'kg', 0.8, 1, GETUTCDATE()),
+        ('Turnip', 'Vegetable', 'Root vegetable, 28 cal/100g', 'kg', 0.6, 1, GETUTCDATE()),
+        ('Beetroot', 'Vegetable', 'Nitrates, 43 cal/100g', 'kg', 0.7, 1, GETUTCDATE()),
+        ('Cucumber', 'Vegetable', 'Hydrating, 16 cal/100g', 'kg', 1.0, 1, GETUTCDATE()),
+        ('Lettuce', 'Vegetable', 'Low calorie, 15 cal/100g', 'kg', 0.8, 1, GETUTCDATE()),
+        ('Arugula', 'Vegetable', 'Peppery greens, 25 cal/100g', 'kg', 0.3, 1, GETUTCDATE()),
+        ('Watercress', 'Vegetable', 'Nutrient-dense, 11 cal/100g', 'kg', 0.2, 1, GETUTCDATE()),
+        ('Leeks', 'Vegetable', 'Mild onion flavor, 61 cal/100g', 'kg', 0.6, 1, GETUTCDATE()),
+        ('Shallots', 'Vegetable', 'Sweet onion, 72 cal/100g', 'kg', 0.3, 1, GETUTCDATE()),
+        ('Scallions', 'Vegetable', 'Green onions, 32 cal/100g', 'kg', 0.4, 1, GETUTCDATE()),
+        
+        -- Additional Fruits (10 more)
+        ('Strawberry', 'Fruit', 'Vitamin C, 32 cal/100g', 'kg', 0.8, 1, GETUTCDATE()),
+        ('Blueberry', 'Fruit', 'Antioxidants, 57 cal/100g', 'kg', 0.6, 1, GETUTCDATE()),
+        ('Raspberry', 'Fruit', 'Fiber-rich, 52 cal/100g', 'kg', 0.4, 1, GETUTCDATE()),
+        ('Blackberry', 'Fruit', 'Dark berries, 43 cal/100g', 'kg', 0.3, 1, GETUTCDATE()),
+        ('Cranberry', 'Fruit', 'Tart berries, 46 cal/100g', 'kg', 0.5, 1, GETUTCDATE()),
+        ('Grape', 'Fruit', 'Resveratrol, 62 cal/100g', 'kg', 0.7, 1, GETUTCDATE()),
+        ('Kiwi', 'Fruit', 'Vitamin C, 61 cal/100g', 'kg', 0.6, 1, GETUTCDATE()),
+        ('Pomegranate', 'Fruit', 'Antioxidants, 83 cal/100g', 'kg', 0.4, 1, GETUTCDATE()),
+        ('Coconut', 'Fruit', 'Healthy fats, 354 cal/100g', 'kg', 0.5, 1, GETUTCDATE()),
+        ('Passion Fruit', 'Fruit', 'Tropical, 97 cal/100g', 'kg', 0.3, 1, GETUTCDATE()),
+        
+        -- Additional Dairy & Eggs (5 more)
+        ('Goat Cheese', 'Dairy', 'Tangy flavor, 364 cal/100g', 'kg', 0.3, 1, GETUTCDATE()),
+        ('Feta Cheese', 'Dairy', 'Salty cheese, 264 cal/100g', 'kg', 0.4, 1, GETUTCDATE()),
+        ('Mozzarella', 'Dairy', 'Mild cheese, 300 cal/100g', 'kg', 0.5, 1, GETUTCDATE()),
+        ('Ricotta', 'Dairy', 'Soft cheese, 174 cal/100g', 'kg', 0.4, 1, GETUTCDATE()),
+        ('Sour Cream', 'Dairy', 'Tangy cream, 198 cal/100g', 'kg', 0.3, 1, GETUTCDATE()),
+        
+        -- Additional Oils & Fats (5 more)
+        ('Ghee', 'Fat', 'Clarified butter, 900 cal/100g', 'kg', 0.3, 1, GETUTCDATE()),
+        ('Lard', 'Fat', 'Pork fat, 902 cal/100g', 'kg', 0.2, 1, GETUTCDATE()),
+        ('Duck Fat', 'Fat', 'Rich flavor, 900 cal/100g', 'kg', 0.2, 1, GETUTCDATE()),
+        ('Walnut Oil', 'Fat', 'Nutty flavor, 884 cal/100g', 'kg', 0.2, 1, GETUTCDATE()),
+        ('Grapeseed Oil', 'Fat', 'Neutral flavor, 884 cal/100g', 'kg', 0.3, 1, GETUTCDATE()),
+        
+        -- Additional Herbs & Spices (15 more)
+        ('Sage', 'Seasoning', 'Earthy flavor, 315 cal/100g', 'kg', 0.05, 1, GETUTCDATE()),
+        ('Tarragon', 'Seasoning', 'Anise flavor, 295 cal/100g', 'kg', 0.05, 1, GETUTCDATE()),
+        ('Dill', 'Seasoning', 'Fresh herb, 43 cal/100g', 'kg', 0.1, 1, GETUTCDATE()),
+        ('Chives', 'Seasoning', 'Onion flavor, 30 cal/100g', 'kg', 0.1, 1, GETUTCDATE()),
+        ('Lemongrass', 'Seasoning', 'Citrus flavor, 99 cal/100g', 'kg', 0.1, 1, GETUTCDATE()),
+        ('Galangal', 'Seasoning', 'Ginger-like, 71 cal/100g', 'kg', 0.1, 1, GETUTCDATE()),
+        ('Kaffir Lime Leaves', 'Seasoning', 'Citrus aroma, 30 cal/100g', 'kg', 0.05, 1, GETUTCDATE()),
+        ('Curry Leaves', 'Seasoning', 'Aromatic, 108 cal/100g', 'kg', 0.05, 1, GETUTCDATE()),
+        ('Fenugreek Leaves', 'Seasoning', 'Bitter greens, 49 cal/100g', 'kg', 0.1, 1, GETUTCDATE()),
+        ('Asafoetida', 'Seasoning', 'Pungent spice, 297 cal/100g', 'kg', 0.02, 1, GETUTCDATE()),
+        ('Nigella Seeds', 'Seasoning', 'Black seeds, 375 cal/100g', 'kg', 0.05, 1, GETUTCDATE()),
+        ('Caraway Seeds', 'Seasoning', 'Anise flavor, 333 cal/100g', 'kg', 0.05, 1, GETUTCDATE()),
+        ('Juniper Berries', 'Seasoning', 'Gin flavor, 106 cal/100g', 'kg', 0.05, 1, GETUTCDATE()),
+        ('Pink Peppercorns', 'Seasoning', 'Mild spice, 251 cal/100g', 'kg', 0.05, 1, GETUTCDATE()),
+        ('Szechuan Peppercorns', 'Seasoning', 'Numbing spice, 296 cal/100g', 'kg', 0.05, 1, GETUTCDATE()),
+        
+        -- Additional Nuts & Seeds (10 more)
+        ('Pecans', 'Nuts', 'Buttery nuts, 691 cal/100g', 'kg', 0.3, 1, GETUTCDATE()),
+        ('Hazelnuts', 'Nuts', 'Sweet nuts, 628 cal/100g', 'kg', 0.2, 1, GETUTCDATE()),
+        ('Macadamia Nuts', 'Nuts', 'Rich nuts, 718 cal/100g', 'kg', 0.1, 1, GETUTCDATE()),
+        ('Brazil Nuts', 'Nuts', 'Selenium-rich, 659 cal/100g', 'kg', 0.1, 1, GETUTCDATE()),
+        ('Pine Nuts', 'Nuts', 'Italian nuts, 673 cal/100g', 'kg', 0.1, 1, GETUTCDATE()),
+        ('Hemp Seeds', 'Nuts', 'Complete protein, 553 cal/100g', 'kg', 0.2, 1, GETUTCDATE()),
+        ('Poppy Seeds', 'Nuts', 'Tiny seeds, 525 cal/100g', 'kg', 0.1, 1, GETUTCDATE()),
+        ('Caraway Seeds', 'Nuts', 'Spice seeds, 333 cal/100g', 'kg', 0.1, 1, GETUTCDATE()),
+        ('Fennel Seeds', 'Nuts', 'Licorice flavor, 345 cal/100g', 'kg', 0.1, 1, GETUTCDATE()),
+        ('Coriander Seeds', 'Nuts', 'Citrus seeds, 298 cal/100g', 'kg', 0.1, 1, GETUTCDATE()),
+        
+        -- Additional Legumes (5 more)
+        ('Soybeans', 'Legume', 'Complete protein, 173 cal/100g', 'kg', 0.8, 1, GETUTCDATE()),
+        ('Lima Beans', 'Legume', 'Buttery beans, 115 cal/100g', 'kg', 0.6, 1, GETUTCDATE()),
+        ('Fava Beans', 'Legume', 'Broad beans, 110 cal/100g', 'kg', 0.5, 1, GETUTCDATE()),
+        ('Edamame', 'Legume', 'Young soybeans, 122 cal/100g', 'kg', 0.4, 1, GETUTCDATE()),
+        ('Black-eyed Peas', 'Legume', 'Southern beans, 116 cal/100g', 'kg', 0.5, 1, GETUTCDATE()),
+        
+        -- Additional Grains (5 more)
+        ('Wild Rice', 'Grain', 'Nutty grain, 101 cal/100g', 'kg', 0.4, 1, GETUTCDATE()),
+        ('Bulgur', 'Grain', 'Cracked wheat, 83 cal/100g', 'kg', 0.6, 1, GETUTCDATE()),
+        ('Couscous', 'Grain', 'Pasta-like, 112 cal/100g', 'kg', 0.5, 1, GETUTCDATE()),
+        ('Farro', 'Grain', 'Ancient wheat, 335 cal/100g', 'kg', 0.4, 1, GETUTCDATE()),
+        ('Millet', 'Grain', 'Gluten-free, 378 cal/100g', 'kg', 0.3, 1, GETUTCDATE())
 END
 GO
 
@@ -693,7 +806,69 @@ BEGIN
          25, 4, 'Easy', 'Soup', NULL, 1, GETUTCDATE(), GETUTCDATE()),
         ('Russian Borscht', 'Beet soup with sour cream', 
          '1. Cook beets until tender\n2. Add vegetables and stock\n3. Simmer for 1 hour\n4. Puree until smooth\n5. Add vinegar and sugar\n6. Serve with sour cream', 
-         120, 6, 'Medium', 'Soup', NULL, 1, GETUTCDATE(), GETUTCDATE())
+         120, 6, 'Medium', 'Soup', NULL, 1, GETUTCDATE(), GETUTCDATE()),
+        
+        -- Additional Recipes (20 more to reach 50 total)
+        ('Italian Risotto', 'Creamy rice dish with parmesan', 
+         '1. Heat stock and keep warm\n2. Sauté onions in butter\n3. Add rice and toast\n4. Add wine and stir\n5. Add stock gradually\n6. Finish with parmesan and butter', 
+         30, 4, 'Medium', 'Main Dish', NULL, 1, GETUTCDATE(), GETUTCDATE()),
+        ('French Ratatouille', 'Provençal vegetable stew', 
+         '1. Sauté eggplant and zucchini\n2. Add tomatoes and peppers\n3. Season with herbs\n4. Simmer until tender\n5. Serve hot or cold', 
+         60, 6, 'Easy', 'Side Dish', NULL, 1, GETUTCDATE(), GETUTCDATE()),
+        ('German Pretzels', 'Soft bread with salt', 
+         '1. Make dough with flour and yeast\n2. Shape into pretzels\n3. Boil in baking soda water\n4. Sprinkle with salt\n5. Bake until golden', 
+         90, 8, 'Medium', 'Bread', NULL, 1, GETUTCDATE(), GETUTCDATE()),
+        ('Swedish Meatballs', 'Tender meatballs in cream sauce', 
+         '1. Mix ground meat with breadcrumbs\n2. Form into balls\n3. Brown in butter\n4. Make cream sauce\n5. Simmer until cooked', 
+         45, 6, 'Medium', 'Main Dish', NULL, 1, GETUTCDATE(), GETUTCDATE()),
+        ('Polish Pierogi', 'Dumplings with potato filling', 
+         '1. Make dough with flour and eggs\n2. Make potato and cheese filling\n3. Roll and cut dough\n4. Fill and seal dumplings\n5. Boil until they float', 
+         120, 8, 'Hard', 'Main Dish', NULL, 1, GETUTCDATE(), GETUTCDATE()),
+        ('Turkish Baklava', 'Sweet pastry with nuts', 
+         '1. Layer phyllo with butter\n2. Add nut mixture\n3. Cut into diamonds\n4. Bake until golden\n5. Pour syrup over hot pastry', 
+         180, 24, 'Hard', 'Dessert', NULL, 1, GETUTCDATE(), GETUTCDATE()),
+        ('Greek Gyros', 'Spiced meat in pita bread', 
+         '1. Marinate meat with spices\n2. Cook on vertical spit\n3. Slice thinly\n4. Serve in pita with tzatziki\n5. Add vegetables and herbs', 
+         60, 4, 'Medium', 'Main Dish', NULL, 1, GETUTCDATE(), GETUTCDATE()),
+        ('Lebanese Falafel', 'Fried chickpea balls', 
+         '1. Soak chickpeas overnight\n2. Blend with herbs and spices\n3. Form into balls\n4. Deep fry until golden\n5. Serve with tahini sauce', 
+         120, 6, 'Medium', 'Main Dish', NULL, 1, GETUTCDATE(), GETUTCDATE()),
+        ('Israeli Shakshuka', 'Eggs in tomato sauce', 
+         '1. Sauté onions and peppers\n2. Add tomatoes and spices\n3. Simmer until thick\n4. Make wells for eggs\n5. Cook until eggs are set', 
+         30, 4, 'Easy', 'Breakfast', NULL, 1, GETUTCDATE(), GETUTCDATE()),
+        ('Iranian Kebab', 'Grilled marinated meat', 
+         '1. Marinate meat with yogurt and spices\n2. Thread onto skewers\n3. Grill over high heat\n4. Serve with rice\n5. Garnish with herbs', 
+         45, 4, 'Medium', 'Main Dish', NULL, 1, GETUTCDATE(), GETUTCDATE()),
+        ('Indian Biryani', 'Fragrant rice with meat', 
+         '1. Marinate meat with spices\n2. Parboil basmati rice\n3. Layer rice and meat\n4. Add saffron and herbs\n5. Cook on dum until done', 
+         90, 6, 'Hard', 'Main Dish', NULL, 1, GETUTCDATE(), GETUTCDATE()),
+        ('Thai Pad Thai', 'Stir-fried noodles', 
+         '1. Soak rice noodles\n2. Make tamarind sauce\n3. Stir-fry with protein\n4. Add noodles and sauce\n5. Garnish with peanuts', 
+         20, 2, 'Easy', 'Main Dish', NULL, 1, GETUTCDATE(), GETUTCDATE()),
+        ('Chinese Dumplings', 'Steamed or fried dumplings', 
+         '1. Make dough with flour and water\n2. Prepare meat and vegetable filling\n3. Wrap in dough\n4. Steam or pan-fry\n5. Serve with dipping sauce', 
+         60, 6, 'Medium', 'Main Dish', NULL, 1, GETUTCDATE(), GETUTCDATE()),
+        ('Japanese Tempura', 'Lightly battered vegetables', 
+         '1. Make tempura batter\n2. Cut vegetables into pieces\n3. Dip in batter\n4. Fry in hot oil\n5. Serve with tentsuyu sauce', 
+         30, 4, 'Medium', 'Appetizer', NULL, 1, GETUTCDATE(), GETUTCDATE()),
+        ('Korean Kimchi', 'Fermented cabbage', 
+         '1. Salt cabbage leaves\n2. Make chili paste\n3. Rub paste on leaves\n4. Pack in jars\n5. Ferment for days', 
+         1440, 10, 'Hard', 'Side Dish', NULL, 1, GETUTCDATE(), GETUTCDATE()),
+        ('Vietnamese Banh Mi', 'Vietnamese sandwich', 
+         '1. Make pickled vegetables\n2. Prepare pâté and mayo\n3. Grill or roast meat\n4. Assemble in baguette\n5. Add herbs and vegetables', 
+         45, 4, 'Easy', 'Main Dish', NULL, 1, GETUTCDATE(), GETUTCDATE()),
+        ('Indonesian Nasi Goreng', 'Fried rice with kecap manis', 
+         '1. Cook jasmine rice\n2. Sauté aromatics\n3. Add rice and sauce\n4. Stir-fry until hot\n5. Top with fried egg', 
+         25, 4, 'Easy', 'Main Dish', NULL, 1, GETUTCDATE(), GETUTCDATE()),
+        ('Malaysian Laksa', 'Spicy noodle soup', 
+         '1. Make laksa paste\n2. Simmer with coconut milk\n3. Add noodles and seafood\n4. Garnish with herbs\n5. Serve with sambal', 
+         40, 4, 'Medium', 'Main Dish', NULL, 1, GETUTCDATE(), GETUTCDATE()),
+        ('Filipino Adobo', 'Vinegar and soy braised meat', 
+         '1. Marinate meat in vinegar and soy\n2. Brown meat in oil\n3. Add marinade and bay leaves\n4. Simmer until tender\n5. Serve with rice', 
+         60, 6, 'Easy', 'Main Dish', NULL, 1, GETUTCDATE(), GETUTCDATE()),
+        ('Australian Pavlova', 'Meringue dessert with fruit', 
+         '1. Beat egg whites to stiff peaks\n2. Add sugar gradually\n3. Shape into nest\n4. Bake until crisp outside\n5. Top with cream and fruit', 
+         120, 8, 'Medium', 'Dessert', NULL, 1, GETUTCDATE(), GETUTCDATE())
 END
 GO
 
@@ -1086,7 +1261,165 @@ BEGIN
         (43, 22, 300, 'g', 'Crushed tomatoes'),
         (43, 6, 40, 'ml', 'Oil'),
         (43, 36, 8, 'g', 'To taste'),
-        (43, 27, 3, 'g', 'Freshly ground')
+        (43, 27, 3, 'g', 'Freshly ground'),
+        
+        -- Additional Recipe Ingredients (for recipes 44-63)
+        -- Italian Risotto (Recipe 44)
+        (44, 12, 400, 'g', 'Arborio rice'),
+        (44, 20, 200, 'g', 'Diced onions'),
+        (44, 21, 30, 'g', 'Minced garlic'),
+        (44, 6, 60, 'ml', 'Butter'),
+        (44, 13, 100, 'g', 'Parmesan cheese'),
+        (44, 36, 8, 'g', 'To taste'),
+        (44, 37, 3, 'g', 'Freshly ground'),
+        
+        -- French Ratatouille (Recipe 45)
+        (45, 7, 400, 'g', 'Sliced eggplant'),
+        (45, 25, 300, 'g', 'Sliced zucchini'),
+        (45, 22, 400, 'g', 'Diced tomatoes'),
+        (45, 23, 200, 'g', 'Bell peppers'),
+        (45, 6, 50, 'ml', 'Olive oil'),
+        (45, 26, 5, 'g', 'To taste'),
+        (45, 27, 2, 'g', 'Freshly ground'),
+        
+        -- German Pretzels (Recipe 46)
+        (46, 13, 500, 'g', 'All-purpose flour'),
+        (46, 12, 2, 'pieces', 'Large eggs'),
+        (46, 20, 40, 'g', 'Butter'),
+        (46, 26, 5, 'g', 'To taste'),
+        
+        -- Swedish Meatballs (Recipe 47)
+        (47, 3, 500, 'g', 'Ground beef'),
+        (47, 20, 200, 'g', 'Diced onions'),
+        (47, 21, 30, 'g', 'Minced garlic'),
+        (47, 6, 50, 'ml', 'Butter'),
+        (47, 26, 8, 'g', 'To taste'),
+        (47, 27, 3, 'g', 'Freshly ground'),
+        
+        -- Polish Pierogi (Recipe 48)
+        (48, 13, 400, 'g', 'All-purpose flour'),
+        (48, 12, 2, 'pieces', 'Large eggs'),
+        (48, 6, 200, 'g', 'Mashed potatoes'),
+        (48, 10, 100, 'g', 'Cheese'),
+        (48, 26, 5, 'g', 'To taste'),
+        
+        -- Turkish Baklava (Recipe 49)
+        (49, 13, 200, 'g', 'Phyllo dough'),
+        (49, 6, 100, 'g', 'Butter'),
+        (49, 25, 200, 'g', 'Mixed nuts'),
+        (49, 26, 5, 'g', 'To taste'),
+        
+        -- Greek Gyros (Recipe 50)
+        (50, 1, 600, 'g', 'Lamb meat'),
+        (50, 13, 4, 'pieces', 'Pita bread'),
+        (50, 6, 40, 'ml', 'Olive oil'),
+        (50, 26, 8, 'g', 'To taste'),
+        (50, 27, 3, 'g', 'Freshly ground'),
+        
+        -- Lebanese Falafel (Recipe 51)
+        (51, 14, 400, 'g', 'Chickpeas'),
+        (51, 20, 100, 'g', 'Diced onions'),
+        (51, 21, 20, 'g', 'Minced garlic'),
+        (51, 6, 40, 'ml', 'Oil for frying'),
+        (51, 26, 5, 'g', 'To taste'),
+        (51, 27, 2, 'g', 'Freshly ground'),
+        
+        -- Israeli Shakshuka (Recipe 52)
+        (52, 12, 4, 'pieces', 'Large eggs'),
+        (52, 20, 200, 'g', 'Sliced onions'),
+        (52, 22, 400, 'g', 'Crushed tomatoes'),
+        (52, 23, 150, 'g', 'Bell peppers'),
+        (52, 6, 40, 'ml', 'Olive oil'),
+        (52, 26, 8, 'g', 'To taste'),
+        (52, 27, 3, 'g', 'Freshly ground'),
+        
+        -- Iranian Kebab (Recipe 53)
+        (53, 3, 600, 'g', 'Lamb meat'),
+        (53, 12, 200, 'g', 'Basmati rice'),
+        (53, 6, 50, 'ml', 'Oil'),
+        (53, 26, 8, 'g', 'To taste'),
+        (53, 27, 3, 'g', 'Freshly ground'),
+        
+        -- Indian Biryani (Recipe 54)
+        (54, 12, 400, 'g', 'Basmati rice'),
+        (54, 1, 500, 'g', 'Chicken pieces'),
+        (54, 20, 200, 'g', 'Sliced onions'),
+        (54, 21, 30, 'g', 'Minced garlic'),
+        (54, 6, 60, 'ml', 'Ghee'),
+        (54, 26, 8, 'g', 'To taste'),
+        (54, 27, 3, 'g', 'Freshly ground'),
+        
+        -- Thai Pad Thai (Recipe 55)
+        (55, 13, 200, 'g', 'Rice noodles'),
+        (55, 9, 200, 'g', 'Shrimp'),
+        (55, 20, 100, 'g', 'Bean sprouts'),
+        (55, 6, 30, 'ml', 'Oil'),
+        (55, 26, 5, 'g', 'To taste'),
+        (55, 27, 2, 'g', 'Freshly ground'),
+        
+        -- Chinese Dumplings (Recipe 56)
+        (56, 13, 300, 'g', 'All-purpose flour'),
+        (56, 3, 300, 'g', 'Ground pork'),
+        (56, 20, 150, 'g', 'Diced cabbage'),
+        (56, 21, 20, 'g', 'Minced garlic'),
+        (56, 6, 30, 'ml', 'Oil'),
+        (56, 26, 5, 'g', 'To taste'),
+        (56, 27, 2, 'g', 'Freshly ground'),
+        
+        -- Japanese Tempura (Recipe 57)
+        (57, 13, 200, 'g', 'All-purpose flour'),
+        (57, 12, 2, 'pieces', 'Large eggs'),
+        (57, 25, 300, 'g', 'Mixed vegetables'),
+        (57, 6, 500, 'ml', 'Oil for frying'),
+        (57, 26, 3, 'g', 'To taste'),
+        
+        -- Korean Kimchi (Recipe 58)
+        (58, 22, 1000, 'g', 'Napa cabbage'),
+        (58, 20, 200, 'g', 'Diced onions'),
+        (58, 21, 40, 'g', 'Minced garlic'),
+        (58, 26, 20, 'g', 'To taste'),
+        (58, 27, 5, 'g', 'Freshly ground'),
+        
+        -- Vietnamese Banh Mi (Recipe 59)
+        (59, 13, 4, 'pieces', 'Baguette'),
+        (59, 1, 300, 'g', 'Pork meat'),
+        (59, 20, 150, 'g', 'Pickled vegetables'),
+        (59, 6, 30, 'ml', 'Oil'),
+        (59, 26, 5, 'g', 'To taste'),
+        (59, 27, 2, 'g', 'Freshly ground'),
+        
+        -- Indonesian Nasi Goreng (Recipe 60)
+        (60, 12, 400, 'g', 'Jasmine rice'),
+        (60, 1, 200, 'g', 'Chicken pieces'),
+        (60, 20, 150, 'g', 'Diced onions'),
+        (60, 21, 20, 'g', 'Minced garlic'),
+        (60, 6, 40, 'ml', 'Oil'),
+        (60, 26, 5, 'g', 'To taste'),
+        (60, 27, 2, 'g', 'Freshly ground'),
+        
+        -- Malaysian Laksa (Recipe 61)
+        (61, 13, 200, 'g', 'Rice noodles'),
+        (61, 9, 300, 'g', 'Mixed seafood'),
+        (61, 20, 100, 'g', 'Sliced onions'),
+        (61, 21, 20, 'g', 'Minced garlic'),
+        (61, 6, 40, 'ml', 'Coconut oil'),
+        (61, 26, 5, 'g', 'To taste'),
+        (61, 27, 2, 'g', 'Freshly ground'),
+        
+        -- Filipino Adobo (Recipe 62)
+        (62, 1, 600, 'g', 'Chicken pieces'),
+        (62, 20, 200, 'g', 'Sliced onions'),
+        (62, 21, 30, 'g', 'Minced garlic'),
+        (62, 6, 40, 'ml', 'Oil'),
+        (62, 26, 8, 'g', 'To taste'),
+        (62, 27, 3, 'g', 'Freshly ground'),
+        
+        -- Australian Pavlova (Recipe 63)
+        (63, 12, 6, 'pieces', 'Large eggs'),
+        (63, 13, 300, 'g', 'Sugar'),
+        (63, 6, 200, 'ml', 'Heavy cream'),
+        (63, 25, 200, 'g', 'Mixed fruits'),
+        (63, 26, 2, 'g', 'To taste')
 END
 GO
 
@@ -1394,7 +1727,148 @@ BEGIN
         (43, 44, 5, 'Perfect for cold weather.', GETUTCDATE()),
         (43, 80, 4, 'Great with sour cream.', GETUTCDATE()),
         (43, 11, 5, 'Authentic Russian cuisine.', GETUTCDATE()),
-        (43, 32, 4, 'Perfect comfort food.', GETUTCDATE())
+        (43, 32, 4, 'Perfect comfort food.', GETUTCDATE()),
+        
+        -- Additional Ratings (for recipes 44-63)
+        -- Italian Risotto ratings
+        (44, 2, 5, 'Creamy and perfect risotto technique.', GETUTCDATE()),
+        (44, 3, 4, 'Great Italian comfort food.', GETUTCDATE()),
+        (44, 4, 5, 'Restaurant quality risotto.', GETUTCDATE()),
+        (44, 5, 4, 'Perfect for special occasions.', GETUTCDATE()),
+        (44, 6, 5, 'Best risotto recipe ever.', GETUTCDATE()),
+        
+        -- French Ratatouille ratings
+        (45, 7, 4, 'Beautiful vegetable stew.', GETUTCDATE()),
+        (45, 8, 5, 'Perfect Provençal flavors.', GETUTCDATE()),
+        (45, 9, 4, 'Great vegetarian option.', GETUTCDATE()),
+        (45, 10, 5, 'Authentic French cuisine.', GETUTCDATE()),
+        (45, 11, 4, 'Perfect summer dish.', GETUTCDATE()),
+        
+        -- German Pretzels ratings
+        (46, 12, 5, 'Perfect soft pretzels.', GETUTCDATE()),
+        (46, 13, 4, 'Great German bread.', GETUTCDATE()),
+        (46, 14, 5, 'Authentic Bavarian pretzels.', GETUTCDATE()),
+        (46, 15, 4, 'Perfect with beer.', GETUTCDATE()),
+        (46, 16, 5, 'Best pretzel recipe.', GETUTCDATE()),
+        
+        -- Swedish Meatballs ratings
+        (47, 17, 4, 'Tender and flavorful meatballs.', GETUTCDATE()),
+        (47, 18, 5, 'Perfect Swedish comfort food.', GETUTCDATE()),
+        (47, 19, 4, 'Great with cream sauce.', GETUTCDATE()),
+        (47, 20, 5, 'Authentic Swedish flavors.', GETUTCDATE()),
+        (47, 21, 4, 'Perfect for family dinners.', GETUTCDATE()),
+        
+        -- Polish Pierogi ratings
+        (48, 22, 5, 'Authentic Polish dumplings.', GETUTCDATE()),
+        (48, 23, 4, 'Worth the effort to make.', GETUTCDATE()),
+        (48, 24, 5, 'Perfect comfort food.', GETUTCDATE()),
+        (48, 25, 4, 'Great traditional recipe.', GETUTCDATE()),
+        (48, 26, 5, 'Best pierogi recipe.', GETUTCDATE()),
+        
+        -- Turkish Baklava ratings
+        (49, 27, 5, 'Sweet and flaky perfection.', GETUTCDATE()),
+        (49, 28, 4, 'Great dessert for special occasions.', GETUTCDATE()),
+        (49, 29, 5, 'Authentic Turkish baklava.', GETUTCDATE()),
+        (49, 30, 4, 'Perfect with tea.', GETUTCDATE()),
+        (49, 31, 5, 'Best baklava recipe.', GETUTCDATE()),
+        
+        -- Greek Gyros ratings
+        (50, 32, 4, 'Spicy and flavorful gyros.', GETUTCDATE()),
+        (50, 33, 5, 'Perfect Greek street food.', GETUTCDATE()),
+        (50, 34, 4, 'Great with tzatziki sauce.', GETUTCDATE()),
+        (50, 35, 5, 'Authentic Greek flavors.', GETUTCDATE()),
+        (50, 36, 4, 'Perfect for lunch.', GETUTCDATE()),
+        
+        -- Lebanese Falafel ratings
+        (51, 37, 5, 'Crispy and delicious falafel.', GETUTCDATE()),
+        (51, 38, 4, 'Great vegetarian option.', GETUTCDATE()),
+        (51, 39, 5, 'Perfect with tahini sauce.', GETUTCDATE()),
+        (51, 40, 4, 'Authentic Lebanese flavors.', GETUTCDATE()),
+        (51, 41, 5, 'Best falafel recipe.', GETUTCDATE()),
+        
+        -- Israeli Shakshuka ratings
+        (52, 42, 4, 'Spicy and flavorful eggs.', GETUTCDATE()),
+        (52, 43, 5, 'Perfect Middle Eastern breakfast.', GETUTCDATE()),
+        (52, 44, 4, 'Great with crusty bread.', GETUTCDATE()),
+        (52, 45, 5, 'Authentic Israeli dish.', GETUTCDATE()),
+        (52, 46, 4, 'Perfect for brunch.', GETUTCDATE()),
+        
+        -- Iranian Kebab ratings
+        (53, 47, 5, 'Perfect grilled meat.', GETUTCDATE()),
+        (53, 48, 4, 'Great Persian flavors.', GETUTCDATE()),
+        (53, 49, 5, 'Authentic Iranian cuisine.', GETUTCDATE()),
+        (53, 50, 4, 'Perfect with rice.', GETUTCDATE()),
+        (53, 51, 5, 'Best kebab recipe.', GETUTCDATE()),
+        
+        -- Indian Biryani ratings
+        (54, 52, 5, 'Fragrant and delicious biryani.', GETUTCDATE()),
+        (54, 53, 4, 'Perfect Indian comfort food.', GETUTCDATE()),
+        (54, 54, 5, 'Authentic Indian flavors.', GETUTCDATE()),
+        (54, 55, 4, 'Worth the long cooking time.', GETUTCDATE()),
+        (54, 56, 5, 'Best biryani recipe.', GETUTCDATE()),
+        
+        -- Thai Pad Thai ratings
+        (55, 57, 4, 'Perfect Thai street food.', GETUTCDATE()),
+        (55, 58, 5, 'Authentic Thai flavors.', GETUTCDATE()),
+        (55, 59, 4, 'Great with peanuts.', GETUTCDATE()),
+        (55, 60, 5, 'Best Pad Thai recipe.', GETUTCDATE()),
+        (55, 61, 4, 'Perfect quick meal.', GETUTCDATE()),
+        
+        -- Chinese Dumplings ratings
+        (56, 62, 5, 'Perfect dumpling technique.', GETUTCDATE()),
+        (56, 63, 4, 'Great Chinese comfort food.', GETUTCDATE()),
+        (56, 64, 5, 'Authentic Chinese flavors.', GETUTCDATE()),
+        (56, 65, 4, 'Perfect for family meals.', GETUTCDATE()),
+        (56, 66, 5, 'Best dumpling recipe.', GETUTCDATE()),
+        
+        -- Japanese Tempura ratings
+        (57, 67, 4, 'Light and crispy tempura.', GETUTCDATE()),
+        (57, 68, 5, 'Perfect Japanese technique.', GETUTCDATE()),
+        (57, 69, 4, 'Great with tentsuyu sauce.', GETUTCDATE()),
+        (57, 70, 5, 'Authentic Japanese flavors.', GETUTCDATE()),
+        (57, 71, 4, 'Perfect appetizer.', GETUTCDATE()),
+        
+        -- Korean Kimchi ratings
+        (58, 72, 5, 'Spicy and fermented perfection.', GETUTCDATE()),
+        (58, 73, 4, 'Worth the fermentation time.', GETUTCDATE()),
+        (58, 74, 5, 'Authentic Korean flavors.', GETUTCDATE()),
+        (58, 75, 4, 'Perfect side dish.', GETUTCDATE()),
+        (58, 76, 5, 'Best kimchi recipe.', GETUTCDATE()),
+        
+        -- Vietnamese Banh Mi ratings
+        (59, 77, 4, 'Perfect Vietnamese sandwich.', GETUTCDATE()),
+        (59, 78, 5, 'Authentic Vietnamese flavors.', GETUTCDATE()),
+        (59, 79, 4, 'Great with pickled vegetables.', GETUTCDATE()),
+        (59, 80, 5, 'Best Banh Mi recipe.', GETUTCDATE()),
+        (59, 81, 4, 'Perfect for lunch.', GETUTCDATE()),
+        
+        -- Indonesian Nasi Goreng ratings
+        (60, 82, 5, 'Perfect Indonesian fried rice.', GETUTCDATE()),
+        (60, 83, 4, 'Great Indonesian flavors.', GETUTCDATE()),
+        (60, 84, 5, 'Authentic Indonesian cuisine.', GETUTCDATE()),
+        (60, 85, 4, 'Perfect with fried egg.', GETUTCDATE()),
+        (60, 86, 5, 'Best Nasi Goreng recipe.', GETUTCDATE()),
+        
+        -- Malaysian Laksa ratings
+        (61, 87, 4, 'Spicy and flavorful laksa.', GETUTCDATE()),
+        (61, 88, 5, 'Perfect Malaysian noodle soup.', GETUTCDATE()),
+        (61, 89, 4, 'Great with coconut milk.', GETUTCDATE()),
+        (61, 90, 5, 'Authentic Malaysian flavors.', GETUTCDATE()),
+        (61, 91, 4, 'Perfect comfort food.', GETUTCDATE()),
+        
+        -- Filipino Adobo ratings
+        (62, 92, 5, 'Perfect Filipino comfort food.', GETUTCDATE()),
+        (62, 93, 4, 'Great Filipino flavors.', GETUTCDATE()),
+        (62, 94, 5, 'Authentic Filipino cuisine.', GETUTCDATE()),
+        (62, 95, 4, 'Perfect with rice.', GETUTCDATE()),
+        (62, 96, 5, 'Best Adobo recipe.', GETUTCDATE()),
+        
+        -- Australian Pavlova ratings
+        (63, 97, 4, 'Light and airy meringue.', GETUTCDATE()),
+        (63, 98, 5, 'Perfect Australian dessert.', GETUTCDATE()),
+        (63, 99, 4, 'Great with fresh fruit.', GETUTCDATE()),
+        (63, 100, 5, 'Authentic Australian flavors.', GETUTCDATE()),
+        (63, 1, 4, 'Perfect for special occasions.', GETUTCDATE())
 END
 GO
 
@@ -1489,7 +1963,13 @@ BEGIN
 END
 GO
 
-PRINT 'FoodBook database created successfully with sample data!'
+PRINT 'FoodBook database created successfully with expanded sample data!'
 PRINT 'Database: FoodBook'
 PRINT 'Tables: Users, Recipes, Ingredients, RecipeIngredients, Ratings, LogEntries'
-PRINT 'Sample data inserted for testing'
+PRINT 'Total Users: 100+ diverse international users'
+PRINT 'Total Ingredients: 120+ ingredients across all categories'
+PRINT 'Total Recipes: 50+ recipes from various world cuisines'
+PRINT 'Total Recipe-Ingredient Relationships: 500+ connections'
+PRINT 'Total Ratings: 300+ user ratings and reviews'
+PRINT 'Total Log Entries: 50+ system and user activity logs'
+PRINT 'Sample data inserted for comprehensive testing'
