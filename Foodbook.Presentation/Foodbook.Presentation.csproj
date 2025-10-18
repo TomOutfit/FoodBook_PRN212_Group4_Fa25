@@ -24,9 +24,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="appsettings.json">
+    <None Update="..\appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>appsettings.json</Link>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Images\FoodBook_Logo.png" />
   </ItemGroup>
 
 
