@@ -20,8 +20,12 @@ namespace Foodbook.Presentation.Views
             _loginModel = new LoginModel();
             DataContext = _loginModel;
             
+            // Initialize empty login model
+            _loginModel.Email = "";
+            _loginModel.Password = "";
+            
             // Set focus to email field
-            Loaded += (s, e) => EmailTextBox.Focus();
+            Loaded += (s, e) => this.EmailTextBox.Focus();
         }
 
         private async void SignIn_Click(object sender, RoutedEventArgs e)
@@ -29,15 +33,15 @@ namespace Foodbook.Presentation.Views
             try
             {
                 // Update model from UI
-                _loginModel.Email = EmailTextBox.Text;
-                _loginModel.Password = PasswordBox.Password;
+                _loginModel.Email = this.EmailTextBox.Text;
+                _loginModel.Password = this.PasswordBox.Password;
 
                 // Validate input
                 if (string.IsNullOrWhiteSpace(_loginModel.Email))
                 {
                     MessageBox.Show("Please enter your email address.", "Validation Error", 
                         MessageBoxButton.OK, MessageBoxImage.Warning);
-                    EmailTextBox.Focus();
+                    this.EmailTextBox.Focus();
                     return;
                 }
 
@@ -45,15 +49,18 @@ namespace Foodbook.Presentation.Views
                 {
                     MessageBox.Show("Please enter your password.", "Validation Error", 
                         MessageBoxButton.OK, MessageBoxImage.Warning);
-                    PasswordBox.Focus();
+                    this.PasswordBox.Focus();
                     return;
                 }
 
                 // Show loading state
                 var signInButton = sender as Button;
-                var originalContent = signInButton?.Content;
-                signInButton.Content = "Signing In...";
-                signInButton.IsEnabled = false;
+                if (signInButton != null)
+                {
+                    var originalContent = signInButton.Content;
+                    signInButton.Content = "Signing In...";
+                    signInButton.IsEnabled = false;
+                }
 
                 // Attempt login
                 var user = await _authService.LoginAsync(_loginModel);
@@ -138,6 +145,71 @@ namespace Foodbook.Presentation.Views
             if (e.Key == Key.Enter)
             {
                 SignIn_Click(sender, new RoutedEventArgs());
+            }
+        }
+
+        private void EmailTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            _loginModel.Email = EmailTextBox.Text;
+        }
+
+        private void PasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
+        {
+            _loginModel.Password = PasswordBox.Password;
+        }
+
+        private async void QuickAdminLogin_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Set admin credentials
+                _loginModel.Email = "admin@foodbook.com";
+                _loginModel.Password = "admin123";
+                
+                // Update UI
+                EmailTextBox.Text = _loginModel.Email;
+                PasswordBox.Password = _loginModel.Password;
+
+                // Show loading state
+                var button = sender as Button;
+                if (button != null)
+                {
+                    var originalContent = button.Content;
+                    button.Content = "Logging in...";
+                    button.IsEnabled = false;
+                }
+
+                // Attempt login
+                var user = await _authService.LoginAsync(_loginModel);
+
+                if (user != null)
+                {
+                    MessageBox.Show($"Welcome back, {user.Username}!", "Quick Admin Login Successful", 
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    
+                    // Set the result and close
+                    LoginSuccessful?.Invoke(this, EventArgs.Empty);
+                    Close();
+                }
+                else
+                {
+                    MessageBox.Show("Admin login failed. Please check database connection.", "Login Failed", 
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred during admin login: {ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                // Restore button state
+                if (sender is Button btn)
+                {
+                    btn.Content = "🚀 Quick Login as Admin";
+                    btn.IsEnabled = true;
+                }
             }
         }
     }

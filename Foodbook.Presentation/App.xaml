@@ -1,8 +1,15 @@
 ﻿<Application x:Class="Foodbook.Presentation.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:Foodbook.Presentation">
+             xmlns:local="clr-namespace:Foodbook.Presentation"
+             xmlns:converters="clr-namespace:Foodbook.Presentation.Converters">
     <Application.Resources>
+        <!-- Converters -->
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <converters:TabButtonStyleConverter x:Key="TabButtonStyleConverter"/>
+        <converters:TabVisibilityConverter x:Key="TabVisibilityConverter"/>
+        <converters:SidebarWidthConverter x:Key="SidebarWidthConverter"/>
+        <converters:SidebarVisibilityConverter x:Key="SidebarVisibilityConverter"/>
          
     </Application.Resources>
 </Application>

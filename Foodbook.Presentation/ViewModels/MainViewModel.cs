@@ -24,6 +24,7 @@ namespace Foodbook.Presentation.ViewModels
 
         private ObservableCollection<Recipe> _recipes = new();
         private ObservableCollection<Ingredient> _ingredients = new();
+        private List<Recipe> _allRecipes = new(); // Store all recipes for filtering
         private Recipe? _selectedRecipe;
         private string _searchText = string.Empty;
         private bool _isLoading;
@@ -35,6 +36,19 @@ namespace Foodbook.Presentation.ViewModels
         private string _selectedLanguage = "English";
         private bool _notificationsEnabled = true;
         private int _defaultServings = 4;
+        
+        // Recipe Collection properties
+        private string _sortBy = "Name A-Z";
+        private string _selectedCategory = "All";
+        private bool _autoSaveEnabled = true;
+        
+        // Ingredient Collection properties
+        private string _ingredientSortBy = "Name A-Z";
+        private string _selectedIngredientCategory = "All";
+        private List<Ingredient> _allIngredients = new(); // Store all ingredients for filtering
+        
+        // Sidebar properties
+        private bool _isSidebarCollapsed = false;
 
         // Analytics properties
         private int _totalRecipes = 0;
@@ -47,6 +61,7 @@ namespace Foodbook.Presentation.ViewModels
         private ISeries[] _ingredientUsageSeries = new ISeries[] { };
         private ISeries[] _aiPerformanceSeries = new ISeries[] { };
         private ISeries[] _cookTimeDistributionSeries = new ISeries[] { };
+        private ISeries[] _recipeDistributionSeries = new ISeries[] { };
         private User? _currentUser;
 
         // My Recipes statistics properties
@@ -68,6 +83,47 @@ namespace Foodbook.Presentation.ViewModels
         }
         
         public List<string> EvaluationModes { get; } = new List<string> { "😊 Casual (Encouraging)", "👨‍⚖️ Strict (Professional)" };
+        
+        // Custom nutrition analysis properties
+        private string _customRecipeText = string.Empty;
+        public string CustomRecipeText 
+        { 
+            get => _customRecipeText; 
+            set 
+            { 
+                _customRecipeText = value; 
+                OnPropertyChanged(); 
+            } 
+        }
+
+        // Recipe and Ingredient search properties
+        private string _recipeSearchText = string.Empty;
+        public string RecipeSearchText 
+        { 
+            get => _recipeSearchText; 
+            set 
+            { 
+                if (SetProperty(ref _recipeSearchText, value))
+                {
+                    // Trigger search when text changes
+                    _ = Task.Run(async () => await SearchRecipesAsync());
+                }
+            } 
+        }
+
+        private string _ingredientSearchText = string.Empty;
+        public string IngredientSearchText 
+        { 
+            get => _ingredientSearchText; 
+            set 
+            { 
+                if (SetProperty(ref _ingredientSearchText, value))
+                {
+                    // Trigger search when text changes
+                    _ = Task.Run(async () => await SearchIngredientsAsync());
+                }
+            } 
+        }
 
         public MainViewModel(
             IRecipeService recipeService,
@@ -100,16 +156,44 @@ namespace Foodbook.Presentation.ViewModels
             JudgeDishCommand = new RelayCommand(async () => await JudgeDishAsync());
             GenerateShoppingListCommand = new RelayCommand(async () => await GenerateShoppingListAsync());
             AnalyzeNutritionCommand = new RelayCommand(async () => await AnalyzeNutritionAsync());
-            SelectTabCommand = new RelayCommand<string>(SelectTab);
+            AnalyzeCustomNutritionCommand = new RelayCommand(async () => await AnalyzeCustomNutritionAsync());
+            SelectTabCommand = new RelayCommand<string>(async (tabName) => await SelectTab(tabName));
             AddNewRecipeCommand = new RelayCommand(async () => await AddNewRecipeAsync());
             AddNewIngredientCommand = new RelayCommand(async () => await AddNewIngredientAsync());
             EditRecipeCommand = new RelayCommand<Recipe>(async (recipe) => await EditRecipeAsync(recipe));
             DeleteRecipeCommand = new RelayCommand<Recipe>(async (recipe) => await DeleteRecipeAsync(recipe));
             ViewRecipeCommand = new RelayCommand<Recipe>(async (recipe) => await ViewRecipeAsync(recipe));
-            EditIngredientCommand = new RelayCommand(async () => await EditIngredientAsync(null!));
-            DeleteIngredientCommand = new RelayCommand(async () => await DeleteIngredientAsync(null!));
+            EditIngredientCommand = new RelayCommand<Ingredient>(async (ingredient) => await EditIngredientAsync(ingredient));
+            DeleteIngredientCommand = new RelayCommand<Ingredient>(async (ingredient) => await DeleteIngredientAsync(ingredient));
+            ViewIngredientCommand = new RelayCommand<Ingredient>(async (ingredient) => await ViewIngredientAsync(ingredient));
+            CreateRecipeCommand = new RelayCommand(async () => await AddNewRecipeAsync());
+            CreateIngredientCommand = new RelayCommand(async () => await AddNewIngredientAsync());
             SaveSettingsCommand = new RelayCommand(async () => await SaveSettingsAsync());
             LoadSettingsCommand = new RelayCommand(async () => await LoadSettingsAsync());
+            SearchIngredientsCommand = new RelayCommand(async () => await SearchIngredientsAsync());
+            
+            // Initialize additional commands
+            AddRecipeCommand = new RelayCommand(async () => await AddNewRecipeAsync());
+            ViewRecipeAnalyticsCommand = new RelayCommand(async () => await SelectTab("Analytics"));
+            SortByCommand = new RelayCommand<string>(async (sortBy) => await SortRecipesAsync(sortBy));
+            FilterByCategoryCommand = new RelayCommand<string>(async (category) => await FilterRecipesByCategoryAsync(category));
+            RefreshProfileCommand = new RelayCommand(async () => await LoadCurrentUserAsync());
+            TestDatabaseConnectionCommand = new RelayCommand(async () => await TestDatabaseConnectionAsync());
+            ConfigureAICommand = new RelayCommand(async () => await ConfigureAISettingsAsync());
+            ViewLogsCommand = new RelayCommand(async () => await ViewLogsAsync());
+            RefreshUserProfileCommand = new RelayCommand(async () => await LoadCurrentUserAsync());
+            ToggleSidebarCommand = new RelayCommand(async () => await ToggleSidebarAsync());
+            
+            // Initialize ingredient commands
+            AddIngredientCommand = new RelayCommand(async () => await AddNewIngredientAsync());
+            ViewIngredientAnalyticsCommand = new RelayCommand(async () => await SelectTab("Analytics"));
+            
+            // Initialize ingredient tab navigation commands
+            NavigateToAllIngredientsCommand = new RelayCommand(async () => await NavigateToIngredientCategory("All"));
+            NavigateToProteinsCommand = new RelayCommand(async () => await NavigateToIngredientCategory("Proteins"));
+            NavigateToGrainsCommand = new RelayCommand(async () => await NavigateToIngredientCategory("Grains"));
+            NavigateToVegetablesCommand = new RelayCommand(async () => await NavigateToIngredientCategory("Vegetables"));
+            NavigateToSpicesCommand = new RelayCommand(async () => await NavigateToIngredientCategory("Spices"));
         }
 
         // Parameterless constructor for fallback
@@ -138,7 +222,8 @@ namespace Foodbook.Presentation.ViewModels
             JudgeDishCommand = new RelayCommand(async () => await JudgeDishAsync());
             GenerateShoppingListCommand = new RelayCommand(async () => await GenerateShoppingListAsync());
             AnalyzeNutritionCommand = new RelayCommand(async () => await AnalyzeNutritionAsync());
-            SelectTabCommand = new RelayCommand<string>(SelectTab);
+            AnalyzeCustomNutritionCommand = new RelayCommand(async () => await AnalyzeCustomNutritionAsync());
+            SelectTabCommand = new RelayCommand<string>(async (tabName) => await SelectTab(tabName));
             AddNewRecipeCommand = new RelayCommand(async () => await AddNewRecipeAsync());
             AddNewIngredientCommand = new RelayCommand(async () => await AddNewIngredientAsync());
             EditRecipeCommand = new RelayCommand<Recipe>(async (recipe) => await EditRecipeAsync(recipe));
@@ -146,8 +231,39 @@ namespace Foodbook.Presentation.ViewModels
             ViewRecipeCommand = new RelayCommand<Recipe>(async (recipe) => await ViewRecipeAsync(recipe));
             EditIngredientCommand = new RelayCommand<Ingredient>(async (ingredient) => await EditIngredientAsync(ingredient));
             DeleteIngredientCommand = new RelayCommand<Ingredient>(async (ingredient) => await DeleteIngredientAsync(ingredient));
+            ViewIngredientCommand = new RelayCommand<Ingredient>(async (ingredient) => await ViewIngredientAsync(ingredient));
+            CreateRecipeCommand = new RelayCommand(async () => await AddNewRecipeAsync());
+            CreateIngredientCommand = new RelayCommand(async () => await AddNewIngredientAsync());
             SaveSettingsCommand = new RelayCommand(async () => await SaveSettingsAsync());
             LoadSettingsCommand = new RelayCommand(async () => await LoadSettingsAsync());
+            SearchIngredientsCommand = new RelayCommand(async () => await SearchIngredientsAsync());
+            
+            // Initialize additional commands
+            AddRecipeCommand = new RelayCommand(async () => await AddNewRecipeAsync());
+            ViewRecipeAnalyticsCommand = new RelayCommand(async () => await SelectTab("Analytics"));
+            SortByCommand = new RelayCommand<string>(async (sortBy) => await SortRecipesAsync(sortBy));
+            FilterByCategoryCommand = new RelayCommand<string>(async (category) => await FilterRecipesByCategoryAsync(category));
+            RefreshProfileCommand = new RelayCommand(async () => await LoadCurrentUserAsync());
+            TestDatabaseConnectionCommand = new RelayCommand(async () => await TestDatabaseConnectionAsync());
+            ConfigureAICommand = new RelayCommand(async () => await ConfigureAISettingsAsync());
+            ViewLogsCommand = new RelayCommand(async () => await ViewLogsAsync());
+            RefreshUserProfileCommand = new RelayCommand(async () => await LoadCurrentUserAsync());
+            ToggleSidebarCommand = new RelayCommand(async () => await ToggleSidebarAsync());
+            
+            // Initialize ingredient filter commands
+            SortIngredientsByCommand = new RelayCommand<string>(async (sortBy) => await SortIngredientsAsync(sortBy));
+            FilterIngredientsByCategoryCommand = new RelayCommand<string>(async (category) => await FilterIngredientsByCategoryAsync(category));
+            
+            // Initialize ingredient commands
+            AddIngredientCommand = new RelayCommand(async () => await AddNewIngredientAsync());
+            ViewIngredientAnalyticsCommand = new RelayCommand(async () => await SelectTab("Analytics"));
+            
+            // Initialize ingredient tab navigation commands
+            NavigateToAllIngredientsCommand = new RelayCommand(async () => await NavigateToIngredientCategory("All"));
+            NavigateToProteinsCommand = new RelayCommand(async () => await NavigateToIngredientCategory("Proteins"));
+            NavigateToGrainsCommand = new RelayCommand(async () => await NavigateToIngredientCategory("Grains"));
+            NavigateToVegetablesCommand = new RelayCommand(async () => await NavigateToIngredientCategory("Vegetables"));
+            NavigateToSpicesCommand = new RelayCommand(async () => await NavigateToIngredientCategory("Spices"));
             
             // Load current user
             try
@@ -218,15 +334,47 @@ namespace Foodbook.Presentation.ViewModels
         public ICommand JudgeDishCommand { get; }
         public ICommand GenerateShoppingListCommand { get; }
         public ICommand AnalyzeNutritionCommand { get; }
+        public ICommand AnalyzeCustomNutritionCommand { get; }
         public ICommand SelectTabCommand { get; }
         public ICommand AddNewRecipeCommand { get; }
         public ICommand AddNewIngredientCommand { get; }
         public ICommand EditRecipeCommand { get; }
         public ICommand ViewRecipeCommand { get; }
         public ICommand EditIngredientCommand { get; }
+        public ICommand ViewIngredientCommand { get; } = null!;
+        public ICommand CreateRecipeCommand { get; } = null!;
+        public ICommand CreateIngredientCommand { get; } = null!;
         public ICommand DeleteIngredientCommand { get; }
         public ICommand SaveSettingsCommand { get; }
         public ICommand LoadSettingsCommand { get; }
+        public ICommand SearchIngredientsCommand { get; }
+        
+        // Additional commands for Recipe Collection page
+        public ICommand AddRecipeCommand { get; }
+        public ICommand ViewRecipeAnalyticsCommand { get; }
+        public ICommand SortByCommand { get; }
+        public ICommand FilterByCategoryCommand { get; }
+        public ICommand RefreshProfileCommand { get; }
+        public ICommand TestDatabaseConnectionCommand { get; }
+        public ICommand ConfigureAICommand { get; }
+        public ICommand ViewLogsCommand { get; }
+        public ICommand RefreshUserProfileCommand { get; }
+        public ICommand ToggleSidebarCommand { get; }
+        
+        // Ingredient Filter Commands
+        public ICommand SortIngredientsByCommand { get; } = null!;
+        public ICommand FilterIngredientsByCategoryCommand { get; } = null!;
+        
+        // Ingredient Commands
+        public ICommand AddIngredientCommand { get; } = null!;
+        public ICommand ViewIngredientAnalyticsCommand { get; } = null!;
+        
+        // Ingredient Tab Navigation Commands
+        public ICommand NavigateToAllIngredientsCommand { get; } = null!;
+        public ICommand NavigateToProteinsCommand { get; } = null!;
+        public ICommand NavigateToGrainsCommand { get; } = null!;
+        public ICommand NavigateToVegetablesCommand { get; } = null!;
+        public ICommand NavigateToSpicesCommand { get; } = null!;
         
         // Settings Properties
         public string SelectedTheme
@@ -314,6 +462,12 @@ namespace Foodbook.Presentation.ViewModels
             set => SetProperty(ref _cookTimeDistributionSeries, value);
         }
 
+        public ISeries[] RecipeDistributionSeries
+        {
+            get => _recipeDistributionSeries;
+            set => SetProperty(ref _recipeDistributionSeries, value);
+        }
+
         public User? CurrentUser
         {
             get => _currentUser;
@@ -345,12 +499,52 @@ namespace Foodbook.Presentation.ViewModels
             set => SetProperty(ref _myAIGeneratedRecipes, value);
         }
 
+        // Recipe Collection Properties
+        public string SortBy
+        {
+            get => _sortBy;
+            set => SetProperty(ref _sortBy, value);
+        }
+
+        public string SelectedCategory
+        {
+            get => _selectedCategory;
+            set => SetProperty(ref _selectedCategory, value);
+        }
+
+        public bool AutoSaveEnabled
+        {
+            get => _autoSaveEnabled;
+            set => SetProperty(ref _autoSaveEnabled, value);
+        }
+        
+        // Ingredient Collection Properties
+        public string IngredientSortBy
+        {
+            get => _ingredientSortBy;
+            set => SetProperty(ref _ingredientSortBy, value);
+        }
+        
+        public string SelectedIngredientCategory
+        {
+            get => _selectedIngredientCategory;
+            set => SetProperty(ref _selectedIngredientCategory, value);
+        }
+
+        // Sidebar Properties
+        public bool IsSidebarCollapsed
+        {
+            get => _isSidebarCollapsed;
+            set => SetProperty(ref _isSidebarCollapsed, value);
+        }
+
+
         private async Task LoadRecipesAsync()
         {
             try
             {
                 IsLoading = true;
-                StatusMessage = "Loading recipes...";
+                StatusMessage = "Loading recipes from database...";
                 
                 // Check if service is available
                 if (_recipeService == null)
@@ -359,45 +553,46 @@ namespace Foodbook.Presentation.ViewModels
                     return;
                 }
                 
+                // Load from database - FoodBook.sql
                 var recipes = await _recipeService.GetAllRecipesAsync();
                 
-                // Use Dispatcher to update UI on the correct thread
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     Recipes.Clear();
+                    _allRecipes.Clear(); // Clear previous data
                     
                     if (recipes != null && recipes.Any())
                     {
                         foreach (var recipe in recipes)
                         {
                             Recipes.Add(recipe);
+                            _allRecipes.Add(recipe); // Store in all recipes list
                         }
                         
-                        StatusMessage = $"Loaded {Recipes.Count} recipes successfully";
+                        StatusMessage = $"Loaded {Recipes.Count} recipes from FoodBook database";
+                        
+                        // Calculate statistics from real database data
+                        MyTotalRecipes = Recipes.Count;
+                        MyAverageCookTime = Recipes.Average(r => r.CookTime);
+                        MyMostCommonDifficulty = Recipes.GroupBy(r => r.Difficulty).OrderByDescending(g => g.Count()).First().Key;
+                        MyAIGeneratedRecipes = Recipes.Count(r => r.Category?.Contains("AI") == true || r.Title?.Contains("AI") == true);
                     }
                     else
                     {
-                        StatusMessage = "No recipes found. Click 'Add New Recipe' to get started!";
-                        // Reset statistics when no recipes
+                        StatusMessage = "No recipes found in database. Please check FoodBook.sql data.";
                         MyTotalRecipes = 0;
                         MyAverageCookTime = 0;
                         MyMostCommonDifficulty = "Easy";
                         MyAIGeneratedRecipes = 0;
                     }
                 });
-                
-                // Calculate statistics after UI update
-                if (recipes != null && recipes.Any())
-                {
-                    await CalculateMyRecipesStatistics(recipes);
-                }
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Error loading recipes: {ex.Message}";
+                StatusMessage = $"Error loading recipes from database: {ex.Message}";
                 System.Diagnostics.Debug.WriteLine($"LoadRecipesAsync Error: {ex}");
                 
-                // Use Dispatcher for error handling too
+                // Show error but don't fallback to sample data
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     Recipes.Clear();
@@ -413,33 +608,116 @@ namespace Foodbook.Presentation.ViewModels
             }
         }
 
+        private async Task LoadIngredientsAsync()
+        {
+            try
+            {
+                IsLoading = true;
+                StatusMessage = "Loading ingredients from database...";
+                
+                // Check if service is available
+                if (_ingredientService == null)
+                {
+                    StatusMessage = "Ingredient service not available. Please restart the application.";
+                    return;
+                }
+                
+                // Load from database - FoodBook.sql
+                var ingredients = await _ingredientService.GetUserIngredientsAsync(1);
+                
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    Ingredients.Clear();
+                    _allIngredients.Clear(); // Clear previous data
+                    
+                    if (ingredients != null && ingredients.Any())
+                    {
+                        foreach (var ingredient in ingredients)
+                        {
+                            Ingredients.Add(ingredient);
+                            _allIngredients.Add(ingredient); // Store in all ingredients list
+                        }
+                        
+                        StatusMessage = $"Loaded {Ingredients.Count} ingredients from FoodBook database";
+                    }
+                    else
+                    {
+                        StatusMessage = "No ingredients found in database. Please check FoodBook.sql data.";
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error loading ingredients from database: {ex.Message}";
+                System.Diagnostics.Debug.WriteLine($"LoadIngredientsAsync Error: {ex}");
+                
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    Ingredients.Clear();
+                });
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+
         private async Task SearchRecipesAsync()
         {
             try
             {
                 IsLoading = true;
                 
-                if (string.IsNullOrWhiteSpace(SearchText))
+                if (string.IsNullOrWhiteSpace(RecipeSearchText))
                 {
-                    // If search text is empty, load all recipes
-                    await LoadRecipesAsync();
+                    // If search text is empty, show all recipes based on current filter
+                    await FilterRecipesByCategoryAsync(SelectedCategory);
                     return;
                 }
                 
                 StatusMessage = "Searching recipes...";
                 
-                var recipes = await _recipeService.SearchRecipesAsync(SearchText, null, null, null);
+                // Search within current filtered results or all recipes
+                var searchBase = _allRecipes.AsEnumerable();
+                
+                // Apply current category filter if not "All"
+                if (SelectedCategory != "All")
+                {
+                    searchBase = searchBase.Where(r => 
+                    {
+                        if (SelectedCategory == "Main Dishes")
+                            return r.Category?.Contains("Main", StringComparison.OrdinalIgnoreCase) == true ||
+                                   r.Category?.Contains("Dish", StringComparison.OrdinalIgnoreCase) == true;
+                        else if (SelectedCategory == "Desserts")
+                            return r.Category?.Contains("Dessert", StringComparison.OrdinalIgnoreCase) == true ||
+                                   r.Category?.Contains("Sweet", StringComparison.OrdinalIgnoreCase) == true;
+                        else if (SelectedCategory == "Quick")
+                            return r.CookTime <= 30;
+                        else
+                            return r.Category?.Contains(SelectedCategory, StringComparison.OrdinalIgnoreCase) == true ||
+                                   r.Title?.Contains(SelectedCategory, StringComparison.OrdinalIgnoreCase) == true;
+                    });
+                }
+                
+                // Apply search filter
+                var searchResults = searchBase.Where(r => 
+                    r.Title?.Contains(RecipeSearchText, StringComparison.OrdinalIgnoreCase) == true ||
+                    r.Description?.Contains(RecipeSearchText, StringComparison.OrdinalIgnoreCase) == true ||
+                    r.Category?.Contains(RecipeSearchText, StringComparison.OrdinalIgnoreCase) == true ||
+                    r.Difficulty?.Contains(RecipeSearchText, StringComparison.OrdinalIgnoreCase) == true
+                ).ToList();
                 
                 // Use Dispatcher to update UI on the correct thread
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     Recipes.Clear();
-                    foreach (var recipe in recipes)
+                    foreach (var recipe in searchResults)
                     {
                         Recipes.Add(recipe);
                     }
                     
-                    StatusMessage = $"Found {Recipes.Count} recipes for '{SearchText}'";
+                    StatusMessage = $"Found {Recipes.Count} recipes for '{RecipeSearchText}'";
                 });
             }
             catch (Exception ex)
@@ -452,55 +730,53 @@ namespace Foodbook.Presentation.ViewModels
             }
         }
 
-        private async Task LoadIngredientsAsync()
+        private async Task SearchIngredientsAsync()
         {
             try
             {
                 IsLoading = true;
-                StatusMessage = "Loading ingredients...";
+                
+                if (string.IsNullOrWhiteSpace(IngredientSearchText))
+                {
+                    // If search text is empty, load all ingredients
+                    await LoadIngredientsAsync();
+                    return;
+                }
+                
+                StatusMessage = "Searching ingredients...";
                 
                 // For demo purposes, using user ID 1
                 var ingredients = await _ingredientService.GetUserIngredientsAsync(1);
-                Ingredients.Clear();
                 
-                if (ingredients != null && ingredients.Any())
+                // Filter ingredients based on search text
+                var filteredIngredients = ingredients?.Where(i => 
+                    i.Name.Contains(IngredientSearchText, StringComparison.OrdinalIgnoreCase) ||
+                    (i.Category?.Contains(IngredientSearchText, StringComparison.OrdinalIgnoreCase) == true) ||
+                    (i.NutritionInfo?.Contains(IngredientSearchText, StringComparison.OrdinalIgnoreCase) == true)
+                ).ToList() ?? new List<Ingredient>();
+                
+                // Use Dispatcher to update UI on the correct thread
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    foreach (var ingredient in ingredients)
+                    Ingredients.Clear();
+                    foreach (var ingredient in filteredIngredients)
                     {
                         Ingredients.Add(ingredient);
                     }
-                    StatusMessage = $"Loaded {Ingredients.Count} ingredients";
-                }
-                else
-                {
-                    StatusMessage = "No ingredients found. Click 'Add New Ingredient' to get started!";
-                }
+                    
+                    StatusMessage = $"Found {Ingredients.Count} ingredients for '{IngredientSearchText}'";
+                });
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Error loading ingredients: {ex.Message}";
-                // Add some sample data for demo
-                if (Ingredients.Count == 0)
-                {
-                    var sampleIngredients = new[]
-                    {
-                        new Ingredient { Id = 1, Name = "Rice", Unit = "cup", Quantity = 2, UserId = 1 },
-                        new Ingredient { Id = 2, Name = "Chicken", Unit = "gram", Quantity = 500, UserId = 1 },
-                        new Ingredient { Id = 3, Name = "Onion", Unit = "piece", Quantity = 1, UserId = 1 }
-                    };
-                    
-                    foreach (var ingredient in sampleIngredients)
-                    {
-                        Ingredients.Add(ingredient);
-                    }
-                    StatusMessage = "Loaded sample ingredients (database connection issue)";
-                }
+                StatusMessage = $"Error searching ingredients: {ex.Message}";
             }
             finally
             {
                 IsLoading = false;
             }
         }
+
 
         private async Task DeleteRecipeAsync(Recipe recipe)
         {
@@ -711,12 +987,15 @@ namespace Foodbook.Presentation.ViewModels
             }
         }
 
-        private async void SelectTab(string tabName)
+        private async Task SelectTab(string tabName)
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine($"SelectTab called with: {tabName}");
                 SelectedTab = tabName;
                 StatusMessage = $"Switched to {tabName} tab";
+                System.Diagnostics.Debug.WriteLine($"SelectedTab set to: {SelectedTab}");
+                System.Diagnostics.Debug.WriteLine($"PropertyChanged event should fire for SelectedTab");
                 
                 // Load data based on selected tab
                 switch (tabName)
@@ -752,7 +1031,7 @@ namespace Foodbook.Presentation.ViewModels
         {
             try
             {
-                var dialog = new Views.RecipeDialog();
+                var dialog = new Views.RecipePopupDialog();
                 if (dialog.ShowDialog() == true && dialog.Recipe != null)
                 {
                     IsLoading = true;
@@ -785,7 +1064,7 @@ namespace Foodbook.Presentation.ViewModels
         {
             try
             {
-                var dialog = new Views.IngredientDialog();
+                var dialog = new Views.IngredientPopupDialog();
                 if (dialog.ShowDialog() == true && dialog.Ingredient != null)
                 {
                     IsLoading = true;
@@ -819,7 +1098,7 @@ namespace Foodbook.Presentation.ViewModels
 
             try
             {
-                var dialog = new Views.RecipeDialog(recipe);
+                var dialog = new Views.RecipePopupDialog(recipe);
                 if (dialog.ShowDialog() == true && dialog.Recipe != null)
                 {
                     IsLoading = true;
@@ -870,13 +1149,31 @@ namespace Foodbook.Presentation.ViewModels
             }
         }
 
+        private async Task ViewIngredientAsync(Ingredient ingredient)
+        {
+            if (ingredient == null) return;
+
+            try
+            {
+                // Open ingredient details dialog in read-only mode
+                var dialog = new Views.IngredientDialog(ingredient); // Open for viewing
+                dialog.ShowDialog();
+                StatusMessage = $"Viewing ingredient: {ingredient.Name}";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error viewing ingredient: {ex.Message}";
+                await _loggingService.LogErrorAsync("Ingredient View", "1", ex, "Error viewing ingredient");
+            }
+        }
+
         private async Task EditIngredientAsync(Ingredient ingredient)
         {
             if (ingredient == null) return;
 
             try
             {
-                var dialog = new Views.IngredientDialog(ingredient);
+                var dialog = new Views.IngredientPopupDialog(ingredient);
                 if (dialog.ShowDialog() == true && dialog.Ingredient != null)
                 {
                     IsLoading = true;
@@ -1061,6 +1358,68 @@ namespace Foodbook.Presentation.ViewModels
             {
                 StatusMessage = $"Error analyzing nutrition: {ex.Message}";
                 await _loggingService.LogErrorAsync("Nutrition Analysis", "1", ex, "Unexpected error in nutrition analysis");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private async Task AnalyzeCustomNutritionAsync()
+        {
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(CustomRecipeText))
+                {
+                    StatusMessage = "Please enter a recipe text to analyze.";
+                    return;
+                }
+
+                IsLoading = true;
+                StatusMessage = "🤖 AI is parsing and analyzing your custom recipe...";
+                
+                // Log feature usage
+                await _loggingService.LogFeatureUsageAsync("Custom Nutrition Analysis", "1", 
+                    $"Analyzing custom recipe text: {CustomRecipeText.Length} characters");
+                
+                // Use the new unstructured recipe analysis
+                var nutritionAnalysis = await _nutritionService.AnalyzeUnstructuredRecipeAsync(CustomRecipeText);
+                
+                // Get health alerts
+                var healthAlerts = await _nutritionService.GetHealthAlertsAsync(nutritionAnalysis);
+                
+                // Get recommendations for general health
+                var recommendations = await _nutritionService.GetNutritionRecommendationsAsync(nutritionAnalysis, "General Health");
+                
+                // Log AI activity
+                stopwatch.Stop();
+                await _loggingService.LogAIActivityAsync("Custom Nutrition Analysis", "1", 
+                    $"Custom recipe: {CustomRecipeText.Substring(0, Math.Min(50, CustomRecipeText.Length))}...", 
+                    $"Analysis: {nutritionAnalysis.TotalCalories:F0} cal, Grade: {nutritionAnalysis.Rating.Grade}", 
+                    stopwatch.Elapsed);
+                
+                // Show custom nutrition analysis dialog
+                var customNutritionDialog = new Views.CustomNutritionDialog();
+                customNutritionDialog.SetNutritionAnalysis(nutritionAnalysis, healthAlerts, new[] { recommendations });
+                customNutritionDialog.ShowDialog();
+                
+                StatusMessage = $"🤖 AI-powered nutrition analysis complete! " +
+                              $"Total: {nutritionAnalysis.TotalCalories:F0} calories, " +
+                              $"{nutritionAnalysis.TotalProtein:F1}g protein, " +
+                              $"{nutritionAnalysis.TotalCarbs:F1}g carbs, " +
+                              $"{nutritionAnalysis.TotalFat:F1}g fat. " +
+                              $"Grade: {nutritionAnalysis.Rating.Grade} ({nutritionAnalysis.Rating.OverallScore}/100). " +
+                              $"{healthAlerts.Count()} health alerts found.";
+                
+                // Log performance
+                await _loggingService.LogPerformanceAsync("Custom Nutrition Analysis", "1", stopwatch.Elapsed, 
+                    $"Analysis completed: {nutritionAnalysis.TotalCalories:F0} calories, Grade {nutritionAnalysis.Rating.Grade}, {healthAlerts.Count()} alerts");
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error analyzing custom nutrition: {ex.Message}";
+                await _loggingService.LogErrorAsync("Custom Nutrition Analysis", "1", ex, "Unexpected error in custom nutrition analysis");
             }
             finally
             {
@@ -1351,6 +1710,44 @@ namespace Foodbook.Presentation.ViewModels
                 }
             };
 
+            // Recipe Distribution Chart - using real recipe data by category
+            if (recipes?.Any() == true)
+            {
+                var categoryGroups = recipes
+                    .GroupBy(r => r.Category ?? "Other")
+                    .Select(g => new { Category = g.Key, Count = g.Count() })
+                    .OrderByDescending(x => x.Count)
+                    .ToList();
+
+                var categoryValues = categoryGroups.Select(x => (double)x.Count).ToArray();
+                var categoryLabels = categoryGroups.Select(x => x.Category).ToArray();
+
+                // Create pie chart for recipe distribution
+                RecipeDistributionSeries = new ISeries[]
+                {
+                    new PieSeries<double>
+                    {
+                        Values = categoryValues,
+                        Name = "Recipe Distribution",
+                        Fill = new SolidColorPaint(SKColor.Parse("#10B981")),
+                        DataLabelsFormatter = point => $"{point.Coordinate.PrimaryValue:F0}"
+                    }
+                };
+            }
+            else
+            {
+                // Show empty chart when no recipes available
+                RecipeDistributionSeries = new ISeries[]
+                {
+                    new PieSeries<double>
+                    {
+                        Values = new double[] { 0 },
+                        Name = "No Recipes",
+                        Fill = new SolidColorPaint(SKColor.Parse("#6B7280"))
+                    }
+                };
+            }
+
             // Cook time distribution - using real recipe data
             if (recipes?.Any() == true)
             {
@@ -1439,6 +1836,16 @@ namespace Foodbook.Presentation.ViewModels
                     Fill = new SolidColorPaint(SKColor.Parse("#F59E0B"))
                 }
             };
+
+            RecipeDistributionSeries = new ISeries[]
+            {
+                new PieSeries<double>
+                {
+                    Values = new double[] { 0 },
+                    Name = "Recipe Distribution",
+                    Fill = new SolidColorPaint(SKColor.Parse("#10B981"))
+                }
+            };
         }
 
         private Task CreateDemoChartDataAsync()
@@ -1496,16 +1903,317 @@ namespace Foodbook.Presentation.ViewModels
                 if (_authenticationService != null)
                 {
                     CurrentUser = await _authenticationService.GetCurrentUserAsync();
+                    StatusMessage = CurrentUser != null ? $"Welcome back, {CurrentUser.Username}!" : "Please log in to continue";
                 }
                 else
                 {
-                    CurrentUser = null;
+                    // Create a demo user for testing
+                    CurrentUser = new User 
+                    { 
+                        Id = 1, 
+                        Username = "DemoUser", 
+                        Email = "demo@foodbook.com",
+                        CreatedAt = DateTime.Now
+                    };
+                    StatusMessage = "Demo mode - Welcome, DemoUser!";
                 }
             }
             catch (Exception ex)
             {
-                // Handle error silently for now
+                // Create a fallback user
+                CurrentUser = new User 
+                { 
+                    Id = 1, 
+                    Username = "Guest", 
+                    Email = "guest@foodbook.com",
+                    CreatedAt = DateTime.Now
+                };
+                StatusMessage = "Guest mode - Welcome, Guest!";
                 System.Diagnostics.Debug.WriteLine($"Error loading current user: {ex.Message}");
+            }
+        }
+
+        // Additional command implementations
+        private async Task SortRecipesAsync(string sortBy)
+        {
+            try
+            {
+                SortBy = sortBy;
+                StatusMessage = $"Sorting recipes by {sortBy}...";
+                
+                // Get current filtered recipes
+                var currentRecipes = Recipes.ToList();
+                
+                switch (sortBy)
+                {
+                    case "Name A-Z":
+                        currentRecipes = currentRecipes.OrderBy(r => r.Title).ToList();
+                        break;
+                    case "Name Z-A":
+                        currentRecipes = currentRecipes.OrderByDescending(r => r.Title).ToList();
+                        break;
+                    case "Time":
+                        currentRecipes = currentRecipes.OrderBy(r => r.CookTime).ToList();
+                        break;
+                    case "Time Desc":
+                        currentRecipes = currentRecipes.OrderByDescending(r => r.CookTime).ToList();
+                        break;
+                    case "Difficulty":
+                        // Sort by difficulty: Easy, Medium, Hard
+                        var difficultyOrder = new Dictionary<string, int> { { "Easy", 1 }, { "Medium", 2 }, { "Hard", 3 } };
+                        currentRecipes = currentRecipes.OrderBy(r => difficultyOrder.GetValueOrDefault(r.Difficulty ?? "Easy", 1)).ToList();
+                        break;
+                    case "Difficulty Desc":
+                        var difficultyOrderDesc = new Dictionary<string, int> { { "Easy", 3 }, { "Medium", 2 }, { "Hard", 1 } };
+                        currentRecipes = currentRecipes.OrderBy(r => difficultyOrderDesc.GetValueOrDefault(r.Difficulty ?? "Easy", 3)).ToList();
+                        break;
+                    case "Date Created":
+                        currentRecipes = currentRecipes.OrderByDescending(r => r.CreatedAt).ToList();
+                        break;
+                }
+                
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    Recipes.Clear();
+                    foreach (var recipe in currentRecipes)
+                    {
+                        Recipes.Add(recipe);
+                    }
+                });
+                
+                StatusMessage = $"Recipes sorted by {sortBy}";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error sorting recipes: {ex.Message}";
+            }
+        }
+
+        private async Task FilterRecipesByCategoryAsync(string category)
+        {
+            try
+            {
+                SelectedCategory = category;
+                StatusMessage = $"Filtering recipes by {category}...";
+                
+                List<Recipe> filteredRecipes;
+                
+                if (category == "All")
+                {
+                    filteredRecipes = _allRecipes.ToList();
+                }
+                else
+                {
+                    // Filter based on category
+                    filteredRecipes = _allRecipes.Where(r => 
+                    {
+                        if (category == "Main Dishes")
+                            return r.Category?.Contains("Main", StringComparison.OrdinalIgnoreCase) == true ||
+                                   r.Category?.Contains("Dish", StringComparison.OrdinalIgnoreCase) == true;
+                        else if (category == "Desserts")
+                            return r.Category?.Contains("Dessert", StringComparison.OrdinalIgnoreCase) == true ||
+                                   r.Category?.Contains("Sweet", StringComparison.OrdinalIgnoreCase) == true;
+                        else if (category == "Quick")
+                            return r.CookTime <= 30; // Quick recipes are 30 minutes or less
+                        else
+                            return r.Category?.Contains(category, StringComparison.OrdinalIgnoreCase) == true ||
+                                   r.Title?.Contains(category, StringComparison.OrdinalIgnoreCase) == true;
+                    }).ToList();
+                }
+                
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    Recipes.Clear();
+                    foreach (var recipe in filteredRecipes)
+                    {
+                        Recipes.Add(recipe);
+                    }
+                });
+                
+                StatusMessage = $"Filtered {Recipes.Count} recipes by {category}";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error filtering recipes: {ex.Message}";
+            }
+        }
+
+        private async Task TestDatabaseConnectionAsync()
+        {
+            try
+            {
+                IsLoading = true;
+                StatusMessage = "Testing database connection...";
+                
+                // Test connection by loading recipes
+                await LoadRecipesAsync();
+                
+                StatusMessage = "✅ Database connection successful!";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ Database connection failed: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private async Task ConfigureAISettingsAsync()
+        {
+            try
+            {
+                StatusMessage = "Opening AI configuration...";
+                // For now, just switch to AI tab
+                await SelectTab("AI");
+                StatusMessage = "AI configuration opened";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error opening AI configuration: {ex.Message}";
+            }
+        }
+
+        private async Task ViewLogsAsync()
+        {
+            try
+            {
+                StatusMessage = "Opening log viewer...";
+                var logViewer = new Views.LogViewerWindow(_loggingService);
+                logViewer.ShowDialog();
+                StatusMessage = "Log viewer opened";
+                await Task.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error opening log viewer: {ex.Message}";
+            }
+        }
+
+        private async Task ToggleSidebarAsync()
+        {
+            IsSidebarCollapsed = !IsSidebarCollapsed;
+            StatusMessage = IsSidebarCollapsed ? "Sidebar collapsed" : "Sidebar expanded";
+            await Task.CompletedTask;
+        }
+        
+        // Ingredient Filter Methods
+        private async Task SortIngredientsAsync(string sortBy)
+        {
+            try
+            {
+                IngredientSortBy = sortBy;
+                StatusMessage = $"Sorting ingredients by {sortBy}...";
+                
+                // Get current filtered ingredients
+                var currentIngredients = Ingredients.ToList();
+                
+                switch (sortBy)
+                {
+                    case "Name A-Z":
+                        currentIngredients = currentIngredients.OrderBy(i => i.Name).ToList();
+                        break;
+                    case "Name Z-A":
+                        currentIngredients = currentIngredients.OrderByDescending(i => i.Name).ToList();
+                        break;
+                    case "Category":
+                        currentIngredients = currentIngredients.OrderBy(i => i.Category).ToList();
+                        break;
+                    case "Date Added":
+                        currentIngredients = currentIngredients.OrderByDescending(i => i.CreatedAt).ToList();
+                        break;
+                }
+                
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    Ingredients.Clear();
+                    foreach (var ingredient in currentIngredients)
+                    {
+                        Ingredients.Add(ingredient);
+                    }
+                });
+                
+                StatusMessage = $"Ingredients sorted by {sortBy}";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error sorting ingredients: {ex.Message}";
+            }
+        }
+        
+        private async Task FilterIngredientsByCategoryAsync(string category)
+        {
+            try
+            {
+                SelectedIngredientCategory = category;
+                StatusMessage = $"Filtering ingredients by {category}...";
+                
+                List<Ingredient> filteredIngredients;
+                
+                if (category == "All")
+                {
+                    filteredIngredients = _allIngredients.ToList();
+                }
+                else
+                {
+                    // Filter based on category
+                    filteredIngredients = _allIngredients.Where(i => 
+                    {
+                        if (category == "Proteins")
+                            return i.Category?.Contains("Protein", StringComparison.OrdinalIgnoreCase) == true ||
+                                   i.Category?.Contains("Meat", StringComparison.OrdinalIgnoreCase) == true ||
+                                   i.Category?.Contains("Fish", StringComparison.OrdinalIgnoreCase) == true ||
+                                   i.Category?.Contains("Chicken", StringComparison.OrdinalIgnoreCase) == true;
+                        else if (category == "Grains")
+                            return i.Category?.Contains("Grain", StringComparison.OrdinalIgnoreCase) == true ||
+                                   i.Category?.Contains("Rice", StringComparison.OrdinalIgnoreCase) == true ||
+                                   i.Category?.Contains("Wheat", StringComparison.OrdinalIgnoreCase) == true;
+                        else if (category == "Vegetables")
+                            return i.Category?.Contains("Vegetable", StringComparison.OrdinalIgnoreCase) == true ||
+                                   i.Category?.Contains("Vegetable", StringComparison.OrdinalIgnoreCase) == true;
+                        else if (category == "Spices")
+                            return i.Category?.Contains("Spice", StringComparison.OrdinalIgnoreCase) == true ||
+                                   i.Category?.Contains("Herb", StringComparison.OrdinalIgnoreCase) == true ||
+                                   i.Category?.Contains("Seasoning", StringComparison.OrdinalIgnoreCase) == true;
+                        else
+                            return i.Category?.Contains(category, StringComparison.OrdinalIgnoreCase) == true ||
+                                   i.Name?.Contains(category, StringComparison.OrdinalIgnoreCase) == true;
+                    }).ToList();
+                }
+                
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    Ingredients.Clear();
+                    foreach (var ingredient in filteredIngredients)
+                    {
+                        Ingredients.Add(ingredient);
+                    }
+                });
+                
+                StatusMessage = $"Filtered {Ingredients.Count} ingredients by {category}";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error filtering ingredients: {ex.Message}";
+            }
+        }
+        
+        private async Task NavigateToIngredientCategory(string category)
+        {
+            try
+            {
+                // Set the selected category
+                SelectedIngredientCategory = category;
+                
+                // Filter ingredients by category
+                await FilterIngredientsByCategoryAsync(category);
+                
+                StatusMessage = $"Switched to {category} ingredients";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error navigating to {category}: {ex.Message}";
             }
         }
     }

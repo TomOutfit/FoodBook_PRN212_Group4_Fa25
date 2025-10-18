@@ -10,6 +10,11 @@ namespace Foodbook.Presentation.Converters
         {
             if (value is bool boolValue)
             {
+                bool shouldInvert = parameter?.ToString() == "Invert";
+                if (shouldInvert)
+                {
+                    return boolValue ? Visibility.Collapsed : Visibility.Visible;
+                }
                 return boolValue ? Visibility.Visible : Visibility.Collapsed;
             }
             return Visibility.Collapsed;
@@ -41,6 +46,27 @@ namespace Foodbook.Presentation.Converters
             if (value is bool boolValue)
             {
                 return !boolValue;
+            }
+            return false;
+        }
+    }
+
+    public class CountToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is int intValue)
+            {
+                return intValue == 0 ? Visibility.Visible : Visibility.Collapsed;
+            }
+            return Visibility.Collapsed;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is Visibility visibility)
+            {
+                return visibility == Visibility.Visible;
             }
             return false;
         }
