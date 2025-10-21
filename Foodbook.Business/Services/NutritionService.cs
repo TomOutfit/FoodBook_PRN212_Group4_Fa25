@@ -7,9 +7,9 @@ namespace Foodbook.Business.Services
 {
     public class NutritionService : INutritionService
     {
-        private readonly FoodBookDbContext _context;
+        private readonly FoodbookDbContext _context;
 
-        public NutritionService(FoodBookDbContext context)
+        public NutritionService(FoodbookDbContext context)
         {
             _context = context;
         }

@@ -10,10 +10,10 @@ namespace Foodbook.Business.Services
 {
     public class AuthenticationService : IAuthenticationService
     {
-        private readonly FoodBookDbContext _context;
+        private readonly FoodbookDbContext _context;
         private User? _currentUser;
 
-        public AuthenticationService(FoodBookDbContext context)
+        public AuthenticationService(FoodbookDbContext context)
         {
             _context = context;
         }

@@ -9,9 +9,9 @@ namespace Foodbook.Business.Services
 {
     public class LoggingService : ILoggingService
     {
-        private readonly FoodBookDbContext _context;
+        private readonly FoodbookDbContext _context;
 
-        public LoggingService(FoodBookDbContext context)
+        public LoggingService(FoodbookDbContext context)
         {
             _context = context;
         }
