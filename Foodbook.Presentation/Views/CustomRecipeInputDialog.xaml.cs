@@ -1,5 +1,6 @@
-using System;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Threading;
 
 namespace Foodbook.Presentation.Views
 {
@@ -7,36 +8,36 @@ namespace Foodbook.Presentation.Views
     {
         public string RecipeText { get; private set; } = string.Empty;
         public bool IsConfirmed { get; private set; }
-        
+
         public CustomRecipeInputDialog()
         {
             InitializeComponent();
         }
-        
-        private void OnTextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+
+        private void OnTextChanged(object sender, TextChangedEventArgs e)
         {
-            // Use Dispatcher to ensure UI is fully loaded
-            Dispatcher.BeginInvoke(new Action(() =>
+            Dispatcher.BeginInvoke(DispatcherPriority.Normal, new System.Action(() =>
             {
                 if (AnalyzeButton != null)
                 {
-                    AnalyzeButton.IsEnabled = !string.IsNullOrWhiteSpace(RecipeTextBox.Text);
+                    RecipeText = RecipeTextBox.Text.Trim();
+                    AnalyzeButton.IsEnabled = !string.IsNullOrEmpty(RecipeText);
                 }
             }));
         }
-        
-        private void OnAnalyzeClick(object sender, RoutedEventArgs e)
+
+        private void OnAnalyzeClicked(object sender, RoutedEventArgs e)
         {
             RecipeText = RecipeTextBox.Text.Trim();
-            if (!string.IsNullOrWhiteSpace(RecipeText))
+            if (!string.IsNullOrEmpty(RecipeText))
             {
                 IsConfirmed = true;
                 DialogResult = true;
                 Close();
             }
         }
-        
-        private void OnCancelClick(object sender, RoutedEventArgs e)
+
+        private void OnCancelClicked(object sender, RoutedEventArgs e)
         {
             IsConfirmed = false;
             DialogResult = false;

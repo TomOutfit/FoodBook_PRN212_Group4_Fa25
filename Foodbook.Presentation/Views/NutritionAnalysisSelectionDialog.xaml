@@ -1,0 +1,100 @@
+<Window x:Class="Foodbook.Presentation.Views.NutritionAnalysisSelectionDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Nutrition Analysis Options" 
+        Height="550" 
+        Width="600"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="#F8F9FA">
+    
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="🍎 Nutrition Analysis" 
+                       FontSize="24" 
+                       FontWeight="Bold" 
+                       Foreground="#2C3E50" 
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,10"/>
+            <TextBlock Text="Choose how you want to analyze nutrition" 
+                       FontSize="14" 
+                       Foreground="#7F8C8D" 
+                       HorizontalAlignment="Center"/>
+        </StackPanel>
+        
+        <!-- Options -->
+        <StackPanel Grid.Row="1">
+            <!-- Option 1: Saved Recipe -->
+            <Border Background="White" 
+                    CornerRadius="10" 
+                    Padding="20" 
+                    Margin="0,0,0,15"
+                    BorderBrush="#E9ECEF" 
+                    BorderThickness="1"
+                    MouseLeftButtonDown="OnSavedRecipeClicked"
+                    Cursor="Hand">
+                <Border.Effect>
+                    <DropShadowEffect Color="#000000" Opacity="0.1" BlurRadius="10" ShadowDepth="2"/>
+                </Border.Effect>
+                <StackPanel>
+                    <TextBlock Text="📊 Analyze Saved Recipe" 
+                               FontSize="18" 
+                               FontWeight="SemiBold" 
+                               Foreground="#2C3E50" 
+                               Margin="0,0,0,8"/>
+                    <TextBlock Text="Select a recipe from your saved collection and analyze its nutritional content using our database." 
+                               FontSize="12" 
+                               Foreground="#7F8C8D" 
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+            
+            <!-- Option 2: Custom Recipe -->
+            <Border Background="White" 
+                    CornerRadius="10" 
+                    Padding="20" 
+                    BorderBrush="#E9ECEF" 
+                    BorderThickness="1"
+                    MouseLeftButtonDown="OnCustomRecipeClicked"
+                    Cursor="Hand">
+                <Border.Effect>
+                    <DropShadowEffect Color="#000000" Opacity="0.1" BlurRadius="10" ShadowDepth="2"/>
+                </Border.Effect>
+                <StackPanel>
+                    <TextBlock Text="🤖 Analyze Custom Recipe" 
+                               FontSize="18" 
+                               FontWeight="SemiBold" 
+                               Foreground="#2C3E50" 
+                               Margin="0,0,0,8"/>
+                    <TextBlock Text="Enter any recipe text and let AI parse the ingredients to analyze nutritional content." 
+                               FontSize="12" 
+                               Foreground="#7F8C8D" 
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+        
+        <!-- Buttons -->
+        <StackPanel Grid.Row="2" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right" 
+                    Margin="0,20,0,0">
+            <Button Name="CancelButton" 
+                    Content="Cancel" 
+                    Width="80" 
+                    Height="35" 
+                    Margin="0,0,10,0"
+                    Background="#6C757D" 
+                    Foreground="White" 
+                    BorderThickness="0" 
+                    Click="OnCancelClicked"/>
+        </StackPanel>
+    </Grid>
+</Window>

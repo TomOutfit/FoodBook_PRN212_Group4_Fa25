@@ -1425,7 +1425,8 @@ namespace Foodbook.Presentation.ViewModels
                 }
                 
                 // Show recipe selection dialog
-                var recipeDialog = new Views.RecipeSelectionDialog(recipes);
+                var recipeDialog = new Views.RecipeSelectionDialog();
+                recipeDialog.LoadRecipes(recipes);
                 recipeDialog.Owner = System.Windows.Application.Current.MainWindow;
                 recipeDialog.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner;
                 
