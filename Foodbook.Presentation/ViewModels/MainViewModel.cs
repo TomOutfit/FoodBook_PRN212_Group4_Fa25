@@ -6,6 +6,7 @@ using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
+using System.Threading;
 
 namespace Foodbook.Presentation.ViewModels
 {
@@ -21,6 +22,9 @@ namespace Foodbook.Presentation.ViewModels
         private readonly ISettingsService _settingsService;
         private readonly IAuthenticationService? _authenticationService;
         public ILoggingService LoggingService => _loggingService;
+        
+        // Semaphore to prevent concurrent DbContext access
+        private static readonly SemaphoreSlim _dbContextSemaphore = new SemaphoreSlim(1, 1);
 
         private ObservableCollection<Recipe> _recipes = new();
         private ObservableCollection<Ingredient> _ingredients = new();
@@ -541,6 +545,7 @@ namespace Foodbook.Presentation.ViewModels
 
         private async Task LoadRecipesAsync()
         {
+            await _dbContextSemaphore.WaitAsync();
             try
             {
                 IsLoading = true;
@@ -605,11 +610,13 @@ namespace Foodbook.Presentation.ViewModels
             finally
             {
                 IsLoading = false;
+                _dbContextSemaphore.Release();
             }
         }
 
         private async Task LoadIngredientsAsync()
         {
+            await _dbContextSemaphore.WaitAsync();
             try
             {
                 IsLoading = true;
@@ -659,6 +666,7 @@ namespace Foodbook.Presentation.ViewModels
             finally
             {
                 IsLoading = false;
+                _dbContextSemaphore.Release();
             }
         }
 

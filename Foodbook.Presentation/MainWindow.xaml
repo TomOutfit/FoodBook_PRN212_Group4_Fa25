@@ -23,6 +23,36 @@
             <GradientStop Color="#764ba2" Offset="1"/>
         </LinearGradientBrush>
 
+        <!-- ScrollViewer Style for Right Edge Scrollbar -->
+        <Style x:Key="RightEdgeScrollViewer" TargetType="ScrollViewer">
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
+            <Setter Property="Margin" Value="0,0,0,0"/>
+            <Setter Property="Padding" Value="0,0,0,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollViewer">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ScrollContentPresenter Grid.Column="0" 
+                                                  Content="{TemplateBinding Content}" 
+                                                  ContentTemplate="{TemplateBinding ContentTemplate}"/>
+                            <ScrollBar Grid.Column="1" 
+                                      Name="PART_VerticalScrollBar"
+                                      Orientation="Vertical"
+                                      Value="{TemplateBinding VerticalOffset}"
+                                      Maximum="{TemplateBinding ScrollableHeight}"
+                                      ViewportSize="{TemplateBinding ViewportHeight}"
+                                      Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Enhanced Modern Button Style -->
         <Style x:Key="ModernButton" TargetType="Button">
             <Setter Property="Background" Value="#10B981"/>
@@ -181,8 +211,20 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Enhanced Title -->
+                <!-- Enhanced Title with Hamburger Menu -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="24,0,0,0">
+                    <!-- Hamburger Menu Button -->
+                    <Button Content="☰" 
+                           Command="{Binding ToggleSidebarCommand}"
+                           Background="Transparent" 
+                           Foreground="White" 
+                           BorderThickness="0" 
+                           Width="40" Height="40"
+                           FontSize="18"
+                           Margin="0,0,16,0"
+                           ToolTip="Toggle Sidebar"/>
+                    
+                    <!-- Logo and Title -->
                     <TextBlock Text="🍽️" FontSize="24" Margin="0,0,12,0"/>
                     <TextBlock Text="FoodBook" FontSize="22" FontWeight="Bold" Foreground="White"/>
                     <TextBlock Text="✨" FontSize="20" Margin="8,0,0,0" Opacity="0.8"/>
@@ -246,8 +288,7 @@
                                 <DataTrigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.Target="{Binding RelativeSource={RelativeSource AncestorType=Border}}"
-                                                           Storyboard.TargetProperty="(Border.RenderTransform).(TranslateTransform.X)"
+                                            <DoubleAnimation Storyboard.TargetProperty="(Border.RenderTransform).(TranslateTransform.X)"
                                                            To="-220"
                                                            Duration="0:0:0.3">
                                                 <DoubleAnimation.EasingFunction>
@@ -260,8 +301,7 @@
                                 <DataTrigger.ExitActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.Target="{Binding RelativeSource={RelativeSource AncestorType=Border}}"
-                                                           Storyboard.TargetProperty="(Border.RenderTransform).(TranslateTransform.X)"
+                                            <DoubleAnimation Storyboard.TargetProperty="(Border.RenderTransform).(TranslateTransform.X)"
                                                            To="0"
                                                            Duration="0:0:0.3">
                                                 <DoubleAnimation.EasingFunction>
@@ -290,17 +330,6 @@
                                 <TextBlock Text="FoodBook" FontSize="16" FontWeight="Bold" Foreground="#1F2937" VerticalAlignment="Center"
                                            Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Invert}"/>
                             </StackPanel>
-                            <Button Content="☰" 
-                                   Command="{Binding ToggleSidebarCommand}"
-                                   Background="Transparent" 
-                                   Foreground="#6B7280" 
-                                   BorderThickness="0" 
-                                   Width="32" Height="32"
-                                   FontSize="16"
-                                   HorizontalAlignment="Right"
-                                   VerticalAlignment="Center"
-                                   ToolTip="Toggle Sidebar"
-                                   Margin="0,0,8,0"/>
                         </Grid>
                     </Border>
 
@@ -486,7 +515,8 @@
 
 
                 <!-- Tab Content -->
-                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                <ScrollViewer Grid.Row="1" 
+                             Style="{StaticResource RightEdgeScrollViewer}">
                     <StackPanel>
                         <!-- Dashboard Content -->
                         <StackPanel Visibility="{Binding SelectedTab, Converter={StaticResource TabVisibilityConverter}, ConverterParameter=Dashboard}">
@@ -880,11 +910,11 @@
                                 
                                 <!-- Title and Stats -->
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="📚 Recipe Collection" FontSize="32" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,8"/>
+                                    <TextBlock Text="📚 Recipe Collection" FontSize="28" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,6"/>
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding Recipes.Count, StringFormat={}{0} recipes}" FontSize="16" Foreground="#6B7280" Margin="0,0,16,0"/>
-                                        <TextBlock Text="•" FontSize="16" Foreground="#D1D5DB" Margin="0,0,16,0"/>
-                                        <TextBlock Text="Updated: Today" FontSize="16" Foreground="#6B7280"/>
+                                        <TextBlock Text="{Binding MyTotalRecipes, StringFormat={}{0} recipes}" FontSize="14" Foreground="#6B7280" Margin="0,0,12,0"/>
+                                        <TextBlock Text="•" FontSize="14" Foreground="#D1D5DB" Margin="0,0,12,0"/>
+                                        <TextBlock Text="Updated: Today" FontSize="14" Foreground="#6B7280"/>
                                     </StackPanel>
                                 </StackPanel>
                                 
@@ -911,7 +941,7 @@
                             </Grid>
 
                             <!-- Enhanced Search and Filter Section -->
-                            <Border Background="White" CornerRadius="16" Padding="24" Margin="0,0,0,20">
+                            <Border Background="White" CornerRadius="12" Padding="20" Margin="0,0,0,16">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
@@ -1118,18 +1148,18 @@
                                     <ItemsControl ItemsSource="{Binding Recipes}">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
-                                            <UniformGrid Columns="3" Margin="0,0,0,24"/>
+                                            <UniformGrid Columns="4" Margin="0,0,0,24"/>
                                             </ItemsPanelTemplate>
                                         </ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                         <Border Background="White" 
-                                                CornerRadius="16" 
+                                                CornerRadius="12" 
                                                 Padding="0" 
-                                                Margin="8"
+                                                Margin="6"
                                                 Cursor="Hand"
-                                                Width="300" 
-                                                Height="350">
+                                                Width="280" 
+                                                Height="320">
                                             <Border.Effect>
                                                 <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="4" Opacity="0.1" BlurRadius="12"/>
                                             </Border.Effect>
@@ -1804,7 +1834,7 @@
                                     </Border.Effect>
                                     <StackPanel>
                                         <TextBlock Text="📈" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                                        <TextBlock Text="{Binding Recipes.Count}" FontSize="28" FontWeight="Bold" Foreground="#4CAF50" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding MyTotalRecipes}" FontSize="28" FontWeight="Bold" Foreground="#4CAF50" HorizontalAlignment="Center"/>
                                         <TextBlock Text="Total Recipes" FontSize="14" Foreground="#6B7280" HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </Border>
@@ -1879,7 +1909,7 @@
                                                     </LinearGradientBrush>
                                                 </Ellipse.Fill>
                                             </Ellipse>
-                                            <TextBlock Text="43" FontSize="48" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding MyTotalRecipes}" FontSize="48" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Grid>
                                         <StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,8">

@@ -16,7 +16,6 @@ namespace Foodbook.Presentation.Views
             InitializeComponent();
             _authService = authService;
             _registerModel = new RegisterModel();
-            DataContext = _registerModel;
             
             // Set focus to username field
             Loaded += (s, e) => UsernameTextBox.Focus();
