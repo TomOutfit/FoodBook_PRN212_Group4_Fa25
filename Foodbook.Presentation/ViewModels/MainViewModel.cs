@@ -1353,6 +1353,19 @@ namespace Foodbook.Presentation.ViewModels
                     
                     StatusMessage = "✅ Nutrition analysis dialog closed.";
                 }
+                catch (System.InvalidOperationException invalidOpEx)
+                {
+                    StatusMessage = $"InvalidOperationException: {invalidOpEx.Message}";
+                    
+                    // Show detailed error for InvalidOperationException
+                    System.Windows.MessageBox.Show($"InvalidOperationException in Nutrition Dialog!\n\n" +
+                        $"Error: {invalidOpEx.Message}\n\n" +
+                        $"Source: {invalidOpEx.Source}\n\n" +
+                        $"Stack Trace: {invalidOpEx.StackTrace}", 
+                        "InvalidOperationException", 
+                        System.Windows.MessageBoxButton.OK, 
+                        System.Windows.MessageBoxImage.Error);
+                }
                 catch (Exception dialogEx)
                 {
                     StatusMessage = $"Error showing nutrition dialog: {dialogEx.Message}";
@@ -1363,6 +1376,19 @@ namespace Foodbook.Presentation.ViewModels
                         System.Windows.MessageBoxButton.OK, 
                         System.Windows.MessageBoxImage.Error);
                 }
+            }
+            catch (System.InvalidOperationException invalidOpEx)
+            {
+                StatusMessage = $"InvalidOperationException: {invalidOpEx.Message}";
+                
+                // Show detailed error for InvalidOperationException
+                System.Windows.MessageBox.Show($"InvalidOperationException in AnalyzeNutrition!\n\n" +
+                    $"Error: {invalidOpEx.Message}\n\n" +
+                    $"Source: {invalidOpEx.Source}\n\n" +
+                    $"Stack Trace: {invalidOpEx.StackTrace}", 
+                    "InvalidOperationException", 
+                    System.Windows.MessageBoxButton.OK, 
+                    System.Windows.MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
