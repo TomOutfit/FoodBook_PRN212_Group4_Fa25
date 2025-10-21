@@ -5,9 +5,9 @@
         xmlns:converters="clr-namespace:Foodbook.Presentation.Converters"
         xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
         Title="🍽️ FoodBook - AI-Powered Recipe Manager" 
-        Height="750" Width="1500"
+        Height="800" Width="1600"
         WindowStartupLocation="CenterScreen"
-        Background="#F1F5F9"
+        Background="Transparent"
         WindowStyle="None"
         AllowsTransparency="True"
         ResizeMode="CanResize">
@@ -17,65 +17,145 @@
         <converters:TabVisibilityConverter x:Key="TabVisibilityConverter"/>
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
-        <!-- Modern Button Style -->
+        <!-- Gradient Background Brush -->
+        <LinearGradientBrush x:Key="MainGradientBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#667eea" Offset="0"/>
+            <GradientStop Color="#764ba2" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- Enhanced Modern Button Style -->
         <Style x:Key="ModernButton" TargetType="Button">
-            <Setter Property="Background" Value="#4CAF50"/>
+            <Setter Property="Background" Value="#10B981"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="Padding" Value="24,16"/>
             <Setter Property="Margin" Value="8"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="15"/>
             <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-
-        <!-- Card Style -->
-        <Style x:Key="CardStyle" TargetType="Border">
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="CornerRadius" Value="16"/>
-            <Setter Property="Padding" Value="20"/>
-            <Setter Property="Margin" Value="12"/>
-            <Setter Property="Effect">
+            <Setter Property="Template">
                 <Setter.Value>
-                    <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="4" Opacity="0.12" BlurRadius="20"/>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="12" 
+                                Padding="{TemplateBinding Padding}">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#000000" Opacity="0.2" BlurRadius="8" ShadowDepth="2"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#059669"/>
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="1.02" ScaleY="1.02"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#047857"/>
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.98" ScaleY="0.98"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <!-- Sidebar Button Style -->
+        <!-- Enhanced Card Style with Glass Effect -->
+        <Style x:Key="CardStyle" TargetType="Border">
+            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="CornerRadius" Value="20"/>
+            <Setter Property="Padding" Value="24"/>
+            <Setter Property="Margin" Value="16"/>
+            <Setter Property="Opacity" Value="0.95"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="6" Opacity="0.15" BlurRadius="25"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Enhanced Sidebar Button Style -->
         <Style x:Key="SidebarButton" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="#6B7280"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="20,16"/>
-            <Setter Property="Margin" Value="8,4"/>
+            <Setter Property="Padding" Value="24,18"/>
+            <Setter Property="Margin" Value="8,6"/>
             <Setter Property="FontWeight" Value="Medium"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="15"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="12" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#F3F4F6"/>
+                                <Setter Property="Foreground" Value="#374151"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
-        <!-- Active Sidebar Button Style -->
+        <!-- Enhanced Active Sidebar Button Style -->
         <Style x:Key="ActiveSidebarButton" TargetType="Button" BasedOn="{StaticResource SidebarButton}">
             <Setter Property="Background" Value="#E0F2F1"/>
-            <Setter Property="Foreground" Value="#00796B"/>
+            <Setter Property="Foreground" Value="#10B981"/>
             <Setter Property="FontWeight" Value="Bold"/>
         </Style>
 
-        <!-- Recipe Card Style -->
+        <!-- Enhanced Recipe Card Style -->
         <Style x:Key="RecipeCard" TargetType="Border">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="CornerRadius" Value="20"/>
             <Setter Property="Padding" Value="0"/>
-            <Setter Property="Margin" Value="8"/>
+            <Setter Property="Margin" Value="12"/>
+            <Setter Property="Opacity" Value="0.95"/>
             <Setter Property="Effect">
                 <Setter.Value>
-                    <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="2" Opacity="0.08" BlurRadius="12"/>
+                    <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="4" Opacity="0.12" BlurRadius="16"/>
                 </Setter.Value>
             </Setter>
         </Style>
     </Window.Resources>
+
+    <Grid>
+        <!-- Animated Gradient Background -->
+        <Grid>
+            <Grid.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#667eea" Offset="0"/>
+                    <GradientStop Color="#764ba2" Offset="0.5"/>
+                    <GradientStop Color="#f093fb" Offset="1"/>
+                </LinearGradientBrush>
+            </Grid.Background>
+        </Grid>
+
+        <!-- Floating Particles Effect -->
+        <Canvas>
+            <Ellipse Canvas.Left="100" Canvas.Top="100" Width="6" Height="6" Fill="White" Opacity="0.4"/>
+            <Ellipse Canvas.Left="300" Canvas.Top="150" Width="8" Height="8" Fill="White" Opacity="0.3"/>
+            <Ellipse Canvas.Left="500" Canvas.Top="80" Width="5" Height="5" Fill="White" Opacity="0.5"/>
+            <Ellipse Canvas.Left="800" Canvas.Top="200" Width="7" Height="7" Fill="White" Opacity="0.4"/>
+            <Ellipse Canvas.Left="1200" Canvas.Top="120" Width="6" Height="6" Fill="White" Opacity="0.3"/>
+        </Canvas>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -84,18 +164,28 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Custom Title Bar -->
-        <Border Grid.Row="0" Background="#4CAF50" Height="50" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+        <!-- Enhanced Custom Title Bar -->
+        <Border Grid.Row="0" Height="60" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                    <GradientStop Color="#10B981" Offset="0"/>
+                    <GradientStop Color="#059669" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+            <Border.Effect>
+                <DropShadowEffect Color="#000000" Opacity="0.2" BlurRadius="10" ShadowDepth="2"/>
+            </Border.Effect>
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Title -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0,0,0">
-                    <TextBlock Text="🍽️" FontSize="18" Margin="0,0,10,0"/>
-                    <TextBlock Text="FoodBook" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                <!-- Enhanced Title -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="24,0,0,0">
+                    <TextBlock Text="🍽️" FontSize="24" Margin="0,0,12,0"/>
+                    <TextBlock Text="FoodBook" FontSize="22" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock Text="✨" FontSize="20" Margin="8,0,0,0" Opacity="0.8"/>
                 </StackPanel>
 
                 <!-- Window Controls -->
@@ -138,10 +228,14 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Left Sidebar - POS Navigation -->
-            <Border Grid.Column="0" Background="White" CornerRadius="0,0,16,0"
+            <!-- Enhanced Left Sidebar - POS Navigation -->
+            <Border Grid.Column="0" Background="#FFFFFF" CornerRadius="0,0,20,0"
                     Width="{Binding IsSidebarCollapsed, Converter={StaticResource SidebarWidthConverter}}"
-                    RenderTransformOrigin="1,0">
+                    RenderTransformOrigin="1,0"
+                    Opacity="0.95">
+                <Border.Effect>
+                    <DropShadowEffect Color="#000000" Opacity="0.1" BlurRadius="15" ShadowDepth="3"/>
+                </Border.Effect>
                 <Border.RenderTransform>
                     <TranslateTransform x:Name="SidebarTransform"/>
                 </Border.RenderTransform>
@@ -2099,6 +2193,7 @@
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
+            </Grid>
             </Grid>
         </Grid>
     </Grid>
