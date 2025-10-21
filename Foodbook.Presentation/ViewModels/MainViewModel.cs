@@ -2,10 +2,6 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Foodbook.Business.Interfaces;
 using Foodbook.Data.Entities;
-using LiveChartsCore;
-using LiveChartsCore.SkiaSharpView;
-using LiveChartsCore.SkiaSharpView.Painting;
-using SkiaSharp;
 using System.Threading;
 
 namespace Foodbook.Presentation.ViewModels
@@ -61,11 +57,11 @@ namespace Foodbook.Presentation.ViewModels
         private int _aiJudgments = 0;
         private int _generatedRecipes = 0;
         private double _successRate = 0;
-        private ISeries[] _recipeTrendSeries = new ISeries[] { };
-        private ISeries[] _ingredientUsageSeries = new ISeries[] { };
-        private ISeries[] _aiPerformanceSeries = new ISeries[] { };
-        private ISeries[] _cookTimeDistributionSeries = new ISeries[] { };
-        private ISeries[] _recipeDistributionSeries = new ISeries[] { };
+        private object[] _recipeTrendSeries = new object[] { };
+        private object[] _ingredientUsageSeries = new object[] { };
+        private object[] _aiPerformanceSeries = new object[] { };
+        private object[] _cookTimeDistributionSeries = new object[] { };
+        private object[] _recipeDistributionSeries = new object[] { };
         private User? _currentUser;
 
         // My Recipes statistics properties
@@ -442,31 +438,31 @@ namespace Foodbook.Presentation.ViewModels
             set => SetProperty(ref _successRate, value);
         }
 
-        public ISeries[] RecipeTrendSeries
+        public object[] RecipeTrendSeries
         {
             get => _recipeTrendSeries;
             set => SetProperty(ref _recipeTrendSeries, value);
         }
 
-        public ISeries[] IngredientUsageSeries
+        public object[] IngredientUsageSeries
         {
             get => _ingredientUsageSeries;
             set => SetProperty(ref _ingredientUsageSeries, value);
         }
 
-        public ISeries[] AIPerformanceSeries
+        public object[] AIPerformanceSeries
         {
             get => _aiPerformanceSeries;
             set => SetProperty(ref _aiPerformanceSeries, value);
         }
 
-        public ISeries[] CookTimeDistributionSeries
+        public object[] CookTimeDistributionSeries
         {
             get => _cookTimeDistributionSeries;
             set => SetProperty(ref _cookTimeDistributionSeries, value);
         }
 
-        public ISeries[] RecipeDistributionSeries
+        public object[] RecipeDistributionSeries
         {
             get => _recipeDistributionSeries;
             set => SetProperty(ref _recipeDistributionSeries, value);
@@ -1648,14 +1644,12 @@ namespace Foodbook.Presentation.ViewModels
             // Use real data from database - if no recipes created in last 7 days, show 0
             // This gives accurate real-time statistics
 
-            RecipeTrendSeries = new ISeries[]
+            RecipeTrendSeries = new object[]
             {
-                new LineSeries<double>
+                new
                 {
                     Values = recipeTrendData,
-                    Name = "Recipes Created",
-                    Stroke = new SolidColorPaint(SKColor.Parse("#3B82F6"), 3),
-                    Fill = new SolidColorPaint(SKColor.Parse("#3B82F6").WithAlpha(50))
+                    Name = "Recipes Created"
                 }
             };
 
@@ -1673,26 +1667,24 @@ namespace Foodbook.Presentation.ViewModels
                 {
                     var ingredientValues = ingredientUsage.Select(x => (double)x.Count).ToArray();
 
-                    IngredientUsageSeries = new ISeries[]
+                    IngredientUsageSeries = new object[]
                     {
-                        new ColumnSeries<double>
+                        new
                         {
                             Values = ingredientValues,
-                            Name = "Usage Count",
-                            Fill = new SolidColorPaint(SKColor.Parse("#10B981"))
+                            Name = "Usage Count"
                         }
                     };
                 }
                 else
                 {
                     // Show empty chart when no real ingredients - real-time data
-                    IngredientUsageSeries = new ISeries[]
+                    IngredientUsageSeries = new object[]
                     {
-                        new ColumnSeries<double>
+                        new
                         {
                             Values = new double[] { 0 },
-                            Name = "No Ingredients",
-                            Fill = new SolidColorPaint(SKColor.Parse("#6B7280"))
+                            Name = "No Ingredients"
                         }
                     };
                 }
@@ -1700,13 +1692,12 @@ namespace Foodbook.Presentation.ViewModels
             else
             {
                 // Show empty chart when no ingredients available - real-time data
-                IngredientUsageSeries = new ISeries[]
+                IngredientUsageSeries = new object[]
                 {
-                    new ColumnSeries<double>
+                    new
                     {
                         Values = new double[] { 0 },
-                        Name = "No Ingredients",
-                        Fill = new SolidColorPaint(SKColor.Parse("#6B7280"))
+                        Name = "No Ingredients"
                     }
                 };
             }
@@ -1718,14 +1709,12 @@ namespace Foodbook.Presentation.ViewModels
             // Use real AI performance data - if no AI operations, show 0
             // This gives accurate real-time statistics
 
-            AIPerformanceSeries = new ISeries[]
+            AIPerformanceSeries = new object[]
             {
-                new PieSeries<double>
+                new
                 {
                     Values = new double[] { aiSuccessCount, aiErrorCount },
-                    Name = "AI Performance",
-                    Fill = new SolidColorPaint(SKColor.Parse("#10B981")),
-                    DataLabelsFormatter = point => $"{point.Coordinate.PrimaryValue:F0}"
+                    Name = "AI Performance"
                 }
             };
 
@@ -1742,27 +1731,24 @@ namespace Foodbook.Presentation.ViewModels
                 var categoryLabels = categoryGroups.Select(x => x.Category).ToArray();
 
                 // Create pie chart for recipe distribution
-                RecipeDistributionSeries = new ISeries[]
+                RecipeDistributionSeries = new object[]
                 {
-                    new PieSeries<double>
+                    new
                     {
                         Values = categoryValues,
-                        Name = "Recipe Distribution",
-                        Fill = new SolidColorPaint(SKColor.Parse("#10B981")),
-                        DataLabelsFormatter = point => $"{point.Coordinate.PrimaryValue:F0}"
+                        Name = "Recipe Distribution"
                     }
                 };
             }
             else
             {
                 // Show empty chart when no recipes available
-                RecipeDistributionSeries = new ISeries[]
+                RecipeDistributionSeries = new object[]
                 {
-                    new PieSeries<double>
+                    new
                     {
                         Values = new double[] { 0 },
-                        Name = "No Recipes",
-                        Fill = new SolidColorPaint(SKColor.Parse("#6B7280"))
+                        Name = "No Recipes"
                     }
                 };
             }
@@ -1784,26 +1770,24 @@ namespace Foodbook.Presentation.ViewModels
                 // Use real cook time data from database - if no recipes, show 0
                 // This gives accurate real-time statistics
 
-                CookTimeDistributionSeries = new ISeries[]
+                CookTimeDistributionSeries = new object[]
                 {
-                    new ColumnSeries<double>
+                    new
                     {
                         Values = cookTimeValues,
-                        Name = "Cook Time Distribution",
-                        Fill = new SolidColorPaint(SKColor.Parse("#F59E0B"))
+                        Name = "Cook Time Distribution"
                     }
                 };
             }
             else
             {
                 // Show empty chart when no recipes available - real-time data
-                CookTimeDistributionSeries = new ISeries[]
+                CookTimeDistributionSeries = new object[]
                 {
-                    new ColumnSeries<double>
+                    new
                     {
                         Values = new double[] { 0 },
-                        Name = "No Recipes",
-                        Fill = new SolidColorPaint(SKColor.Parse("#6B7280"))
+                        Name = "No Recipes"
                     }
                 };
             }
@@ -1814,55 +1798,48 @@ namespace Foodbook.Presentation.ViewModels
         private void InitializeCharts()
         {
             // Initialize charts with empty data to ensure they display
-            RecipeTrendSeries = new ISeries[]
+            RecipeTrendSeries = new object[]
             {
-                new LineSeries<double>
+                new
                 {
                     Values = new double[] { 0 },
-                    Name = "Recipes Created",
-                    Stroke = new SolidColorPaint(SKColor.Parse("#3B82F6"), 3),
-                    Fill = new SolidColorPaint(SKColor.Parse("#3B82F6").WithAlpha(50))
+                    Name = "Recipes Created"
                 }
             };
 
-            IngredientUsageSeries = new ISeries[]
+            IngredientUsageSeries = new object[]
             {
-                new ColumnSeries<double>
+                new
                 {
                     Values = new double[] { 0 },
-                    Name = "Usage Count",
-                    Fill = new SolidColorPaint(SKColor.Parse("#10B981"))
+                    Name = "Usage Count"        
                 }
             };
 
-            AIPerformanceSeries = new ISeries[]
+            AIPerformanceSeries = new object[]
             {
-                new PieSeries<double>
+                new
                 {
                     Values = new double[] { 0 },
-                    Name = "AI Performance",
-                    Fill = new SolidColorPaint(SKColor.Parse("#10B981")),
-                    DataLabelsFormatter = point => $"{point.Coordinate.PrimaryValue:F0}"
+                    Name = "AI Performance"
                 }
             };
 
-            CookTimeDistributionSeries = new ISeries[]
+            CookTimeDistributionSeries = new object[]
             {
-                new ColumnSeries<double>
+                new
                 {
                     Values = new double[] { 0 },
-                    Name = "Cook Time Distribution",
-                    Fill = new SolidColorPaint(SKColor.Parse("#F59E0B"))
+                    Name = "Cook Time Distribution"
                 }
             };
 
-            RecipeDistributionSeries = new ISeries[]
+            RecipeDistributionSeries = new object[]
             {
-                new PieSeries<double>
+                new
                 {
                     Values = new double[] { 0 },
-                    Name = "Recipe Distribution",
-                    Fill = new SolidColorPaint(SKColor.Parse("#10B981"))
+                    Name = "Recipe Distribution"
                 }
             };
         }
@@ -1870,45 +1847,39 @@ namespace Foodbook.Presentation.ViewModels
         private Task CreateDemoChartDataAsync()
         {
             // Demo data for when no real data is available
-            RecipeTrendSeries = new ISeries[]
+            RecipeTrendSeries = new object[]
             {
-                new LineSeries<double>
+                new
                 {
                     Values = new double[] { 2, 1, 3, 2, 4, 3, 5 },
-                    Name = "Recipes Created",
-                    Stroke = new SolidColorPaint(SKColor.Parse("#3B82F6"), 3),
-                    Fill = new SolidColorPaint(SKColor.Parse("#3B82F6").WithAlpha(50))
+                    Name = "Recipes Created"
                 }
             };
 
-            IngredientUsageSeries = new ISeries[]
+            IngredientUsageSeries = new object[]
             {
-                new ColumnSeries<double>
+                new
                 {
                     Values = new double[] { 8, 6, 5, 4, 3 },
-                    Name = "Usage Count",
-                    Fill = new SolidColorPaint(SKColor.Parse("#10B981"))
+                    Name = "Usage Count"
                 }
             };
 
-            AIPerformanceSeries = new ISeries[]
+            AIPerformanceSeries = new object[]
             {
-                new PieSeries<double>
+                new
                 {
                     Values = new double[] { 85, 15 },
-                    Name = "AI Performance",
-                    Fill = new SolidColorPaint(SKColor.Parse("#10B981")),
-                    DataLabelsFormatter = point => $"{point.Coordinate.PrimaryValue:F0}%"
+                    Name = "AI Performance"
                 }
             };
 
-            CookTimeDistributionSeries = new ISeries[]
+            CookTimeDistributionSeries = new object[]
             {
-                new ColumnSeries<double>
+                new
                 {
                     Values = new double[] { 2, 5, 3, 2, 1 },
-                    Name = "Cook Time Distribution",
-                    Fill = new SolidColorPaint(SKColor.Parse("#F59E0B"))
+                    Name = "Cook Time Distribution"
                 }
             };
             

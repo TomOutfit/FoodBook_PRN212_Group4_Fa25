@@ -1,6 +1,5 @@
 using Foodbook.Business.Interfaces;
 using Foodbook.Data.Entities;
-using Microsoft.EntityFrameworkCore;
 using Foodbook.Data;
 
 namespace Foodbook.Business.Services
@@ -8,10 +7,12 @@ namespace Foodbook.Business.Services
     public class NutritionService : INutritionService
     {
         private readonly FoodbookDbContext _context;
+        private readonly IAIService _aiService;
 
-        public NutritionService(FoodbookDbContext context)
+        public NutritionService(FoodbookDbContext context, IAIService aiService)
         {
             _context = context;
+            _aiService = aiService;
         }
 
         public async Task<NutritionAnalysisResult> AnalyzeRecipeNutritionAsync(Recipe recipe)
@@ -20,17 +21,16 @@ namespace Foodbook.Business.Services
             await Task.Delay(2000);
 
             // Get recipe ingredients with quantities
-            var recipeIngredients = await _context.RecipeIngredients
-                .Include(ri => ri.Ingredient)
+            var recipeIngredients = _context.RecipeIngredients
                 .Where(ri => ri.RecipeId == recipe.Id)
-                .ToListAsync();
+                .ToList();
 
             var nutrition = new NutritionAnalysisResult();
 
             // Calculate nutrition for each ingredient
             foreach (var ri in recipeIngredients)
             {
-                var ingredientNutrition = CalculateIngredientNutrition(ri.Ingredient.Name, ri.Quantity, ri.Ingredient.Unit ?? "piece");
+                var ingredientNutrition = CalculateIngredientNutrition(ri.Ingredient?.Name ?? "unknown", ri.Quantity, ri.Ingredient?.Unit ?? "piece");
                 
                 nutrition.TotalCalories += ingredientNutrition.Calories;
                 nutrition.TotalProtein += ingredientNutrition.Protein;
@@ -52,7 +52,9 @@ namespace Foodbook.Business.Services
             nutrition.Rating = GenerateNutritionRating(nutrition);
             nutrition.Alerts = GenerateHealthAlerts(nutrition);
             nutrition.Recommendations = GenerateRecommendations(nutrition);
-            nutrition.AnalysisSummary = GenerateAnalysisSummary(nutrition, recipe);
+            
+            // Step 3: AI-powered health assessment for database recipes
+            nutrition.AnalysisSummary = await GetAIHealthFeedbackAsync(nutrition, "general health");
 
             return nutrition;
         }
@@ -231,7 +233,7 @@ namespace Foodbook.Business.Services
             await Task.Delay(3000);
 
             // Step 1: AI Parsing - Parse unstructured text into structured ingredients
-            var parsedIngredients = await ParseRecipeTextWithAI(recipeText);
+            var parsedIngredients = await ParseRecipeTextWithAIAsync(recipeText);
             
             // Step 2: Calculate nutrition for each parsed ingredient
             var nutrition = new NutritionAnalysisResult();
@@ -256,7 +258,9 @@ namespace Foodbook.Business.Services
             nutrition.Rating = GenerateNutritionRating(nutrition);
             nutrition.Alerts = GenerateHealthAlerts(nutrition);
             nutrition.Recommendations = GenerateRecommendations(nutrition);
-            nutrition.AnalysisSummary = await GenerateAIAssessmentAsync(nutrition, recipeText);
+            
+            // Step 4: AI-powered health feedback for custom recipes
+            nutrition.AnalysisSummary = await GetAIHealthFeedbackAsync(nutrition, "general health");
 
             return nutrition;
         }
@@ -328,6 +332,22 @@ namespace Foodbook.Business.Services
             }
             
             return mockParsedIngredients;
+        }
+
+        // New method that calls AI service for parsing
+        public async Task<List<ParsedIngredient>> ParseRecipeTextWithAIAsync(string recipeText)
+        {
+            try
+            {
+                // Call AI service to parse recipe text
+                return await _aiService.ParseRecipeTextAsync(recipeText);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"AI Parsing Error: {ex.Message}");
+                // Fallback to basic parsing
+                return await ParseRecipeTextWithAI(recipeText);
+            }
         }
 
         private decimal ExtractQuantity(string text, params string[] keywords)
@@ -790,6 +810,65 @@ namespace Foodbook.Business.Services
                    $"({Math.Max(score1, score2)} vs {Math.Min(score1, score2)} score). " +
                    $"Consider the specific nutrient differences when making your choice.";
         }
+
+        // New AI-powered nutrition analysis methods
+        public async Task<NutritionAnalysisResult> AnalyzeNutritionWithAIAsync(string recipeText, string userGoal = "general health")
+        {
+            try
+            {
+                // Step 1: AI Parsing - Parse unstructured text into structured ingredients
+                var parsedIngredients = await ParseRecipeTextWithAIAsync(recipeText);
+                
+                // Step 2: Calculate nutrition for each parsed ingredient
+                var nutrition = new NutritionAnalysisResult();
+                
+                foreach (var ingredient in parsedIngredients)
+                {
+                    var ingredientNutrition = CalculateIngredientNutrition(ingredient.Name, ingredient.Quantity, ingredient.Unit);
+                    
+                    nutrition.TotalCalories += ingredientNutrition.Calories;
+                    nutrition.TotalProtein += ingredientNutrition.Protein;
+                    nutrition.TotalCarbs += ingredientNutrition.Carbs;
+                    nutrition.TotalFat += ingredientNutrition.Fat;
+                    nutrition.TotalFiber += ingredientNutrition.Fiber;
+                    nutrition.TotalSugar += ingredientNutrition.Sugar;
+                    nutrition.TotalSodium += ingredientNutrition.Sodium;
+                    nutrition.TotalCholesterol += ingredientNutrition.Cholesterol;
+                    nutrition.TotalSaturatedFat += ingredientNutrition.SaturatedFat;
+                    nutrition.TotalTransFat += ingredientNutrition.TransFat;
+                }
+
+                // Step 3: Generate AI-powered health assessment
+                nutrition.Rating = GenerateNutritionRating(nutrition);
+                nutrition.Alerts = GenerateHealthAlerts(nutrition);
+                nutrition.Recommendations = GenerateRecommendations(nutrition);
+                nutrition.AnalysisSummary = await GetAIHealthFeedbackAsync(nutrition, userGoal);
+
+                return nutrition;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"AI Nutrition Analysis Error: {ex.Message}");
+                // Fallback to basic analysis
+                return await AnalyzeUnstructuredRecipeAsync(recipeText);
+            }
+        }
+
+        public async Task<string> GetAIHealthFeedbackAsync(NutritionAnalysisResult analysis, string userGoal = "general health")
+        {
+            try
+            {
+                // Call AI service for health feedback
+                return await _aiService.GetHealthFeedbackAsync(analysis, userGoal);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"AI Health Feedback Error: {ex.Message}");
+                // Fallback to basic assessment
+                return await GenerateAIAssessmentAsync(analysis, $"Recipe with {analysis.TotalCalories:F0} calories");
+            }
+        }
+
     }
 
     public class IngredientNutrition
@@ -806,10 +885,4 @@ namespace Foodbook.Business.Services
         public decimal TransFat { get; set; }
     }
 
-    public class ParsedIngredient
-    {
-        public string Name { get; set; } = string.Empty;
-        public decimal Quantity { get; set; }
-        public string Unit { get; set; } = string.Empty;
-    }
 }

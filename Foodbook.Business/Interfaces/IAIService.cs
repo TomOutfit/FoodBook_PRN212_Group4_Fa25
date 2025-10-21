@@ -17,11 +17,4 @@ namespace Foodbook.Business.Interfaces
         Task<string> GetHealthFeedbackAsync(NutritionAnalysisResult nutritionInfo, string userGoal = "general health");
         Task<NutritionAnalysisResult> AnalyzeNutritionWithAIAsync(string recipeText, string userGoal = "general health");
     }
-
-    public class ParsedIngredient
-    {
-        public string Name { get; set; } = string.Empty;
-        public decimal Quantity { get; set; }
-        public string Unit { get; set; } = string.Empty;
-    }
 }

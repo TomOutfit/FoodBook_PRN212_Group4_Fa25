@@ -101,4 +101,11 @@ namespace Foodbook.Business.Interfaces
         public string BetterRecipe { get; set; } = string.Empty;
         public decimal Difference { get; set; }
     }
+
+    public class ParsedIngredient
+    {
+        public string Name { get; set; } = string.Empty;
+        public decimal Quantity { get; set; }
+        public string Unit { get; set; } = string.Empty;
+    }
 }
