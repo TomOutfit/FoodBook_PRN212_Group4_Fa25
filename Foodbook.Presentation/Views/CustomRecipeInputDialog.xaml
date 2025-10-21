@@ -1,0 +1,90 @@
+<Window x:Class="Foodbook.Presentation.Views.CustomRecipeInputDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="🤖 Enter Custom Recipe" 
+        Height="700" 
+        Width="700"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize">
+    
+    <Window.Resources>
+        <Style x:Key="HeaderStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#2C3E50"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+        
+        <Style x:Key="DescriptionStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="#7F8C8D"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,0,0,20"/>
+        </Style>
+        
+        <Style x:Key="TextBoxStyle" TargetType="TextBox">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="BorderBrush" Value="#E9ECEF"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="AcceptsReturn" Value="True"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
+        </Style>
+        
+        <Style x:Key="ButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#3498DB"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="20,10"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="6" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#2980B9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="🤖 Enter Custom Recipe" Style="{StaticResource HeaderStyle}"/>
+            <TextBlock Text="Enter any recipe text and let AI parse the ingredients automatically. You can paste recipes from websites, handwritten notes, or any text format." 
+                       Style="{StaticResource DescriptionStyle}"/>
+        </StackPanel>
+        
+        <!-- Recipe Text Input -->
+        <TextBox x:Name="RecipeTextBox" Grid.Row="1" Style="{StaticResource TextBoxStyle}"
+                 Text="Example:&#x0a;500g chicken breast&#x0a;1 onion, chopped&#x0a;2 tbsp olive oil&#x0a;Salt and pepper to taste&#x0a;&#x0a;Instructions:&#x0a;1. Season chicken with salt and pepper&#x0a;2. Heat oil in pan&#x0a;3. Cook chicken until golden&#x0a;4. Add onion and cook until soft"
+                 TextChanged="OnTextChanged"/>
+        
+        <!-- Footer -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="Cancel" Style="{StaticResource ButtonStyle}" 
+                    Background="#95A5A6" Margin="0,0,10,0" Click="OnCancelClick"/>
+            <Button Content="Analyze Recipe" Style="{StaticResource ButtonStyle}" 
+                    x:Name="AnalyzeButton" Click="OnAnalyzeClick" IsEnabled="False"/>
+        </StackPanel>
+    </Grid>
+</Window>

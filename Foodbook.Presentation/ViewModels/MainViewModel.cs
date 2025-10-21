@@ -563,32 +563,40 @@ namespace Foodbook.Presentation.ViewModels
                 
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    Recipes.Clear();
-                    _allRecipes.Clear(); // Clear previous data
-                    
-                    if (recipes != null && recipes.Any())
+                    try
                     {
-                        foreach (var recipe in recipes)
+                        Recipes.Clear();
+                        _allRecipes.Clear(); // Clear previous data
+                        
+                        if (recipes != null && recipes.Any())
                         {
-                            Recipes.Add(recipe);
-                            _allRecipes.Add(recipe); // Store in all recipes list
+                            foreach (var recipe in recipes)
+                            {
+                                Recipes.Add(recipe);
+                                _allRecipes.Add(recipe); // Store in all recipes list
+                            }
+                            
+                            StatusMessage = $"Loaded {Recipes.Count} recipes from FoodBook database";
+                            
+                            // Calculate statistics from real database data
+                            MyTotalRecipes = Recipes.Count;
+                            MyAverageCookTime = Recipes.Average(r => r.CookTime);
+                            MyMostCommonDifficulty = Recipes.GroupBy(r => r.Difficulty).OrderByDescending(g => g.Count()).First().Key;
+                            MyAIGeneratedRecipes = Recipes.Count(r => r.Category?.Contains("AI") == true || r.Title?.Contains("AI") == true);
                         }
-                        
-                        StatusMessage = $"Loaded {Recipes.Count} recipes from FoodBook database";
-                        
-                        // Calculate statistics from real database data
-                        MyTotalRecipes = Recipes.Count;
-                        MyAverageCookTime = Recipes.Average(r => r.CookTime);
-                        MyMostCommonDifficulty = Recipes.GroupBy(r => r.Difficulty).OrderByDescending(g => g.Count()).First().Key;
-                        MyAIGeneratedRecipes = Recipes.Count(r => r.Category?.Contains("AI") == true || r.Title?.Contains("AI") == true);
+                        else
+                        {
+                            StatusMessage = "No recipes found in database. Please check FoodBook.sql data.";
+                            MyTotalRecipes = 0;
+                            MyAverageCookTime = 0;
+                            MyMostCommonDifficulty = "Easy";
+                            MyAIGeneratedRecipes = 0;
+                        }
                     }
-                    else
+                    catch (Exception dispatcherEx)
                     {
-                        StatusMessage = "No recipes found in database. Please check FoodBook.sql data.";
-                        MyTotalRecipes = 0;
-                        MyAverageCookTime = 0;
-                        MyMostCommonDifficulty = "Easy";
-                        MyAIGeneratedRecipes = 0;
+                        System.Diagnostics.Debug.WriteLine($"Dispatcher error in LoadRecipesAsync: {dispatcherEx.Message}");
+                        StatusMessage = $"Error updating UI: {dispatcherEx.Message}";
                     }
                 });
             }
@@ -1005,33 +1013,76 @@ namespace Foodbook.Presentation.ViewModels
                 System.Diagnostics.Debug.WriteLine($"SelectedTab set to: {SelectedTab}");
                 System.Diagnostics.Debug.WriteLine($"PropertyChanged event should fire for SelectedTab");
                 
-                // Load data based on selected tab
+                // Load data based on selected tab - use try-catch for each operation
                 switch (tabName)
                 {
                     case "Dashboard":
-                        await LoadRecipesAsync();
-                        await LoadAnalyticsDataAsync(); // Load analytics for dashboard
+                        try
+                        {
+                            await LoadRecipesAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error loading recipes for Dashboard: {ex.Message}");
+                        }
+                        try
+                        {
+                            await LoadAnalyticsDataAsync(); // Load analytics for dashboard
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error loading analytics for Dashboard: {ex.Message}");
+                        }
                         break;
                     case "Recipes":
-                        await LoadRecipesAsync();
+                        try
+                        {
+                            await LoadRecipesAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error loading recipes: {ex.Message}");
+                        }
                         break;
                     case "Ingredients":
-                        await LoadIngredientsAsync();
+                        try
+                        {
+                            await LoadIngredientsAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error loading ingredients: {ex.Message}");
+                        }
                         break;
                     case "AI":
                         // AI features don't need data loading
                         break;
                     case "Analytics":
-                        await LoadAnalyticsDataAsync();
+                        try
+                        {
+                            await LoadAnalyticsDataAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error loading analytics: {ex.Message}");
+                        }
                         break;
                     case "Settings":
-                        await LoadSettingsAsync();
+                        try
+                        {
+                            await LoadSettingsAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error loading settings: {ex.Message}");
+                        }
                         break;
                 }
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error switching to {tabName}: {ex.Message}";
+                System.Diagnostics.Debug.WriteLine($"SelectTab error: {ex.Message}");
             }
         }
 
@@ -1314,29 +1365,138 @@ namespace Foodbook.Presentation.ViewModels
             try
             {
                 IsLoading = true;
-                StatusMessage = "🍎 Analyzing saved recipe nutrition...";
+                StatusMessage = "🍎 Opening nutrition analysis options...";
                 
-                // Kịch bản 1: Phân tích Công thức Đã Lưu (Dữ liệu CSDL)
-                // Kiểm tra xem có recipe được chọn không
-                if (SelectedRecipe == null)
+                // Show selection dialog
+                var selectionDialog = new Views.NutritionAnalysisSelectionDialog();
+                selectionDialog.Owner = System.Windows.Application.Current.MainWindow;
+                selectionDialog.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner;
+                
+                if (selectionDialog.ShowDialog() == true && selectionDialog.IsConfirmed)
                 {
-                    StatusMessage = "Please select a recipe to analyze.";
-                    System.Windows.MessageBox.Show("Please select a recipe from the list to analyze its nutrition.", 
-                        "No Recipe Selected", 
+                    if (selectionDialog.SelectedType == Views.NutritionAnalysisSelectionDialog.AnalysisType.SavedRecipe)
+                    {
+                        await AnalyzeSavedRecipeAsync();
+                    }
+                    else if (selectionDialog.SelectedType == Views.NutritionAnalysisSelectionDialog.AnalysisType.CustomRecipe)
+                    {
+                        await AnalyzeCustomRecipeAsync();
+                    }
+                }
+                else
+                {
+                    StatusMessage = "Nutrition analysis cancelled.";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error opening nutrition analysis: {ex.Message}";
+                await _loggingService.LogErrorAsync("Nutrition Analysis Selection", "1", ex, "Error opening nutrition analysis selection dialog");
+                
+                // Show error message to user
+                System.Windows.MessageBox.Show($"Error opening nutrition analysis: {ex.Message}", 
+                    "Error", 
+                    System.Windows.MessageBoxButton.OK, 
+                    System.Windows.MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+        
+        private async Task AnalyzeSavedRecipeAsync()
+        {
+            try
+            {
+                StatusMessage = "📊 Loading saved recipes...";
+                
+                // Get all recipes from database
+                var recipes = await _recipeService.GetAllRecipesAsync();
+                
+                if (!recipes.Any())
+                {
+                    StatusMessage = "No saved recipes found.";
+                    System.Windows.MessageBox.Show("No saved recipes found. Please create some recipes first or use the custom recipe option.", 
+                        "No Recipes", 
                         System.Windows.MessageBoxButton.OK, 
-                        System.Windows.MessageBoxImage.Warning);
+                        System.Windows.MessageBoxImage.Information);
                     return;
                 }
-
+                
+                // Show recipe selection dialog
+                var recipeDialog = new Views.RecipeSelectionDialog(recipes);
+                recipeDialog.Owner = System.Windows.Application.Current.MainWindow;
+                recipeDialog.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner;
+                
+                if (recipeDialog.ShowDialog() == true && recipeDialog.IsConfirmed && recipeDialog.SelectedRecipe != null)
+                {
+                    await PerformNutritionAnalysisAsync(recipeDialog.SelectedRecipe, null);
+                }
+                else
+                {
+                    StatusMessage = "Recipe selection cancelled.";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error loading recipes: {ex.Message}";
+                await _loggingService.LogErrorAsync("Recipe Selection", "1", ex, "Error loading recipes for selection");
+                
+                System.Windows.MessageBox.Show($"Error loading recipes: {ex.Message}", 
+                    "Error", 
+                    System.Windows.MessageBoxButton.OK, 
+                    System.Windows.MessageBoxImage.Error);
+            }
+        }
+        
+        private async Task AnalyzeCustomRecipeAsync()
+        {
+            try
+            {
+                StatusMessage = "🤖 Opening custom recipe input...";
+                
+                // Show custom recipe input dialog
+                var customDialog = new Views.CustomRecipeInputDialog();
+                customDialog.Owner = System.Windows.Application.Current.MainWindow;
+                customDialog.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner;
+                
+                if (customDialog.ShowDialog() == true && customDialog.IsConfirmed && !string.IsNullOrWhiteSpace(customDialog.RecipeText))
+                {
+                    await PerformCustomNutritionAnalysisAsync(customDialog.RecipeText);
+                }
+                else
+                {
+                    StatusMessage = "Custom recipe input cancelled.";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error opening custom recipe input: {ex.Message}";
+                await _loggingService.LogErrorAsync("Custom Recipe Input", "1", ex, "Error opening custom recipe input dialog");
+                
+                System.Windows.MessageBox.Show($"Error opening custom recipe input: {ex.Message}", 
+                    "Error", 
+                    System.Windows.MessageBoxButton.OK, 
+                    System.Windows.MessageBoxImage.Error);
+            }
+        }
+        
+        private async Task PerformNutritionAnalysisAsync(Recipe recipe, string? customText)
+        {
+            try
+            {
+                StatusMessage = "🍎 Analyzing recipe nutrition...";
+                
                 // Log feature usage
                 await _loggingService.LogFeatureUsageAsync("Database Nutrition Analysis", "1", 
-                    $"Analyzing saved recipe: {SelectedRecipe.Title}");
+                    $"Analyzing saved recipe: {recipe.Title}");
 
                 // Pha 1: Xác định luồng - Database Flow (Công thức đã lưu)
                 StatusMessage = "📊 Calculating nutrition from database...";
                 
                 // Pha 2: Database Flow - Tính toán từ CSDL
-                var nutritionAnalysis = await _nutritionService.AnalyzeRecipeNutritionAsync(SelectedRecipe);
+                var nutritionAnalysis = await _nutritionService.AnalyzeRecipeNutritionAsync(recipe);
                 
                 // Get health alerts
                 var healthAlerts = await _nutritionService.GetHealthAlertsAsync(nutritionAnalysis);
@@ -1349,7 +1509,7 @@ namespace Foodbook.Presentation.ViewModels
                 
                 // Log AI activity
                 await _loggingService.LogAIActivityAsync("Database Nutrition Analysis", "1", 
-                    $"Recipe: {SelectedRecipe.Title}", 
+                    $"Recipe: {recipe.Title}", 
                     $"Analysis: {nutritionAnalysis.TotalCalories:F0} cal, Grade: {nutritionAnalysis.Rating.Grade}", 
                     TimeSpan.FromSeconds(2));
                 
@@ -1404,9 +1564,89 @@ namespace Foodbook.Presentation.ViewModels
                     System.Windows.MessageBoxButton.OK, 
                     System.Windows.MessageBoxImage.Error);
             }
-            finally
+        }
+        
+        private async Task PerformCustomNutritionAnalysisAsync(string recipeText)
+        {
+            try
             {
-                IsLoading = false;
+                StatusMessage = "🤖 AI is parsing your custom recipe text...";
+                
+                // Log feature usage
+                await _loggingService.LogFeatureUsageAsync("AI Parsing Nutrition Analysis", "1", 
+                    $"Analyzing custom recipe text: {recipeText.Length} characters");
+                
+                // Pha 1: Xác định luồng - AI Parsing Flow (Văn bản tùy ý)
+                StatusMessage = "🧠 AI is extracting ingredients from your text...";
+                
+                // Pha 2: AI Parsing - Giải mã văn bản tùy ý
+                var nutritionAnalysis = await _nutritionService.AnalyzeUnstructuredRecipeAsync(recipeText);
+                
+                // Get health alerts
+                var healthAlerts = await _nutritionService.GetHealthAlertsAsync(nutritionAnalysis);
+                
+                // Get recommendations for general health
+                var recommendations = await _nutritionService.GetNutritionRecommendationsAsync(nutritionAnalysis, "General Health");
+                
+                // Pha 3: AI-powered health assessment
+                StatusMessage = "🤖 AI nutritionist is analyzing your data...";
+                
+                // Log AI activity
+                await _loggingService.LogAIActivityAsync("AI Parsing Nutrition Analysis", "1", 
+                    $"Custom recipe: {recipeText.Substring(0, Math.Min(50, recipeText.Length))}...", 
+                    $"Analysis: {nutritionAnalysis.TotalCalories:F0} cal, Grade: {nutritionAnalysis.Rating.Grade}", 
+                    TimeSpan.FromSeconds(3));
+                
+                // Show custom nutrition analysis dialog
+                try
+                {
+                    StatusMessage = "🤖 Opening custom nutrition analysis dialog...";
+                    var customNutritionDialog = new Views.CustomNutritionDialog();
+                    customNutritionDialog.SetNutritionAnalysis(nutritionAnalysis, healthAlerts, new[] { recommendations });
+                    customNutritionDialog.Owner = System.Windows.Application.Current.MainWindow;
+                    customNutritionDialog.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner;
+                    customNutritionDialog.ShowDialog();
+                    StatusMessage = "✅ Custom nutrition analysis dialog closed.";
+                }
+                catch (Exception dialogEx)
+                {
+                    StatusMessage = $"Error showing custom nutrition dialog: {dialogEx.Message}";
+                    await _loggingService.LogErrorAsync("Custom Nutrition Dialog", "1", dialogEx, "Error showing custom nutrition analysis dialog");
+                    
+                    // Fallback: Show simple message box
+                    System.Windows.MessageBox.Show($"Custom Nutrition Analysis Complete!\n\n" +
+                        $"Total Calories: {nutritionAnalysis.TotalCalories:F0}\n" +
+                        $"Protein: {nutritionAnalysis.TotalProtein:F1}g\n" +
+                        $"Carbs: {nutritionAnalysis.TotalCarbs:F1}g\n" +
+                        $"Fat: {nutritionAnalysis.TotalFat:F1}g\n" +
+                        $"Grade: {nutritionAnalysis.Rating.Grade} ({nutritionAnalysis.Rating.OverallScore}/100)",
+                        "Custom Nutrition Analysis", 
+                        System.Windows.MessageBoxButton.OK, 
+                        System.Windows.MessageBoxImage.Information);
+                }
+                
+                StatusMessage = $"🤖 AI-powered nutrition analysis complete! " +
+                              $"Total: {nutritionAnalysis.TotalCalories:F0} calories, " +
+                              $"{nutritionAnalysis.TotalProtein:F1}g protein, " +
+                              $"{nutritionAnalysis.TotalCarbs:F1}g carbs, " +
+                              $"{nutritionAnalysis.TotalFat:F1}g fat. " +
+                              $"Grade: {nutritionAnalysis.Rating.Grade} ({nutritionAnalysis.Rating.OverallScore}/100). " +
+                              $"{healthAlerts.Count()} health alerts found.";
+                
+                // Log performance
+                await _loggingService.LogPerformanceAsync("AI Parsing Nutrition Analysis", "1", TimeSpan.FromSeconds(3), 
+                    $"Analysis completed: {nutritionAnalysis.TotalCalories:F0} calories, Grade {nutritionAnalysis.Rating.Grade}, {healthAlerts.Count()} alerts");
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error analyzing custom nutrition: {ex.Message}";
+                await _loggingService.LogErrorAsync("AI Parsing Nutrition Analysis", "1", ex, "Unexpected error in AI parsing nutrition analysis");
+                
+                // Show error message to user
+                System.Windows.MessageBox.Show($"Error analyzing custom nutrition: {ex.Message}", 
+                    "Error", 
+                    System.Windows.MessageBoxButton.OK, 
+                    System.Windows.MessageBoxImage.Error);
             }
         }
 
