@@ -132,7 +132,7 @@
     
     <Grid>
         <!-- Animated Gradient Background -->
-        <Grid Background="{StaticResource MainGradientBrush}">
+        <Grid>
             <Grid.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                     <GradientStop Color="#667eea" Offset="0"/>
@@ -198,7 +198,6 @@
                                    Text="Create Your Account!" 
                                    FontSize="28" 
                                    FontWeight="Bold" 
-                                   Foreground="#1F2937"
                                    HorizontalAlignment="Left"
                                    Margin="0,0,0,8">
                             <TextBlock.Foreground>

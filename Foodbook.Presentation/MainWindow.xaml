@@ -157,12 +157,12 @@
             <Ellipse Canvas.Left="1200" Canvas.Top="120" Width="6" Height="6" Fill="White" Opacity="0.3"/>
         </Canvas>
 
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
         <!-- Enhanced Custom Title Bar -->
         <Border Grid.Row="0" Height="60" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
@@ -2194,7 +2194,7 @@
                     </StackPanel>
                 </ScrollViewer>
             </Grid>
-        </Grid>
+            </Grid>
         </Grid>
     </Grid>
 </Window>

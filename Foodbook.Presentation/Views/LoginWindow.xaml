@@ -35,8 +35,7 @@
                     <ControlTemplate TargetType="Button">
                         <Border Background="{TemplateBinding Background}" 
                                 CornerRadius="12" 
-                                Padding="{TemplateBinding Padding}"
-                                Effect="{StaticResource DropShadowEffect}">
+                                Padding="{TemplateBinding Padding}">
                             <Border.Effect>
                                 <DropShadowEffect Color="#000000" Opacity="0.2" BlurRadius="8" ShadowDepth="2"/>
                             </Border.Effect>
@@ -133,7 +132,7 @@
 
     <Grid>
         <!-- Animated Gradient Background -->
-        <Grid Background="{StaticResource MainGradientBrush}">
+        <Grid>
             <Grid.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                     <GradientStop Color="#667eea" Offset="0"/>
@@ -195,7 +194,6 @@
                                Text="Welcome Back!" 
                                FontSize="28" 
                                FontWeight="Bold" 
-                               Foreground="#1F2937"
                                HorizontalAlignment="Left"
                                Margin="0,0,0,8">
                         <TextBlock.Foreground>
