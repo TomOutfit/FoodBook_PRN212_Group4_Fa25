@@ -10,6 +10,11 @@ namespace Foodbook.Business.Interfaces
         Task<IEnumerable<HealthAlert>> GetHealthAlertsAsync(NutritionAnalysisResult analysis);
         Task<NutritionComparison> CompareNutritionAsync(Recipe recipe1, Recipe recipe2);
         Task<NutritionAnalysisResult> AnalyzeUnstructuredRecipeAsync(string recipeText);
+        
+        // New methods for AI-powered nutrition analysis
+        Task<NutritionAnalysisResult> AnalyzeNutritionWithAIAsync(string recipeText, string userGoal = "general health");
+        Task<List<ParsedIngredient>> ParseRecipeTextWithAIAsync(string recipeText);
+        Task<string> GetAIHealthFeedbackAsync(NutritionAnalysisResult analysis, string userGoal = "general health");
     }
 
     public class NutritionAnalysisResult

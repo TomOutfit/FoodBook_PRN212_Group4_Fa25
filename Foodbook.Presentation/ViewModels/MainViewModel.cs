@@ -1315,13 +1315,13 @@ namespace Foodbook.Presentation.ViewModels
             try
             {
                 IsLoading = true;
-                StatusMessage = "Analyzing nutrition...";
+                StatusMessage = "🍎 Analyzing nutrition from saved recipes...";
                 
                 // Log feature usage
-                await _loggingService.LogFeatureUsageAsync("Nutrition Analysis", "1", 
-                    $"Analyzing {Recipes.Count} recipes for comprehensive nutrition analysis");
+                await _loggingService.LogFeatureUsageAsync("Database Nutrition Analysis", "1", 
+                    $"Analyzing {Recipes.Count} saved recipes for comprehensive nutrition analysis");
                 
-                // Analyze nutrition for all recipes or create sample recipes
+                // Pha 1: Xác định luồng - Database Flow (Recipe đã lưu)
                 var recipesToAnalyze = Recipes.Count > 0 
                     ? Recipes.ToList() 
                     : new List<Recipe> 
@@ -1330,6 +1330,8 @@ namespace Foodbook.Presentation.ViewModels
                         new Recipe { Id = 2, Title = "Sample Balanced Meal", UserId = 1 }
                     };
                 
+                // Pha 2: Tính toán dinh dưỡng từ CSDL
+                StatusMessage = "📊 Calculating nutrition from database...";
                 var nutritionAnalysis = await _nutritionService.AnalyzeMealPlanNutritionAsync(recipesToAnalyze);
                 
                 // Get health alerts
@@ -1338,9 +1340,12 @@ namespace Foodbook.Presentation.ViewModels
                 // Get recommendations for general health
                 var recommendations = await _nutritionService.GetNutritionRecommendationsAsync(nutritionAnalysis, "General Health");
                 
+                // Pha 3: AI-powered health assessment
+                StatusMessage = "🤖 AI is analyzing your nutrition data...";
+                
                 // Log AI activity
                 stopwatch.Stop();
-                await _loggingService.LogAIActivityAsync("Nutrition Analysis", "1", 
+                await _loggingService.LogAIActivityAsync("Database Nutrition Analysis", "1", 
                     $"Recipes: {string.Join(", ", Recipes.Select(r => r.Title))}", 
                     $"Analysis: {nutritionAnalysis.TotalCalories:F0} cal, Grade: {nutritionAnalysis.Rating.Grade}", 
                     stopwatch.Elapsed);
@@ -1350,7 +1355,7 @@ namespace Foodbook.Presentation.ViewModels
                 nutritionDialog.SetNutritionAnalysis(nutritionAnalysis, healthAlerts, new[] { recommendations });
                 nutritionDialog.ShowDialog();
                 
-                StatusMessage = $"🍎 Nutrition analysis complete! " +
+                StatusMessage = $"🍎 Database nutrition analysis complete! " +
                               $"Total: {nutritionAnalysis.TotalCalories:F0} calories, " +
                               $"{nutritionAnalysis.TotalProtein:F1}g protein, " +
                               $"{nutritionAnalysis.TotalCarbs:F1}g carbs, " +
@@ -1359,13 +1364,13 @@ namespace Foodbook.Presentation.ViewModels
                               $"{healthAlerts.Count()} health alerts found.";
                 
                 // Log performance
-                await _loggingService.LogPerformanceAsync("Nutrition Analysis", "1", stopwatch.Elapsed, 
+                await _loggingService.LogPerformanceAsync("Database Nutrition Analysis", "1", stopwatch.Elapsed, 
                     $"Analysis completed: {nutritionAnalysis.TotalCalories:F0} calories, Grade {nutritionAnalysis.Rating.Grade}, {healthAlerts.Count()} alerts");
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error analyzing nutrition: {ex.Message}";
-                await _loggingService.LogErrorAsync("Nutrition Analysis", "1", ex, "Unexpected error in nutrition analysis");
+                await _loggingService.LogErrorAsync("Database Nutrition Analysis", "1", ex, "Unexpected error in database nutrition analysis");
             }
             finally
             {
@@ -1385,13 +1390,16 @@ namespace Foodbook.Presentation.ViewModels
                 }
 
                 IsLoading = true;
-                StatusMessage = "🤖 AI is parsing and analyzing your custom recipe...";
+                StatusMessage = "🤖 AI is parsing your custom recipe text...";
                 
                 // Log feature usage
-                await _loggingService.LogFeatureUsageAsync("Custom Nutrition Analysis", "1", 
+                await _loggingService.LogFeatureUsageAsync("AI Parsing Nutrition Analysis", "1", 
                     $"Analyzing custom recipe text: {CustomRecipeText.Length} characters");
                 
-                // Use the new unstructured recipe analysis
+                // Pha 1: Xác định luồng - AI Parsing Flow (Văn bản tùy ý)
+                StatusMessage = "🧠 AI is extracting ingredients from your text...";
+                
+                // Pha 2: AI Parsing - Giải mã văn bản tùy ý
                 var nutritionAnalysis = await _nutritionService.AnalyzeUnstructuredRecipeAsync(CustomRecipeText);
                 
                 // Get health alerts
@@ -1400,9 +1408,12 @@ namespace Foodbook.Presentation.ViewModels
                 // Get recommendations for general health
                 var recommendations = await _nutritionService.GetNutritionRecommendationsAsync(nutritionAnalysis, "General Health");
                 
+                // Pha 3: AI-powered health assessment
+                StatusMessage = "🤖 AI nutritionist is analyzing your data...";
+                
                 // Log AI activity
                 stopwatch.Stop();
-                await _loggingService.LogAIActivityAsync("Custom Nutrition Analysis", "1", 
+                await _loggingService.LogAIActivityAsync("AI Parsing Nutrition Analysis", "1", 
                     $"Custom recipe: {CustomRecipeText.Substring(0, Math.Min(50, CustomRecipeText.Length))}...", 
                     $"Analysis: {nutritionAnalysis.TotalCalories:F0} cal, Grade: {nutritionAnalysis.Rating.Grade}", 
                     stopwatch.Elapsed);
@@ -1421,13 +1432,13 @@ namespace Foodbook.Presentation.ViewModels
                               $"{healthAlerts.Count()} health alerts found.";
                 
                 // Log performance
-                await _loggingService.LogPerformanceAsync("Custom Nutrition Analysis", "1", stopwatch.Elapsed, 
+                await _loggingService.LogPerformanceAsync("AI Parsing Nutrition Analysis", "1", stopwatch.Elapsed, 
                     $"Analysis completed: {nutritionAnalysis.TotalCalories:F0} calories, Grade {nutritionAnalysis.Rating.Grade}, {healthAlerts.Count()} alerts");
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error analyzing custom nutrition: {ex.Message}";
-                await _loggingService.LogErrorAsync("Custom Nutrition Analysis", "1", ex, "Unexpected error in custom nutrition analysis");
+                await _loggingService.LogErrorAsync("AI Parsing Nutrition Analysis", "1", ex, "Unexpected error in AI parsing nutrition analysis");
             }
             finally
             {
