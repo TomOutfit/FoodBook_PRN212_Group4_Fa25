@@ -18,11 +18,6 @@ namespace Foodbook.Presentation.Views
             InitializeComponent();
             _authService = authService;
             _loginModel = new LoginModel();
-            DataContext = _loginModel;
-            
-            // Initialize empty login model
-            _loginModel.Email = "";
-            _loginModel.Password = "";
             
             // Set focus to email field
             Loaded += (s, e) => this.EmailTextBox.Focus();
@@ -127,8 +122,7 @@ namespace Foodbook.Presentation.Views
 
         private void Close_Click(object sender, RoutedEventArgs e)
         {
-            DialogResult = false;
-            Close();
+            this.Close();
         }
 
         // Handle Enter key for login
@@ -148,10 +142,6 @@ namespace Foodbook.Presentation.Views
             }
         }
 
-        private void EmailTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            _loginModel.Email = EmailTextBox.Text;
-        }
 
         private void PasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
         {
