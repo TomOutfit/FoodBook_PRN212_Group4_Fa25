@@ -23,6 +23,36 @@
             <GradientStop Color="#764ba2" Offset="1"/>
         </LinearGradientBrush>
 
+        <!-- ScrollViewer Style for Right Edge Scrollbar -->
+        <Style x:Key="RightEdgeScrollViewer" TargetType="ScrollViewer">
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
+            <Setter Property="Margin" Value="0,0,0,0"/>
+            <Setter Property="Padding" Value="0,0,0,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollViewer">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ScrollContentPresenter Grid.Column="0" 
+                                                  Content="{TemplateBinding Content}" 
+                                                  ContentTemplate="{TemplateBinding ContentTemplate}"/>
+                            <ScrollBar Grid.Column="1" 
+                                      Name="PART_VerticalScrollBar"
+                                      Orientation="Vertical"
+                                      Value="{TemplateBinding VerticalOffset}"
+                                      Maximum="{TemplateBinding ScrollableHeight}"
+                                      ViewportSize="{TemplateBinding ViewportHeight}"
+                                      Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Enhanced Modern Button Style -->
         <Style x:Key="ModernButton" TargetType="Button">
             <Setter Property="Background" Value="#10B981"/>
@@ -484,7 +514,8 @@
 
 
                 <!-- Tab Content -->
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <ScrollViewer Grid.Row="1" 
+                             Style="{StaticResource RightEdgeScrollViewer}">
                     <StackPanel>
                         <!-- Dashboard Content -->
                         <StackPanel Visibility="{Binding SelectedTab, Converter={StaticResource TabVisibilityConverter}, ConverterParameter=Dashboard}">
@@ -878,11 +909,11 @@
                                 
                                 <!-- Title and Stats -->
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="📚 Recipe Collection" FontSize="32" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,8"/>
+                                    <TextBlock Text="📚 Recipe Collection" FontSize="28" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,6"/>
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding Recipes.Count, StringFormat={}{0} recipes}" FontSize="16" Foreground="#6B7280" Margin="0,0,16,0"/>
-                                        <TextBlock Text="•" FontSize="16" Foreground="#D1D5DB" Margin="0,0,16,0"/>
-                                        <TextBlock Text="Updated: Today" FontSize="16" Foreground="#6B7280"/>
+                                        <TextBlock Text="{Binding Recipes.Count, StringFormat={}{0} recipes}" FontSize="14" Foreground="#6B7280" Margin="0,0,12,0"/>
+                                        <TextBlock Text="•" FontSize="14" Foreground="#D1D5DB" Margin="0,0,12,0"/>
+                                        <TextBlock Text="Updated: Today" FontSize="14" Foreground="#6B7280"/>
                                     </StackPanel>
                                 </StackPanel>
                                 
@@ -909,7 +940,7 @@
                             </Grid>
 
                             <!-- Enhanced Search and Filter Section -->
-                            <Border Background="White" CornerRadius="16" Padding="24" Margin="0,0,0,20">
+                            <Border Background="White" CornerRadius="12" Padding="20" Margin="0,0,0,16">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
@@ -1116,18 +1147,18 @@
                                     <ItemsControl ItemsSource="{Binding Recipes}">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
-                                            <UniformGrid Columns="3" Margin="0,0,0,24"/>
+                                            <UniformGrid Columns="4" Margin="0,0,0,24"/>
                                             </ItemsPanelTemplate>
                                         </ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                         <Border Background="White" 
-                                                CornerRadius="16" 
+                                                CornerRadius="12" 
                                                 Padding="0" 
-                                                Margin="8"
+                                                Margin="6"
                                                 Cursor="Hand"
-                                                Width="300" 
-                                                Height="350">
+                                                Width="280" 
+                                                Height="320">
                                             <Border.Effect>
                                                 <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="4" Opacity="0.1" BlurRadius="12"/>
                                             </Border.Effect>
