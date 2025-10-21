@@ -246,8 +246,7 @@
                                 <DataTrigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.Target="{Binding RelativeSource={RelativeSource AncestorType=Border}}"
-                                                           Storyboard.TargetProperty="(Border.RenderTransform).(TranslateTransform.X)"
+                                            <DoubleAnimation Storyboard.TargetProperty="(Border.RenderTransform).(TranslateTransform.X)"
                                                            To="-220"
                                                            Duration="0:0:0.3">
                                                 <DoubleAnimation.EasingFunction>
@@ -260,8 +259,7 @@
                                 <DataTrigger.ExitActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.Target="{Binding RelativeSource={RelativeSource AncestorType=Border}}"
-                                                           Storyboard.TargetProperty="(Border.RenderTransform).(TranslateTransform.X)"
+                                            <DoubleAnimation Storyboard.TargetProperty="(Border.RenderTransform).(TranslateTransform.X)"
                                                            To="0"
                                                            Duration="0:0:0.3">
                                                 <DoubleAnimation.EasingFunction>
@@ -486,7 +484,7 @@
 
 
                 <!-- Tab Content -->
-                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <!-- Dashboard Content -->
                         <StackPanel Visibility="{Binding SelectedTab, Converter={StaticResource TabVisibilityConverter}, ConverterParameter=Dashboard}">

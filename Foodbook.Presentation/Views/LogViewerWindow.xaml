@@ -63,17 +63,22 @@
                 <StackPanel Grid.Column="0" Margin="0,0,12,0">
                     <TextBlock Text="Feature Filter" FontWeight="SemiBold" Margin="0,0,0,8"/>
                     <ComboBox x:Name="FeatureFilterComboBox" 
-                              SelectedItem="{Binding SelectedFeature}"
-                              DisplayMemberPath="FeatureName"
-                              Width="200" HorizontalAlignment="Left"/>
+                              Width="200" HorizontalAlignment="Left"
+                              SelectedIndex="0">
+                        <ComboBoxItem Content="All Features" IsSelected="True"/>
+                        <ComboBoxItem Content="AI Recipe Generation"/>
+                        <ComboBoxItem Content="Nutrition Analysis"/>
+                        <ComboBoxItem Content="Ingredient Recognition"/>
+                        <ComboBoxItem Content="Cooking Suggestions"/>
+                    </ComboBox>
                 </StackPanel>
                 
                 <StackPanel Grid.Column="1" Margin="0,0,12,0">
                     <TextBlock Text="Log Type Filter" FontWeight="SemiBold" Margin="0,0,0,8"/>
                     <ComboBox x:Name="LogTypeFilterComboBox" 
-                              SelectedItem="{Binding SelectedLogType}"
-                              Width="150" HorizontalAlignment="Left">
-                        <ComboBoxItem Content="All"/>
+                              Width="150" HorizontalAlignment="Left"
+                              SelectedIndex="0">
+                        <ComboBoxItem Content="All" IsSelected="True"/>
                         <ComboBoxItem Content="Usage"/>
                         <ComboBoxItem Content="Error"/>
                         <ComboBoxItem Content="Performance"/>
@@ -84,12 +89,12 @@
                 <StackPanel Grid.Column="2" Margin="0,0,12,0">
                     <TextBlock Text="Time Range" FontWeight="SemiBold" Margin="0,0,0,8"/>
                     <ComboBox x:Name="TimeRangeComboBox" 
-                              SelectedItem="{Binding SelectedTimeRange}"
-                              Width="150" HorizontalAlignment="Left">
+                              Width="150" HorizontalAlignment="Left"
+                              SelectedIndex="3">
                         <ComboBoxItem Content="Last Hour"/>
                         <ComboBoxItem Content="Last 24 Hours"/>
                         <ComboBoxItem Content="Last 7 Days"/>
-                        <ComboBoxItem Content="All Time"/>
+                        <ComboBoxItem Content="All Time" IsSelected="True"/>
                     </ComboBox>
                 </StackPanel>
                 
