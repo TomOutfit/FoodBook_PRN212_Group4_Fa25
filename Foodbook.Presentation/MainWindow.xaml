@@ -211,8 +211,20 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Enhanced Title -->
+                <!-- Enhanced Title with Hamburger Menu -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="24,0,0,0">
+                    <!-- Hamburger Menu Button -->
+                    <Button Content="☰" 
+                           Command="{Binding ToggleSidebarCommand}"
+                           Background="Transparent" 
+                           Foreground="White" 
+                           BorderThickness="0" 
+                           Width="40" Height="40"
+                           FontSize="18"
+                           Margin="0,0,16,0"
+                           ToolTip="Toggle Sidebar"/>
+                    
+                    <!-- Logo and Title -->
                     <TextBlock Text="🍽️" FontSize="24" Margin="0,0,12,0"/>
                     <TextBlock Text="FoodBook" FontSize="22" FontWeight="Bold" Foreground="White"/>
                     <TextBlock Text="✨" FontSize="20" Margin="8,0,0,0" Opacity="0.8"/>
@@ -318,17 +330,6 @@
                                 <TextBlock Text="FoodBook" FontSize="16" FontWeight="Bold" Foreground="#1F2937" VerticalAlignment="Center"
                                            Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Invert}"/>
                             </StackPanel>
-                            <Button Content="☰" 
-                                   Command="{Binding ToggleSidebarCommand}"
-                                   Background="Transparent" 
-                                   Foreground="#6B7280" 
-                                   BorderThickness="0" 
-                                   Width="32" Height="32"
-                                   FontSize="16"
-                                   HorizontalAlignment="Right"
-                                   VerticalAlignment="Center"
-                                   ToolTip="Toggle Sidebar"
-                                   Margin="0,0,8,0"/>
                         </Grid>
                     </Border>
 
