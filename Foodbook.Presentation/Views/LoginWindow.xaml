@@ -222,8 +222,10 @@
                                        Foreground="#374151"/>
                         </StackPanel>
                         <TextBox x:Name="EmailTextBox" 
+                                 Text="{Binding Email, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                  Style="{StaticResource ModernTextBox}"
-                                 Height="56"/>
+                                 Height="56"
+                                 TextChanged="EmailTextBox_TextChanged"/>
                     </StackPanel>
 
                     <!-- Enhanced Password Field -->
@@ -308,7 +310,7 @@
                             Margin="0,0,0,16"/>
 
                     <!-- Enhanced Quick Admin Login Button -->
-                    <Button Grid.Row="7" 
+                    <Button Grid.Row="8" 
                             Content="⚡ Quick Login as Admin" 
                             Background="#8B5CF6"
                             Foreground="White"
@@ -359,7 +361,7 @@
                     </Button>
 
                     <!-- Enhanced Register Link -->
-                    <StackPanel Grid.Row="8" 
+                    <StackPanel Grid.Row="7" 
                                 Orientation="Horizontal" 
                                 HorizontalAlignment="Center">
                         <TextBlock Text="💡 Don't have an account? " 
