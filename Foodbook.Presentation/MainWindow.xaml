@@ -911,7 +911,7 @@
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="📚 Recipe Collection" FontSize="28" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,6"/>
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding Recipes.Count, StringFormat={}{0} recipes}" FontSize="14" Foreground="#6B7280" Margin="0,0,12,0"/>
+                                        <TextBlock Text="{Binding MyTotalRecipes, StringFormat={}{0} recipes}" FontSize="14" Foreground="#6B7280" Margin="0,0,12,0"/>
                                         <TextBlock Text="•" FontSize="14" Foreground="#D1D5DB" Margin="0,0,12,0"/>
                                         <TextBlock Text="Updated: Today" FontSize="14" Foreground="#6B7280"/>
                                     </StackPanel>
@@ -1833,7 +1833,7 @@
                                     </Border.Effect>
                                     <StackPanel>
                                         <TextBlock Text="📈" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                                        <TextBlock Text="{Binding Recipes.Count}" FontSize="28" FontWeight="Bold" Foreground="#4CAF50" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding MyTotalRecipes}" FontSize="28" FontWeight="Bold" Foreground="#4CAF50" HorizontalAlignment="Center"/>
                                         <TextBlock Text="Total Recipes" FontSize="14" Foreground="#6B7280" HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </Border>
@@ -1908,7 +1908,7 @@
                                                     </LinearGradientBrush>
                                                 </Ellipse.Fill>
                                             </Ellipse>
-                                            <TextBlock Text="43" FontSize="48" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding MyTotalRecipes}" FontSize="48" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Grid>
                                         <StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
