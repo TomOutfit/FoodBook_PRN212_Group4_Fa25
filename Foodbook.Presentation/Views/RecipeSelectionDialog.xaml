@@ -64,14 +64,24 @@
                                            TextTrimming="CharacterEllipsis"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                                     <TextBlock Text="⏱️ " FontSize="11" Foreground="#6C757D"/>
-                                    <TextBlock Text="{Binding PrepTime}" 
-                                               FontSize="11" 
+                                    <TextBlock FontSize="11" 
                                                Foreground="#6C757D" 
-                                               Margin="0,0,15,0"/>
+                                               Margin="0,0,15,0">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0} min">
+                                                <Binding Path="CookTime"/>
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
                                     <TextBlock Text="👥 " FontSize="11" Foreground="#6C757D"/>
-                                    <TextBlock Text="{Binding Servings}" 
-                                               FontSize="11" 
-                                               Foreground="#6C757D"/>
+                                    <TextBlock FontSize="11" 
+                                               Foreground="#6C757D">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0} servings">
+                                                <Binding Path="Servings"/>
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
