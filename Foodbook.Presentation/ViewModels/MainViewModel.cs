@@ -3,6 +3,10 @@ using System.Windows.Input;
 using Foodbook.Business.Interfaces;
 using Foodbook.Data.Entities;
 using System.Threading;
+using System.Threading.Tasks;
+using System;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace Foodbook.Presentation.ViewModels
 {
@@ -1307,66 +1311,68 @@ namespace Foodbook.Presentation.ViewModels
 
         private async Task AnalyzeNutritionAsync()
         {
-            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 IsLoading = true;
-                StatusMessage = "🍎 Analyzing nutrition from saved recipes...";
+                StatusMessage = "🍎 Opening nutrition analysis dialog...";
                 
-                // Log feature usage
-                await _loggingService.LogFeatureUsageAsync("Database Nutrition Analysis", "1", 
-                    $"Analyzing {Recipes.Count} saved recipes for comprehensive nutrition analysis");
-                
-                // Pha 1: Xác định luồng - Database Flow (Recipe đã lưu)
-                var recipesToAnalyze = Recipes.Count > 0 
-                    ? Recipes.ToList() 
-                    : new List<Recipe> 
+                // Show dialog immediately for testing
+                try
+                {
+                    var nutritionDialog = new Views.NutritionAnalysisDialog();
+                    
+                    // Create sample data for testing
+                    var sampleAnalysis = new NutritionAnalysisResult
                     {
-                        new Recipe { Id = 1, Title = "Sample Healthy Recipe", UserId = 1 },
-                        new Recipe { Id = 2, Title = "Sample Balanced Meal", UserId = 1 }
+                        TotalCalories = 450,
+                        TotalProtein = 25.5m,
+                        TotalCarbs = 35.2m,
+                        TotalFat = 18.8m,
+                        Rating = new NutritionRating 
+                        { 
+                            Grade = "A", 
+                            OverallScore = 85, 
+                            Description = "Excellent nutritional balance" 
+                        }
                     };
-                
-                // Pha 2: Tính toán dinh dưỡng từ CSDL
-                StatusMessage = "📊 Calculating nutrition from database...";
-                var nutritionAnalysis = await _nutritionService.AnalyzeMealPlanNutritionAsync(recipesToAnalyze);
-                
-                // Get health alerts
-                var healthAlerts = await _nutritionService.GetHealthAlertsAsync(nutritionAnalysis);
-                
-                // Get recommendations for general health
-                var recommendations = await _nutritionService.GetNutritionRecommendationsAsync(nutritionAnalysis, "General Health");
-                
-                // Pha 3: AI-powered health assessment
-                StatusMessage = "🤖 AI is analyzing your nutrition data...";
-                
-                // Log AI activity
-                stopwatch.Stop();
-                await _loggingService.LogAIActivityAsync("Database Nutrition Analysis", "1", 
-                    $"Recipes: {string.Join(", ", Recipes.Select(r => r.Title))}", 
-                    $"Analysis: {nutritionAnalysis.TotalCalories:F0} cal, Grade: {nutritionAnalysis.Rating.Grade}", 
-                    stopwatch.Elapsed);
-                
-                // Show nutrition analysis dialog
-                var nutritionDialog = new Views.NutritionAnalysisDialog();
-                nutritionDialog.SetNutritionAnalysis(nutritionAnalysis, healthAlerts, new[] { recommendations });
-                nutritionDialog.ShowDialog();
-                
-                StatusMessage = $"🍎 Database nutrition analysis complete! " +
-                              $"Total: {nutritionAnalysis.TotalCalories:F0} calories, " +
-                              $"{nutritionAnalysis.TotalProtein:F1}g protein, " +
-                              $"{nutritionAnalysis.TotalCarbs:F1}g carbs, " +
-                              $"{nutritionAnalysis.TotalFat:F1}g fat. " +
-                              $"Grade: {nutritionAnalysis.Rating.Grade} ({nutritionAnalysis.Rating.OverallScore}/100). " +
-                              $"{healthAlerts.Count()} health alerts found.";
-                
-                // Log performance
-                await _loggingService.LogPerformanceAsync("Database Nutrition Analysis", "1", stopwatch.Elapsed, 
-                    $"Analysis completed: {nutritionAnalysis.TotalCalories:F0} calories, Grade {nutritionAnalysis.Rating.Grade}, {healthAlerts.Count()} alerts");
+                    
+                    var sampleAlerts = new List<HealthAlert>();
+                    var sampleRecommendations = new List<NutritionRecommendation>
+                    {
+                        new NutritionRecommendation 
+                        { 
+                            Goal = "General Health",
+                            Suggestions = new List<string> { "Great protein content", "Consider adding more fiber" }
+                        }
+                    };
+                    
+                    nutritionDialog.SetNutritionAnalysis(sampleAnalysis, sampleAlerts, sampleRecommendations);
+                    nutritionDialog.Owner = System.Windows.Application.Current.MainWindow;
+                    nutritionDialog.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner;
+                    nutritionDialog.ShowDialog();
+                    
+                    StatusMessage = "✅ Nutrition analysis dialog closed.";
+                }
+                catch (Exception dialogEx)
+                {
+                    StatusMessage = $"Error showing nutrition dialog: {dialogEx.Message}";
+                    
+                    // Fallback: Show simple message box
+                    System.Windows.MessageBox.Show($"Nutrition Analysis Dialog Error!\n\nError: {dialogEx.Message}\n\nStack Trace: {dialogEx.StackTrace}", 
+                        "Dialog Error", 
+                        System.Windows.MessageBoxButton.OK, 
+                        System.Windows.MessageBoxImage.Error);
+                }
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error analyzing nutrition: {ex.Message}";
-                await _loggingService.LogErrorAsync("Database Nutrition Analysis", "1", ex, "Unexpected error in database nutrition analysis");
+                
+                // Show error message to user
+                System.Windows.MessageBox.Show($"Error analyzing nutrition: {ex.Message}\n\nStack Trace: {ex.StackTrace}", 
+                    "Error", 
+                    System.Windows.MessageBoxButton.OK, 
+                    System.Windows.MessageBoxImage.Error);
             }
             finally
             {
@@ -1414,10 +1420,33 @@ namespace Foodbook.Presentation.ViewModels
                     $"Analysis: {nutritionAnalysis.TotalCalories:F0} cal, Grade: {nutritionAnalysis.Rating.Grade}", 
                     stopwatch.Elapsed);
                 
-                // Show custom nutrition analysis dialog
-                var customNutritionDialog = new Views.CustomNutritionDialog();
-                customNutritionDialog.SetNutritionAnalysis(nutritionAnalysis, healthAlerts, new[] { recommendations });
-                customNutritionDialog.ShowDialog();
+                // Show custom nutrition analysis dialog immediately
+                try
+                {
+                    StatusMessage = "🤖 Opening custom nutrition analysis dialog...";
+                    var customNutritionDialog = new Views.CustomNutritionDialog();
+                    customNutritionDialog.SetNutritionAnalysis(nutritionAnalysis, healthAlerts, new[] { recommendations });
+                    customNutritionDialog.Owner = System.Windows.Application.Current.MainWindow;
+                    customNutritionDialog.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner;
+                    customNutritionDialog.ShowDialog();
+                    StatusMessage = "✅ Custom nutrition analysis dialog closed.";
+                }
+                catch (Exception dialogEx)
+                {
+                    StatusMessage = $"Error showing custom nutrition dialog: {dialogEx.Message}";
+                    await _loggingService.LogErrorAsync("Custom Nutrition Dialog", "1", dialogEx, "Error showing custom nutrition analysis dialog");
+                    
+                    // Fallback: Show simple message box
+                    System.Windows.MessageBox.Show($"Custom Nutrition Analysis Complete!\n\n" +
+                        $"Total Calories: {nutritionAnalysis.TotalCalories:F0}\n" +
+                        $"Protein: {nutritionAnalysis.TotalProtein:F1}g\n" +
+                        $"Carbs: {nutritionAnalysis.TotalCarbs:F1}g\n" +
+                        $"Fat: {nutritionAnalysis.TotalFat:F1}g\n" +
+                        $"Grade: {nutritionAnalysis.Rating.Grade} ({nutritionAnalysis.Rating.OverallScore}/100)",
+                        "Custom Nutrition Analysis", 
+                        System.Windows.MessageBoxButton.OK, 
+                        System.Windows.MessageBoxImage.Information);
+                }
                 
                 StatusMessage = $"🤖 AI-powered nutrition analysis complete! " +
                               $"Total: {nutritionAnalysis.TotalCalories:F0} calories, " +
