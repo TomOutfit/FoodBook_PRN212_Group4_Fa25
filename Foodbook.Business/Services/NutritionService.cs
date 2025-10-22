@@ -2,16 +2,20 @@ using Foodbook.Business.Interfaces;
 using Foodbook.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using Foodbook.Data;
+using Foodbook.Business.Models;
+using System.Text.Json;
 
 namespace Foodbook.Business.Services
 {
     public class NutritionService : INutritionService
     {
-        private readonly FoodBookDbContext _context;
+        private readonly FoodbookDbContext _context;
+        private readonly IAIService _aiService;
 
-        public NutritionService(FoodBookDbContext context)
+        public NutritionService(FoodbookDbContext context, IAIService aiService)
         {
             _context = context;
+            _aiService = aiService;
         }
 
         public async Task<NutritionAnalysisResult> AnalyzeRecipeNutritionAsync(Recipe recipe)
@@ -790,6 +794,312 @@ namespace Foodbook.Business.Services
                    $"({Math.Max(score1, score2)} vs {Math.Min(score1, score2)} score). " +
                    $"Consider the specific nutrient differences when making your choice.";
         }
+
+        // New methods for enhanced AI integration
+
+        public async Task<List<IngredientDto>> ParseIngredientsWithAIAsync(string recipeText)
+        {
+            try
+            {
+                // Pha 2b: Luồng AI Parsing - Gọi AI để giải mã văn bản tùy ý
+                var aiPrompt = CreateIngredientParsingPrompt(recipeText);
+                var aiResponse = await _aiService.AnalyzeNutritionAsync(aiPrompt);
+                
+                // Parse AI response thành IngredientDto list
+                var ingredients = ParseAIResponseToIngredients(aiResponse);
+                
+                return ingredients;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"AI Parsing Error: {ex.Message}");
+                // Fallback to simple keyword-based parsing
+                return await Task.FromResult(ParseIngredientsWithFallback(recipeText));
+            }
+        }
+
+        public async Task<NutritionAnalysisResult> CalculateNutritionFromIngredientsAsync(List<IngredientDto> ingredients)
+        {
+            // Pha 2: Tính toán dinh dưỡng từ danh sách nguyên liệu đã được AI parse
+            var nutrition = new NutritionAnalysisResult();
+
+            foreach (var ingredient in ingredients)
+            {
+                var quantity = ConvertToGrams((decimal)ingredient.Quantity, ingredient.Unit);
+                var multiplier = (double)(quantity / 100); // Convert to per 100g basis
+
+                nutrition.TotalCalories += (decimal)(ingredient.CaloriesPerUnit * multiplier);
+                nutrition.TotalProtein += (decimal)(ingredient.ProteinPerUnit * multiplier);
+                nutrition.TotalCarbs += (decimal)(ingredient.CarbohydratesPerUnit * multiplier);
+                nutrition.TotalFat += (decimal)(ingredient.FatPerUnit * multiplier);
+                nutrition.TotalFiber += (decimal)(ingredient.FiberPerUnit * multiplier);
+                nutrition.TotalSugar += (decimal)(ingredient.SugarPerUnit * multiplier);
+                nutrition.TotalSodium += (decimal)(ingredient.SodiumPerUnit * multiplier);
+            }
+
+            // Generate rating and analysis
+            nutrition.Rating = GenerateNutritionRating(nutrition);
+            nutrition.Alerts = GenerateHealthAlerts(nutrition);
+            nutrition.Recommendations = GenerateRecommendations(nutrition);
+            nutrition.AnalysisSummary = GenerateIngredientBasedSummary(nutrition, ingredients);
+
+            return await Task.FromResult(nutrition);
+        }
+
+        public async Task<string> GenerateHealthFeedbackAsync(NutritionAnalysisResult nutritionInfo)
+        {
+            try
+            {
+                // Pha 3: Đánh giá AI - Sinh ra báo cáo đánh giá bằng AI
+                var feedbackPrompt = CreateHealthFeedbackPrompt(nutritionInfo);
+                var aiFeedback = await _aiService.AnalyzeNutritionAsync(feedbackPrompt);
+                
+                return aiFeedback;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"AI Health Feedback Error: {ex.Message}");
+                return GenerateFallbackHealthFeedback(nutritionInfo);
+            }
+        }
+
+        public async Task<NutritionAnalysisResult> AnalyzeCustomRecipeAsync(string recipeText, string userGoal = "General Health")
+        {
+            // Luồng hoạt động hoàn chỉnh: AI Parsing + Tính toán + Đánh giá AI
+            try
+            {
+                // Bước 1: AI Parsing
+                var ingredients = await ParseIngredientsWithAIAsync(recipeText);
+                
+                // Bước 2: Tính toán dinh dưỡng
+                var nutrition = await CalculateNutritionFromIngredientsAsync(ingredients);
+                
+                // Bước 3: Đánh giá AI
+                nutrition.AnalysisSummary = await GenerateHealthFeedbackAsync(nutrition);
+                
+                return nutrition;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Custom Recipe Analysis Error: {ex.Message}");
+                // Fallback to existing method
+                return await AnalyzeUnstructuredRecipeAsync(recipeText);
+            }
+        }
+
+        private string CreateIngredientParsingPrompt(string recipeText)
+        {
+            return $@"
+Bạn là chuyên gia dinh dưỡng và đầu bếp chuyên nghiệp. Hãy phân tích công thức sau và trích xuất thông tin nguyên liệu:
+
+Công thức: {recipeText}
+
+Hãy trích xuất các nguyên liệu với định lượng và đơn vị. Trả về kết quả theo định dạng JSON:
+
+{{
+  ""ingredients"": [
+    {{
+      ""name"": ""tên nguyên liệu"",
+      ""quantity"": số_lượng,
+      ""unit"": ""đơn_vị""
+    }}
+  ]
+}}
+
+Lưu ý:
+- Nếu không có đơn vị rõ ràng, sử dụng 'piece' cho nguyên liệu đếm được
+- Nếu không có số lượng rõ ràng, ước tính hợp lý
+- Chỉ trích xuất nguyên liệu thực phẩm, bỏ qua gia vị nhỏ như muối, tiêu
+";
+        }
+
+        private string CreateHealthFeedbackPrompt(NutritionAnalysisResult nutrition)
+        {
+            return $@"
+Bạn là chuyên gia dinh dưỡng với 20 năm kinh nghiệm. Hãy phân tích thông tin dinh dưỡng sau và đưa ra đánh giá chuyên nghiệp:
+
+📊 THÔNG TIN DINH DƯỠNG:
+- Calories: {nutrition.TotalCalories:F0} kcal
+- Protein: {nutrition.TotalProtein:F1}g
+- Carbohydrates: {nutrition.TotalCarbs:F1}g  
+- Fat: {nutrition.TotalFat:F1}g
+- Fiber: {nutrition.TotalFiber:F1}g
+- Sodium: {nutrition.TotalSodium:F0}mg
+- Grade: {nutrition.Rating.Grade} ({nutrition.Rating.OverallScore}/100)
+
+Hãy đưa ra:
+1. Đánh giá tổng quan về cân bằng dinh dưỡng
+2. Điểm mạnh và điểm cần cải thiện
+3. Khuyến nghị cụ thể để tối ưu hóa sức khỏe
+4. Cảnh báo về các vấn đề dinh dưỡng (nếu có)
+
+Sử dụng ngôn ngữ thân thiện, dễ hiểu với emoji phù hợp.
+";
+        }
+
+        private List<IngredientDto> ParseAIResponseToIngredients(string aiResponse)
+        {
+            try
+            {
+                // Try to parse JSON response from AI
+                var jsonStart = aiResponse.IndexOf('{');
+                var jsonEnd = aiResponse.LastIndexOf('}');
+                
+                if (jsonStart >= 0 && jsonEnd > jsonStart)
+                {
+                    var jsonString = aiResponse.Substring(jsonStart, jsonEnd - jsonStart + 1);
+                    var response = JsonSerializer.Deserialize<AIRecipeResponse>(jsonString);
+                    
+                    if (response?.ingredients != null)
+                    {
+                        var ingredients = new List<IngredientDto>();
+                        foreach (var ing in response.ingredients)
+                        {
+                            var ingredient = new IngredientDto
+                            {
+                                Name = ing.name ?? "Unknown",
+                                Quantity = ing.quantity ?? 100,
+                                Unit = ing.unit ?? "g"
+                            };
+                            
+                            // Set nutritional values based on ingredient name
+                            SetNutritionalValues(ingredient);
+                            ingredients.Add(ingredient);
+                        }
+                        return ingredients;
+                    }
+                }
+                
+                // Fallback parsing
+                return ParseIngredientsWithFallback(aiResponse);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"JSON parsing error: {ex.Message}");
+                return ParseIngredientsWithFallback(aiResponse);
+            }
+        }
+
+        private List<IngredientDto> ParseIngredientsWithFallback(string text)
+        {
+            // Simple keyword-based parsing as fallback
+            var ingredients = new List<IngredientDto>();
+            var textLower = text.ToLower();
+            
+            // Common ingredient patterns
+            var patterns = new Dictionary<string, (string name, decimal quantity, string unit)>
+            {
+                ["thịt bò"] = ("beef", 200, "g"),
+                ["thịt gà"] = ("chicken", 150, "g"),
+                ["cá"] = ("fish", 200, "g"),
+                ["hành tây"] = ("onion", 1, "piece"),
+                ["cà chua"] = ("tomato", 2, "piece"),
+                ["khoai tây"] = ("potato", 2, "piece"),
+                ["cà rốt"] = ("carrot", 1, "piece"),
+                ["gạo"] = ("rice", 100, "g"),
+                ["mì"] = ("noodles", 100, "g")
+            };
+            
+            foreach (var pattern in patterns)
+            {
+                if (textLower.Contains(pattern.Key))
+                {
+                    var ingredient = new IngredientDto
+                    {
+                        Name = pattern.Value.name,
+                        Quantity = (double)pattern.Value.quantity,
+                        Unit = pattern.Value.unit
+                    };
+                    SetNutritionalValues(ingredient);
+                    ingredients.Add(ingredient);
+                }
+            }
+            
+            // Default fallback
+            if (!ingredients.Any())
+            {
+                ingredients.Add(new IngredientDto
+                {
+                    Name = "mixed ingredients",
+                    Quantity = 200,
+                    Unit = "g"
+                });
+                SetNutritionalValues(ingredients[0]);
+            }
+            
+            return ingredients;
+        }
+
+        private void SetNutritionalValues(IngredientDto ingredient)
+        {
+            // Set nutritional values based on ingredient name
+            var name = ingredient.Name.ToLower();
+            var multiplier = (double)(ingredient.Quantity / 100); // Per 100g basis
+            
+            var nutrition = name switch
+            {
+                var n when n.Contains("chicken") => (calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0, sugar: 0, sodium: 74),
+                var n when n.Contains("beef") => (calories: 250, protein: 26, carbs: 0, fat: 15, fiber: 0, sugar: 0, sodium: 72),
+                var n when n.Contains("fish") => (calories: 206, protein: 22, carbs: 0, fat: 12, fiber: 0, sugar: 0, sodium: 61),
+                var n when n.Contains("rice") => (calories: 130, protein: 2.7, carbs: 28, fat: 0.3, fiber: 0.4, sugar: 0.1, sodium: 1),
+                var n when n.Contains("onion") => (calories: 40, protein: 1.1, carbs: 9.3, fat: 0.1, fiber: 1.7, sugar: 4.2, sodium: 4),
+                var n when n.Contains("tomato") => (calories: 18, protein: 0.9, carbs: 3.9, fat: 0.2, fiber: 1.2, sugar: 2.6, sodium: 5),
+                var n when n.Contains("potato") => (calories: 77, protein: 2, carbs: 17, fat: 0.1, fiber: 2.2, sugar: 0.8, sodium: 6),
+                var n when n.Contains("carrot") => (calories: 41, protein: 0.9, carbs: 9.6, fat: 0.2, fiber: 2.8, sugar: 4.7, sodium: 69),
+                _ => (calories: 50, protein: 2, carbs: 8, fat: 1, fiber: 2, sugar: 3, sodium: 10)
+            };
+            
+            ingredient.CaloriesPerUnit = nutrition.calories * multiplier;
+            ingredient.ProteinPerUnit = nutrition.protein * multiplier;
+            ingredient.CarbohydratesPerUnit = nutrition.carbs * multiplier;
+            ingredient.FatPerUnit = nutrition.fat * multiplier;
+            ingredient.FiberPerUnit = nutrition.fiber * multiplier;
+            ingredient.SugarPerUnit = nutrition.sugar * multiplier;
+            ingredient.SodiumPerUnit = nutrition.sodium * multiplier;
+        }
+
+        private string GenerateIngredientBasedSummary(NutritionAnalysisResult nutrition, List<IngredientDto> ingredients)
+        {
+            var ingredientNames = string.Join(", ", ingredients.Select(i => i.Name));
+            return $"Phân tích dinh dưỡng cho món ăn với {ingredients.Count} nguyên liệu: {ingredientNames}. " +
+                   $"Tổng cộng {nutrition.TotalCalories:F0} calories với {nutrition.Rating.Grade} grade " +
+                   $"({nutrition.Rating.OverallScore}/100). {nutrition.Rating.Description}";
+        }
+
+        private string GenerateFallbackHealthFeedback(NutritionAnalysisResult nutrition)
+        {
+            var feedback = $"🤖 AI Health Assessment:\n\n";
+            
+            // Protein analysis
+            if (nutrition.TotalProtein >= 20)
+                feedback += "💪 Excellent protein content for muscle health\n";
+            else
+                feedback += "⚠️ Consider adding more protein sources\n";
+            
+            // Fiber analysis
+            if (nutrition.TotalFiber >= 25)
+                feedback += "🌾 Great fiber content for digestive health\n";
+            else
+                feedback += "📈 Add more vegetables and whole grains for fiber\n";
+            
+            // Sodium analysis
+            if (nutrition.TotalSodium > 2300)
+                feedback += "🧂 High sodium content - consider reducing salt\n";
+            else
+                feedback += "✅ Good sodium levels\n";
+            
+            // Overall assessment
+            feedback += $"\n📊 Overall Grade: {nutrition.Rating.Grade} - {nutrition.Rating.Description}\n";
+            
+            // Recommendations
+            feedback += "\n🎯 Recommendations:\n";
+            foreach (var rec in nutrition.Recommendations.Take(3))
+            {
+                feedback += $"• {rec}\n";
+            }
+            
+            return feedback;
+        }
     }
 
     public class IngredientNutrition
@@ -811,5 +1121,18 @@ namespace Foodbook.Business.Services
         public string Name { get; set; } = string.Empty;
         public decimal Quantity { get; set; }
         public string Unit { get; set; } = string.Empty;
+    }
+
+    // AI Response Models for JSON parsing
+    public class AIRecipeResponse
+    {
+        public List<AIIngredient>? ingredients { get; set; }
+    }
+
+    public class AIIngredient
+    {
+        public string? name { get; set; }
+        public double? quantity { get; set; }
+        public string? unit { get; set; }
     }
 }

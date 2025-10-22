@@ -11,5 +11,11 @@ namespace Foodbook.Business.Interfaces
         Task<string> AnalyzeNutritionAsync(string recipeDescription);
         Task<Recipe> GenerateRecipeFromIngredientsAsync(IEnumerable<string> ingredientNames, string dishName, int servings);
         Task<IEnumerable<string>> GetIngredientSubstitutionsAsync(string ingredientName);
+        
+        // Enhanced methods for Nutrition Analysis
+        Task<string> ParseRecipeIngredientsAsync(string recipeText);
+        Task<string> GenerateHealthAssessmentAsync(string nutritionData);
+        Task<string> GenerateNutritionalAdviceAsync(string nutritionInfo, string userGoal);
+        Task<List<IngredientDto>> ExtractIngredientsFromTextAsync(string recipeText);
     }
 }
