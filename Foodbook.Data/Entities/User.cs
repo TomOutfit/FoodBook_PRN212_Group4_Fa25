@@ -31,6 +31,7 @@ namespace Foodbook.Data.Entities
 
         // Navigation properties
         public virtual ICollection<Recipe> Recipes { get; set; } = new List<Recipe>();
+        public virtual ICollection<Ingredient> Ingredients { get; set; } = new List<Ingredient>();
         public virtual ICollection<Rating> Ratings { get; set; } = new List<Rating>();
         public virtual ICollection<LogEntry> LogEntries { get; set; } = new List<LogEntry>();
     }

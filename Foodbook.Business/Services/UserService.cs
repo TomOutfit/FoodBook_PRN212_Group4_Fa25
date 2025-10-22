@@ -8,9 +8,9 @@ namespace Foodbook.Business.Services
 {
     public class UserService : IUserService
     {
-        private readonly FoodBookDbContext _context;
+        private readonly FoodbookDbContext _context;
 
-        public UserService(FoodBookDbContext context)
+        public UserService(FoodbookDbContext context)
         {
             _context = context;
         }

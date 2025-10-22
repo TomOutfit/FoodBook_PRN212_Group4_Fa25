@@ -58,7 +58,7 @@ public partial class App : Application
             
             // Ensure database exists
             using var scope = serviceProvider.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<Foodbook.Data.FoodBookDbContext>();
+            var context = scope.ServiceProvider.GetRequiredService<Foodbook.Data.FoodbookDbContext>();
             context.Database.EnsureCreated();
             
             // Create MainWindow first but don't show it yet

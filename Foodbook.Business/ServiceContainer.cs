@@ -13,7 +13,7 @@ namespace Foodbook.Business
         public static IServiceCollection AddBusinessServices(this IServiceCollection services, string connectionString)
         {
             // Add DbContext
-            services.AddDbContext<FoodBookDbContext>(options =>
+            services.AddDbContext<FoodbookDbContext>(options =>
                 options.UseSqlServer(connectionString));
 
             // Add Services
