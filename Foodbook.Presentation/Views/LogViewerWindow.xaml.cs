@@ -26,17 +26,77 @@ namespace Foodbook.Presentation.Views
             await LoadLogs();
         }
 
+        private async void FeatureFilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            await LoadLogs();
+        }
+
+        private async void LogTypeFilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            await LoadLogs();
+        }
+
+        private async void TimeRangeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            await LoadLogs();
+        }
+
         private async Task LoadLogs()
         {
             try
             {
+                if (_loggingService == null)
+                {
+                    MessageBox.Show("Logging service is not available.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
                 var logs = await _loggingService.GetLogsAsync();
-                DisplayLogs(logs);
+                
+                // Apply filters
+                var filteredLogs = ApplyFilters(logs);
+                
+                DisplayLogs(filteredLogs);
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading logs: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private IEnumerable<LogEntryEntity> ApplyFilters(IEnumerable<LogEntryEntity> logs)
+        {
+            var filteredLogs = logs.AsEnumerable();
+
+            // Apply log type filter
+            if (LogTypeFilterComboBox.SelectedItem is ComboBoxItem selectedLogType)
+            {
+                var logType = selectedLogType.Content.ToString();
+                if (logType != "All")
+                {
+                    filteredLogs = filteredLogs.Where(log => log.LogType == logType);
+                }
+            }
+
+            // Apply time range filter
+            if (TimeRangeComboBox.SelectedItem is ComboBoxItem selectedTimeRange)
+            {
+                var timeRange = selectedTimeRange.Content.ToString();
+                var cutoffTime = timeRange switch
+                {
+                    "Last Hour" => DateTime.Now.AddHours(-1),
+                    "Last 24 Hours" => DateTime.Now.AddDays(-1),
+                    "Last 7 Days" => DateTime.Now.AddDays(-7),
+                    _ => DateTime.MinValue
+                };
+                
+                if (cutoffTime != DateTime.MinValue)
+                {
+                    filteredLogs = filteredLogs.Where(log => log.Timestamp >= cutoffTime);
+                }
+            }
+
+            return filteredLogs.OrderByDescending(log => log.Timestamp);
         }
 
         private void DisplayLogs(IEnumerable<LogEntryEntity> logs)
@@ -63,7 +123,9 @@ namespace Foodbook.Presentation.Views
             foreach (var featureGroup in groupedLogs)
             {
                 // Feature header
+#pragma warning disable CS8604 // Possible null reference argument.
                 var featureHeader = CreateFeatureHeader(featureGroup.Key, featureGroup.Count());
+#pragma warning restore CS8604 // Possible null reference argument.
                 LogsPanel.Children.Add(featureHeader);
 
                 // Logs for this feature
@@ -145,6 +207,7 @@ namespace Foodbook.Presentation.Views
                 Margin = new Thickness(0, 0, 0, 8)
             };
 
+#pragma warning disable CS8604 // Possible null reference argument.
             var logTypeIcon = new TextBlock
             {
                 Text = GetLogTypeIcon(log.LogType),
@@ -152,6 +215,7 @@ namespace Foodbook.Presentation.Views
                 Margin = new Thickness(0, 0, 8, 0),
                 VerticalAlignment = VerticalAlignment.Center
             };
+#pragma warning restore CS8604 // Possible null reference argument.
 
             var logType = new TextBlock
             {

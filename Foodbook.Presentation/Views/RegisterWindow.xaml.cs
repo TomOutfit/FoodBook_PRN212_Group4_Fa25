@@ -75,8 +75,11 @@ namespace Foodbook.Presentation.Views
                 // Show loading state
                 var signUpButton = sender as Button;
                 var originalContent = signUpButton?.Content;
-                signUpButton.Content = "Creating Account...";
-                signUpButton.IsEnabled = false;
+                if (signUpButton != null)
+                {
+                    signUpButton.Content = "Creating Account...";
+                    signUpButton.IsEnabled = false;
+                }
 
                 // Attempt registration
                 var user = await _authService.RegisterAsync(_registerModel);

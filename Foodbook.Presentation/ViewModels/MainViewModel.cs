@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using System.Windows;
+using System.Windows.Media;
 using Foodbook.Business.Interfaces;
 using Foodbook.Data.Entities;
 using LiveChartsCore;
@@ -51,17 +53,17 @@ namespace Foodbook.Presentation.ViewModels
         private bool _isSidebarCollapsed = false;
 
         // Analytics properties
-        private int _totalRecipes = 0;
+        // Removed - using _myTotalRecipes instead
         private string _mostUsedIngredient = "None";
-        private double _averageCookTime = 0;
+        // Removed - using _myAverageCookTime instead
         private int _aiJudgments = 0;
         private int _generatedRecipes = 0;
         private double _successRate = 0;
-        private ISeries[] _recipeTrendSeries = new ISeries[] { };
-        private ISeries[] _ingredientUsageSeries = new ISeries[] { };
-        private ISeries[] _aiPerformanceSeries = new ISeries[] { };
-        private ISeries[] _cookTimeDistributionSeries = new ISeries[] { };
-        private ISeries[] _recipeDistributionSeries = new ISeries[] { };
+        private ISeries[] _recipeTrendSeries = [];
+        private ISeries[] _ingredientUsageSeries = [];
+        private ISeries[] _aiPerformanceSeries = [];
+        private ISeries[] _cookTimeDistributionSeries = [];
+        private ISeries[] _recipeDistributionSeries = [];
         private User? _currentUser;
 
         // My Recipes statistics properties
@@ -183,6 +185,7 @@ namespace Foodbook.Presentation.ViewModels
             ViewLogsCommand = new RelayCommand(async () => await ViewLogsAsync());
             RefreshUserProfileCommand = new RelayCommand(async () => await LoadCurrentUserAsync());
             ToggleSidebarCommand = new RelayCommand(async () => await ToggleSidebarAsync());
+            RefreshDashboardCommand = new RelayCommand(async () => await RefreshDashboardDataAsync());
             
             // Initialize ingredient commands
             AddIngredientCommand = new RelayCommand(async () => await AddNewIngredientAsync());
@@ -360,6 +363,7 @@ namespace Foodbook.Presentation.ViewModels
         public ICommand ViewLogsCommand { get; }
         public ICommand RefreshUserProfileCommand { get; }
         public ICommand ToggleSidebarCommand { get; }
+        public ICommand RefreshDashboardCommand { get; } = null!;
         
         // Ingredient Filter Commands
         public ICommand SortIngredientsByCommand { get; } = null!;
@@ -402,11 +406,7 @@ namespace Foodbook.Presentation.ViewModels
         }
 
         // Analytics Properties
-        public int TotalRecipes
-        {
-            get => _totalRecipes;
-            set => SetProperty(ref _totalRecipes, value);
-        }
+        // Removed - using MyTotalRecipes instead
 
         public string MostUsedIngredient
         {
@@ -414,11 +414,7 @@ namespace Foodbook.Presentation.ViewModels
             set => SetProperty(ref _mostUsedIngredient, value);
         }
 
-        public double AverageCookTime
-        {
-            get => _averageCookTime;
-            set => SetProperty(ref _averageCookTime, value);
-        }
+        // Removed - using MyAverageCookTime instead
 
         public int AIJudgments
         {
@@ -1303,65 +1299,32 @@ namespace Foodbook.Presentation.ViewModels
 
         private async Task AnalyzeNutritionAsync()
         {
-            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             try
             {
-                IsLoading = true;
-                StatusMessage = "Analyzing nutrition...";
-                
                 // Log feature usage
                 await _loggingService.LogFeatureUsageAsync("Nutrition Analysis", "1", 
-                    $"Analyzing {Recipes.Count} recipes for comprehensive nutrition analysis");
+                    "Opening Nutrition Analysis view for user interaction");
                 
-                // Analyze nutrition for all recipes or create sample recipes
-                var recipesToAnalyze = Recipes.Count > 0 
-                    ? Recipes.ToList() 
-                    : new List<Recipe> 
-                    {
-                        new Recipe { Id = 1, Title = "Sample Healthy Recipe", UserId = 1 },
-                        new Recipe { Id = 2, Title = "Sample Balanced Meal", UserId = 1 }
-                    };
+                // Show NutritionView instead of direct analysis
+                var nutritionView = new Views.NutritionView();
+                var nutritionWindow = new Window
+                {
+                    Title = "🥗 Nutrition Analysis",
+                    Content = nutritionView,
+                    Width = 1200,
+                    Height = 800,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Background = new SolidColorBrush(Color.FromRgb(248, 249, 250))
+                };
                 
-                var nutritionAnalysis = await _nutritionService.AnalyzeMealPlanNutritionAsync(recipesToAnalyze);
+                nutritionWindow.ShowDialog();
                 
-                // Get health alerts
-                var healthAlerts = await _nutritionService.GetHealthAlertsAsync(nutritionAnalysis);
-                
-                // Get recommendations for general health
-                var recommendations = await _nutritionService.GetNutritionRecommendationsAsync(nutritionAnalysis, "General Health");
-                
-                // Log AI activity
-                stopwatch.Stop();
-                await _loggingService.LogAIActivityAsync("Nutrition Analysis", "1", 
-                    $"Recipes: {string.Join(", ", Recipes.Select(r => r.Title))}", 
-                    $"Analysis: {nutritionAnalysis.TotalCalories:F0} cal, Grade: {nutritionAnalysis.Rating.Grade}", 
-                    stopwatch.Elapsed);
-                
-                // Show nutrition analysis dialog
-                var nutritionDialog = new Views.NutritionAnalysisDialog();
-                nutritionDialog.SetNutritionAnalysis(nutritionAnalysis, healthAlerts, new[] { recommendations });
-                nutritionDialog.ShowDialog();
-                
-                StatusMessage = $"🍎 Nutrition analysis complete! " +
-                              $"Total: {nutritionAnalysis.TotalCalories:F0} calories, " +
-                              $"{nutritionAnalysis.TotalProtein:F1}g protein, " +
-                              $"{nutritionAnalysis.TotalCarbs:F1}g carbs, " +
-                              $"{nutritionAnalysis.TotalFat:F1}g fat. " +
-                              $"Grade: {nutritionAnalysis.Rating.Grade} ({nutritionAnalysis.Rating.OverallScore}/100). " +
-                              $"{healthAlerts.Count()} health alerts found.";
-                
-                // Log performance
-                await _loggingService.LogPerformanceAsync("Nutrition Analysis", "1", stopwatch.Elapsed, 
-                    $"Analysis completed: {nutritionAnalysis.TotalCalories:F0} calories, Grade {nutritionAnalysis.Rating.Grade}, {healthAlerts.Count()} alerts");
+                StatusMessage = "🍎 Nutrition Analysis view opened successfully!";
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Error analyzing nutrition: {ex.Message}";
-                await _loggingService.LogErrorAsync("Nutrition Analysis", "1", ex, "Unexpected error in nutrition analysis");
-            }
-            finally
-            {
-                IsLoading = false;
+                StatusMessage = $"Error opening nutrition analysis: {ex.Message}";
+                await _loggingService.LogErrorAsync("Nutrition Analysis", "1", ex, "Unexpected error opening nutrition analysis view");
             }
         }
 
@@ -1399,10 +1362,19 @@ namespace Foodbook.Presentation.ViewModels
                     $"Analysis: {nutritionAnalysis.TotalCalories:F0} cal, Grade: {nutritionAnalysis.Rating.Grade}", 
                     stopwatch.Elapsed);
                 
-                // Show custom nutrition analysis dialog
-                var customNutritionDialog = new Views.CustomNutritionDialog();
-                customNutritionDialog.SetNutritionAnalysis(nutritionAnalysis, healthAlerts, new[] { recommendations });
-                customNutritionDialog.ShowDialog();
+                // Show custom nutrition analysis window
+                var nutritionView = new Views.NutritionView();
+                var nutritionWindow = new Window
+                {
+                    Title = "AI-powered Nutrition Analysis",
+                    Content = nutritionView,
+                    Width = 600,
+                    Height = 800,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Background = new SolidColorBrush(Color.FromRgb(248, 249, 250))
+                };
+                
+                nutritionWindow.ShowDialog();
                 
                 StatusMessage = $"🤖 AI-powered nutrition analysis complete! " +
                               $"Total: {nutritionAnalysis.TotalCalories:F0} calories, " +
@@ -1490,9 +1462,11 @@ namespace Foodbook.Presentation.ViewModels
                 var recipes = await _recipeService.GetAllRecipesAsync();
                 var ingredients = await _ingredientService.GetUserIngredientsAsync(1); // Use user 1 for demo
                 var logs = await _loggingService.GetLogsAsync();
+                
+                System.Diagnostics.Debug.WriteLine($"Analytics Debug - Recipes: {recipes?.Count() ?? 0}, Ingredients: {ingredients?.Count() ?? 0}, Logs: {logs?.Count() ?? 0}");
 
                 // Update basic stats with real data
-                TotalRecipes = recipes?.Count() ?? 0;
+                MyTotalRecipes = recipes?.Count() ?? 0;
                 
                 // Find most used ingredient from ingredients
                 if (ingredients?.Any() == true)
@@ -1510,11 +1484,11 @@ namespace Foodbook.Presentation.ViewModels
 
                 if (recipes?.Any() == true)
                 {
-                    AverageCookTime = Math.Round(recipes.Average(r => r.CookTime), 1);
+                    MyAverageCookTime = Math.Round(recipes.Average(r => r.CookTime), 1);
                 }
                 else
                 {
-                    AverageCookTime = 0;
+                    MyAverageCookTime = 0;
                 }
 
                 // AI statistics from logs
@@ -1526,17 +1500,21 @@ namespace Foodbook.Presentation.ViewModels
                 SuccessRate = aiLogs.Any() ? Math.Round((double)successfulOperations / aiLogs.Count * 100, 1) : 0;
 
                 // Create chart data with real database data
+                System.Diagnostics.Debug.WriteLine("Creating chart data with real data...");
                 await CreateChartDataAsync(recipes, ingredients, logs);
+                System.Diagnostics.Debug.WriteLine("Chart data created successfully");
 
-                StatusMessage = $"Analytics loaded: {TotalRecipes} recipes, {ingredients?.Count() ?? 0} ingredients";
+                StatusMessage = $"Analytics loaded: {MyTotalRecipes} recipes, {ingredients?.Count() ?? 0} ingredients";
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error loading analytics: {ex.Message}";
                 // Set fallback values
-                TotalRecipes = 0;
+                MyTotalRecipes = 0;
+                MyAverageCookTime = 0;
+                MyMostCommonDifficulty = "Easy";
+                MyAIGeneratedRecipes = 0;
                 MostUsedIngredient = "None";
-                AverageCookTime = 0;
                 AIJudgments = 0;
                 GeneratedRecipes = 0;
                 SuccessRate = 0;
@@ -1629,8 +1607,8 @@ namespace Foodbook.Presentation.ViewModels
             // Use real data from database - if no recipes created in last 7 days, show 0
             // This gives accurate real-time statistics
 
-            RecipeTrendSeries = new ISeries[]
-            {
+            RecipeTrendSeries =
+            [
                 new LineSeries<double>
                 {
                     Values = recipeTrendData,
@@ -1638,7 +1616,7 @@ namespace Foodbook.Presentation.ViewModels
                     Stroke = new SolidColorPaint(SKColor.Parse("#3B82F6"), 3),
                     Fill = new SolidColorPaint(SKColor.Parse("#3B82F6").WithAlpha(50))
                 }
-            };
+            ];
 
             // Ingredient usage chart - using available ingredients data
             if (ingredients?.Any() == true)
@@ -1654,42 +1632,42 @@ namespace Foodbook.Presentation.ViewModels
                 {
                     var ingredientValues = ingredientUsage.Select(x => (double)x.Count).ToArray();
 
-                    IngredientUsageSeries = new ISeries[]
-                    {
+                    IngredientUsageSeries =
+                    [
                         new ColumnSeries<double>
                         {
                             Values = ingredientValues,
                             Name = "Usage Count",
                             Fill = new SolidColorPaint(SKColor.Parse("#10B981"))
                         }
-                    };
+                    ];
                 }
                 else
                 {
                     // Show empty chart when no real ingredients - real-time data
-                    IngredientUsageSeries = new ISeries[]
-                    {
+                    IngredientUsageSeries =
+                    [
                         new ColumnSeries<double>
                         {
-                            Values = new double[] { 0 },
+                            Values = [0],
                             Name = "No Ingredients",
                             Fill = new SolidColorPaint(SKColor.Parse("#6B7280"))
                         }
-                    };
+                    ];
                 }
             }
             else
             {
                 // Show empty chart when no ingredients available - real-time data
-                IngredientUsageSeries = new ISeries[]
-                {
+                IngredientUsageSeries =
+                [
                     new ColumnSeries<double>
                     {
-                        Values = new double[] { 0 },
+                        Values = [0],
                         Name = "No Ingredients",
                         Fill = new SolidColorPaint(SKColor.Parse("#6B7280"))
                     }
-                };
+                ];
             }
 
             // AI Performance pie chart - using real log data
@@ -1699,16 +1677,16 @@ namespace Foodbook.Presentation.ViewModels
             // Use real AI performance data - if no AI operations, show 0
             // This gives accurate real-time statistics
 
-            AIPerformanceSeries = new ISeries[]
-            {
+            AIPerformanceSeries =
+            [
                 new PieSeries<double>
                 {
-                    Values = new double[] { aiSuccessCount, aiErrorCount },
+                    Values = [aiSuccessCount, aiErrorCount],
                     Name = "AI Performance",
                     Fill = new SolidColorPaint(SKColor.Parse("#10B981")),
                     DataLabelsFormatter = point => $"{point.Coordinate.PrimaryValue:F0}"
                 }
-            };
+            ];
 
             // Recipe Distribution Chart - using real recipe data by category
             if (recipes?.Any() == true)
@@ -1723,8 +1701,8 @@ namespace Foodbook.Presentation.ViewModels
                 var categoryLabels = categoryGroups.Select(x => x.Category).ToArray();
 
                 // Create pie chart for recipe distribution
-                RecipeDistributionSeries = new ISeries[]
-                {
+                RecipeDistributionSeries =
+                [
                     new PieSeries<double>
                     {
                         Values = categoryValues,
@@ -1732,20 +1710,20 @@ namespace Foodbook.Presentation.ViewModels
                         Fill = new SolidColorPaint(SKColor.Parse("#10B981")),
                         DataLabelsFormatter = point => $"{point.Coordinate.PrimaryValue:F0}"
                     }
-                };
+                ];
             }
             else
             {
                 // Show empty chart when no recipes available
-                RecipeDistributionSeries = new ISeries[]
-                {
+                RecipeDistributionSeries =
+                [
                     new PieSeries<double>
                     {
-                        Values = new double[] { 0 },
+                        Values = [0],
                         Name = "No Recipes",
                         Fill = new SolidColorPaint(SKColor.Parse("#6B7280"))
                     }
-                };
+                ];
             }
 
             // Cook time distribution - using real recipe data
@@ -1765,28 +1743,28 @@ namespace Foodbook.Presentation.ViewModels
                 // Use real cook time data from database - if no recipes, show 0
                 // This gives accurate real-time statistics
 
-                CookTimeDistributionSeries = new ISeries[]
-                {
+                CookTimeDistributionSeries =
+                [
                     new ColumnSeries<double>
                     {
                         Values = cookTimeValues,
                         Name = "Cook Time Distribution",
                         Fill = new SolidColorPaint(SKColor.Parse("#F59E0B"))
                     }
-                };
+                ];
             }
             else
             {
                 // Show empty chart when no recipes available - real-time data
-                CookTimeDistributionSeries = new ISeries[]
-                {
+                CookTimeDistributionSeries =
+                [
                     new ColumnSeries<double>
                     {
-                        Values = new double[] { 0 },
+                        Values = [0],
                         Name = "No Recipes",
                         Fill = new SolidColorPaint(SKColor.Parse("#6B7280"))
                     }
-                };
+                ];
             }
             
             return Task.CompletedTask;
@@ -1795,103 +1773,103 @@ namespace Foodbook.Presentation.ViewModels
         private void InitializeCharts()
         {
             // Initialize charts with empty data to ensure they display
-            RecipeTrendSeries = new ISeries[]
-            {
+            RecipeTrendSeries =
+            [
                 new LineSeries<double>
                 {
-                    Values = new double[] { 0 },
+                    Values = [0],
                     Name = "Recipes Created",
                     Stroke = new SolidColorPaint(SKColor.Parse("#3B82F6"), 3),
                     Fill = new SolidColorPaint(SKColor.Parse("#3B82F6").WithAlpha(50))
                 }
-            };
+            ];
 
-            IngredientUsageSeries = new ISeries[]
-            {
+            IngredientUsageSeries =
+            [
                 new ColumnSeries<double>
                 {
-                    Values = new double[] { 0 },
+                    Values = [0],
                     Name = "Usage Count",
                     Fill = new SolidColorPaint(SKColor.Parse("#10B981"))
                 }
-            };
+            ];
 
-            AIPerformanceSeries = new ISeries[]
-            {
+            AIPerformanceSeries =
+            [
                 new PieSeries<double>
                 {
-                    Values = new double[] { 0 },
+                    Values = [0],
                     Name = "AI Performance",
                     Fill = new SolidColorPaint(SKColor.Parse("#10B981")),
                     DataLabelsFormatter = point => $"{point.Coordinate.PrimaryValue:F0}"
                 }
-            };
+            ];
 
-            CookTimeDistributionSeries = new ISeries[]
-            {
+            CookTimeDistributionSeries =
+            [
                 new ColumnSeries<double>
                 {
-                    Values = new double[] { 0 },
+                    Values = [0],
                     Name = "Cook Time Distribution",
                     Fill = new SolidColorPaint(SKColor.Parse("#F59E0B"))
                 }
-            };
+            ];
 
-            RecipeDistributionSeries = new ISeries[]
-            {
+            RecipeDistributionSeries =
+            [
                 new PieSeries<double>
                 {
-                    Values = new double[] { 0 },
+                    Values = [0],
                     Name = "Recipe Distribution",
                     Fill = new SolidColorPaint(SKColor.Parse("#10B981"))
                 }
-            };
+            ];
         }
 
         private Task CreateDemoChartDataAsync()
         {
             // Demo data for when no real data is available
-            RecipeTrendSeries = new ISeries[]
-            {
+            RecipeTrendSeries =
+            [
                 new LineSeries<double>
                 {
-                    Values = new double[] { 2, 1, 3, 2, 4, 3, 5 },
+                    Values = [2, 1, 3, 2, 4, 3, 5],
                     Name = "Recipes Created",
                     Stroke = new SolidColorPaint(SKColor.Parse("#3B82F6"), 3),
                     Fill = new SolidColorPaint(SKColor.Parse("#3B82F6").WithAlpha(50))
                 }
-            };
+            ];
 
-            IngredientUsageSeries = new ISeries[]
-            {
+            IngredientUsageSeries =
+            [
                 new ColumnSeries<double>
                 {
-                    Values = new double[] { 8, 6, 5, 4, 3 },
+                    Values = [8, 6, 5, 4, 3],
                     Name = "Usage Count",
                     Fill = new SolidColorPaint(SKColor.Parse("#10B981"))
                 }
-            };
+            ];
 
-            AIPerformanceSeries = new ISeries[]
-            {
+            AIPerformanceSeries =
+            [
                 new PieSeries<double>
                 {
-                    Values = new double[] { 85, 15 },
+                    Values = [85, 15],
                     Name = "AI Performance",
                     Fill = new SolidColorPaint(SKColor.Parse("#10B981")),
                     DataLabelsFormatter = point => $"{point.Coordinate.PrimaryValue:F0}%"
                 }
-            };
+            ];
 
-            CookTimeDistributionSeries = new ISeries[]
-            {
+            CookTimeDistributionSeries =
+            [
                 new ColumnSeries<double>
                 {
-                    Values = new double[] { 2, 5, 3, 2, 1 },
+                    Values = [2, 5, 3, 2, 1],
                     Name = "Cook Time Distribution",
                     Fill = new SolidColorPaint(SKColor.Parse("#F59E0B"))
                 }
-            };
+            ];
             
             return Task.CompletedTask;
         }
@@ -2079,6 +2057,12 @@ namespace Foodbook.Presentation.ViewModels
         {
             try
             {
+                if (_loggingService == null)
+                {
+                    StatusMessage = "Logging service is not available";
+                    return;
+                }
+
                 StatusMessage = "Opening log viewer...";
                 var logViewer = new Views.LogViewerWindow(_loggingService);
                 logViewer.ShowDialog();
@@ -2093,9 +2077,29 @@ namespace Foodbook.Presentation.ViewModels
 
         private async Task ToggleSidebarAsync()
         {
+            var oldValue = IsSidebarCollapsed;
             IsSidebarCollapsed = !IsSidebarCollapsed;
             StatusMessage = IsSidebarCollapsed ? "Sidebar collapsed" : "Sidebar expanded";
+            
+            // Debug logging
+            System.Diagnostics.Debug.WriteLine($"ToggleSidebar: {oldValue} -> {IsSidebarCollapsed}");
+            
             await Task.CompletedTask;
+        }
+
+        // Method to refresh dashboard data from database
+        public async Task RefreshDashboardDataAsync()
+        {
+            try
+            {
+                await LoadRecipesAsync();
+                await LoadAnalyticsDataAsync();
+                StatusMessage = "Dashboard data refreshed from FoodBook database";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error refreshing dashboard: {ex.Message}";
+            }
         }
         
         // Ingredient Filter Methods

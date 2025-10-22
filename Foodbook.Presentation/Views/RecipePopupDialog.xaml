@@ -135,10 +135,10 @@
                             <!-- Difficulty -->
                             <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,8,16">
                                 <TextBlock Text="Difficulty *" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                <ComboBox SelectedItem="{Binding Difficulty}">
-                                    <ComboBoxItem Content="Easy"/>
-                                    <ComboBoxItem Content="Medium"/>
-                                    <ComboBoxItem Content="Hard"/>
+                                <ComboBox SelectedValue="{Binding Difficulty}">
+                                    <ComboBoxItem Content="Easy" Tag="Easy"/>
+                                    <ComboBoxItem Content="Medium" Tag="Medium"/>
+                                    <ComboBoxItem Content="Hard" Tag="Hard"/>
                                 </ComboBox>
                             </StackPanel>
                             
