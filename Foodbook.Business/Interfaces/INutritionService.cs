@@ -1,4 +1,5 @@
 using Foodbook.Data.Entities;
+using Foodbook.Business.Models;
 
 namespace Foodbook.Business.Interfaces
 {
@@ -10,6 +11,12 @@ namespace Foodbook.Business.Interfaces
         Task<IEnumerable<HealthAlert>> GetHealthAlertsAsync(NutritionAnalysisResult analysis);
         Task<NutritionComparison> CompareNutritionAsync(Recipe recipe1, Recipe recipe2);
         Task<NutritionAnalysisResult> AnalyzeUnstructuredRecipeAsync(string recipeText);
+        
+        // New methods for enhanced AI integration
+        Task<List<IngredientDto>> ParseIngredientsWithAIAsync(string recipeText);
+        Task<NutritionAnalysisResult> CalculateNutritionFromIngredientsAsync(List<IngredientDto> ingredients);
+        Task<string> GenerateHealthFeedbackAsync(NutritionAnalysisResult nutritionInfo);
+        Task<NutritionAnalysisResult> AnalyzeCustomRecipeAsync(string recipeText, string userGoal = "General Health");
     }
 
     public class NutritionAnalysisResult
