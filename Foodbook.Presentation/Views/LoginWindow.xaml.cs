@@ -127,7 +127,6 @@ namespace Foodbook.Presentation.Views
 
         private void Close_Click(object sender, RoutedEventArgs e)
         {
-            DialogResult = false;
             Close();
         }
 

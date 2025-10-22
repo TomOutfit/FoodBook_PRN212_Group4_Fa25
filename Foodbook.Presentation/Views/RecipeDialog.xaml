@@ -73,12 +73,12 @@
                     
                     <StackPanel Grid.Column="1" Margin="8,0,0,0">
                         <TextBlock Text="Difficulty *" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                        <ComboBox SelectedItem="{Binding Difficulty, UpdateSourceTrigger=PropertyChanged}"
+                        <ComboBox SelectedValue="{Binding Difficulty, UpdateSourceTrigger=PropertyChanged}"
                                   Padding="12" 
                                   FontSize="14">
-                            <ComboBoxItem Content="Easy"/>
-                            <ComboBoxItem Content="Medium"/>
-                            <ComboBoxItem Content="Hard"/>
+                            <ComboBoxItem Content="Easy" Tag="Easy"/>
+                            <ComboBoxItem Content="Medium" Tag="Medium"/>
+                            <ComboBoxItem Content="Hard" Tag="Hard"/>
                         </ComboBox>
                     </StackPanel>
                 </Grid>
