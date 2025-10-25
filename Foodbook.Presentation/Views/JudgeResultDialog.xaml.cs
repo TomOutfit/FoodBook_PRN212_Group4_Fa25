@@ -7,11 +7,26 @@ namespace Foodbook.Presentation.Views
         public JudgeResultDialog()
         {
             InitializeComponent();
+            ShowAnalyzingState();
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
+        }
+
+        private void ShowAnalyzingState()
+        {
+            ScoreText.Text = "--/10";
+            RatingText.Text = "Analyzing...";
+            CommentText.Text = "AI is analyzing your dish...";
+            PresentationScoreText.Text = "--/10";
+            ColorScoreText.Text = "--/10";
+            TextureScoreText.Text = "--/10";
+            PlatingScoreText.Text = "--/10";
+            HealthNotesText.Text = "Health analysis in progress...";
+            ChefTipsText.Text = "Chef tips will be generated based on AI analysis...";
+            SuggestionsText.Text = "AI suggestions will appear here after analysis...";
         }
 
         public void SetJudgeResult(int score, string overallRating, string comment, string cookingMethods, string flavors, string ingredients, string suggestions)

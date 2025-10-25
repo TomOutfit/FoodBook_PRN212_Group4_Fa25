@@ -4,10 +4,14 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:Foodbook.Presentation.Views"
+             xmlns:converters="clr-namespace:Foodbook.Presentation.Converters"
              mc:Ignorable="d" 
              d:DesignHeight="800" d:DesignWidth="1200">
     
     <UserControl.Resources>
+        <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        
         <Style x:Key="CardStyle" TargetType="Border">
             <Setter Property="Background" Value="White"/>
             <Setter Property="CornerRadius" Value="12"/>
@@ -85,7 +89,7 @@
                 <!-- Dropdown chọn nguồn dữ liệu -->
                 <TextBlock Text="Chọn nguồn dữ liệu:" FontWeight="SemiBold" Margin="0,0,0,8"/>
                 <ComboBox x:Name="DataSourceComboBox" 
-                         SelectedItem="{Binding SelectedDataSource}"
+                         SelectedValue="{Binding SelectedDataSource}"
                          Margin="0,0,0,16"
                          Height="40"
                          FontSize="14">
@@ -102,7 +106,13 @@
                              DisplayMemberPath="Title"
                              Margin="0,0,0,16"
                              Height="40"
-                             FontSize="14"/>
+                             FontSize="14">
+                        <ComboBox.Style>
+                            <Style TargetType="ComboBox">
+                                <Setter Property="Text" Value="Chọn công thức từ danh sách..."/>
+                            </Style>
+                        </ComboBox.Style>
+                    </ComboBox>
                 </StackPanel>
                 
                 <!-- Khu vực nhập công thức mới -->
@@ -115,21 +125,35 @@
                             Height="120"
                             FontSize="14"
                             Padding="12"
-                            Margin="0,0,0,16"/>
+                            Margin="0,0,0,16">
+                        <TextBox.Style>
+                            <Style TargetType="TextBox">
+                                <Setter Property="Text" Value="Nhập công thức của bạn ở đây... (VD: Thịt bò 200g, hành tây 1 củ, cà chua 2 quả, muối, tiêu)"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CustomRecipeText}" Value="">
+                                        <Setter Property="Foreground" Value="Gray"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CustomRecipeText}" Value="{x:Null}">
+                                        <Setter Property="Foreground" Value="Gray"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBox.Style>
+                    </TextBox>
                 </StackPanel>
                 
                 <!-- Mục tiêu sức khỏe -->
                 <TextBlock Text="Mục tiêu sức khỏe:" FontWeight="SemiBold" Margin="0,0,0,8"/>
                 <ComboBox x:Name="HealthGoalComboBox" 
-                         SelectedItem="{Binding UserGoal}"
+                         SelectedValue="{Binding UserGoal}"
                          Margin="0,0,0,24"
                          Height="40"
                          FontSize="14">
-                    <ComboBoxItem Content="💪 Sức Khỏe Tổng Quát" IsSelected="True"/>
-                    <ComboBoxItem Content="🏃 Giảm Cân"/>
-                    <ComboBoxItem Content="💪 Tăng Cơ"/>
-                    <ComboBoxItem Content="❤️ Tim Mạch"/>
-                    <ComboBoxItem Content="🧠 Trí Não"/>
+                    <ComboBoxItem Content="💪 Sức Khỏe Tổng Quát" Tag="Sức Khỏe Tổng Quát" IsSelected="True"/>
+                    <ComboBoxItem Content="🏃 Giảm Cân" Tag="Giảm Cân"/>
+                    <ComboBoxItem Content="💪 Tăng Cơ" Tag="Tăng Cơ"/>
+                    <ComboBoxItem Content="❤️ Tim Mạch" Tag="Tim Mạch"/>
+                    <ComboBoxItem Content="🧠 Trí Não" Tag="Trí Não"/>
                 </ComboBox>
                 
                 <!-- Nút Analyze duy nhất -->
@@ -226,11 +250,16 @@
                                 <ItemsControl ItemsSource="{Binding HealthAlerts}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding}" 
-                                                      TextWrapping="Wrap" 
-                                                      FontSize="14" 
-                                                      Margin="0,0,0,4"
-                                                      Foreground="#721C24"/>
+                                            <Border Background="White" CornerRadius="6" Padding="12" Margin="0,0,0,8">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Icon}" FontSize="16" Margin="0,0,0,4"/>
+                                                    <TextBlock Text="{Binding Message}" 
+                                                              TextWrapping="Wrap" 
+                                                              FontSize="14" 
+                                                              FontWeight="SemiBold"
+                                                              Foreground="#721C24"/>
+                                                </StackPanel>
+                                            </Border>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>

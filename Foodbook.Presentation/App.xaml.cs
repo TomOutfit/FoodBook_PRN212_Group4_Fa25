@@ -58,8 +58,20 @@ public partial class App : Application
             
             // Ensure database exists
             using var scope = serviceProvider.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<Foodbook.Data.FoodBookDbContext>();
-            context.Database.EnsureCreated();
+            var context = scope.ServiceProvider.GetRequiredService<Foodbook.Data.FoodbookDbContext>();
+            
+            try
+            {
+                // Ensure database schema is created/updated
+                context.Database.EnsureCreated();
+            }
+            catch (Exception dbEx)
+            {
+                // If there's a database connection issue, show a more specific error
+                MessageBox.Show($"Database connection error: {dbEx.Message}\n\nPlease check your SQL Server installation and connection string.", 
+                    "Database Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
             
             // Create MainWindow first but don't show it yet
             System.Diagnostics.Debug.WriteLine("Creating MainWindow...");

@@ -9,7 +9,15 @@ namespace Foodbook.Presentation.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return !string.IsNullOrEmpty(value as string) ? Visibility.Visible : Visibility.Collapsed;
+            if (value == null || parameter == null)
+                return Visibility.Collapsed;
+                
+            string stringValue = value.ToString();
+            string parameterValue = parameter.ToString();
+            
+            return stringValue.Equals(parameterValue, StringComparison.OrdinalIgnoreCase) 
+                ? Visibility.Visible 
+                : Visibility.Collapsed;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

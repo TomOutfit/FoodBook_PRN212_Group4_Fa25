@@ -18,7 +18,26 @@ namespace Foodbook.Presentation.Views
         {
             InitializeComponent();
             _loggingService = loggingService;
+            
+            // Show loading message immediately
+            ShowLoadingMessage();
+            
+            // Load logs asynchronously
             _ = LoadLogs();
+        }
+        
+        private void ShowLoadingMessage()
+        {
+            LogsPanel.Children.Clear();
+            var loadingText = new TextBlock
+            {
+                Text = "🔄 Loading logs...",
+                FontSize = 16,
+                Foreground = new SolidColorBrush(Color.FromRgb(59, 130, 246)),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 50, 0, 0)
+            };
+            LogsPanel.Children.Add(loadingText);
         }
 
         private async void RefreshButton_Click(object sender, RoutedEventArgs e)

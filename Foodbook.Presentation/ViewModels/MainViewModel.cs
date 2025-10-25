@@ -24,6 +24,18 @@ namespace Foodbook.Presentation.ViewModels
         private readonly IAuthenticationService? _authenticationService;
         public ILoggingService LoggingService => _loggingService;
 
+        // Nutrition Analysis ViewModel
+        private NutritionViewModel? _nutritionViewModel;
+        public NutritionViewModel? NutritionViewModel
+        {
+            get => _nutritionViewModel;
+            set
+            {
+                _nutritionViewModel = value;
+                OnPropertyChanged();
+            }
+        }
+
         private ObservableCollection<Recipe> _recipes = new();
         private ObservableCollection<Ingredient> _ingredients = new();
         private List<Recipe> _allRecipes = new(); // Store all recipes for filtering
@@ -64,6 +76,21 @@ namespace Foodbook.Presentation.ViewModels
         private ISeries[] _aiPerformanceSeries = [];
         private ISeries[] _cookTimeDistributionSeries = [];
         private ISeries[] _recipeDistributionSeries = [];
+
+        // Dashboard Chart private fields
+        private int _totalRecipeCount = 0;
+        private int _mainDishesCount = 0;
+        private int _dessertsCount = 0;
+        private int _quickMealsCount = 0;
+        private int _cookingTime0To30Count = 0;
+        private int _cookingTime30To60Count = 0;
+        private int _cookingTime60To90Count = 0;
+        private int _cookingTime90To120Count = 0;
+        private int _cookingTime120PlusCount = 0;
+        private int _easyDifficultyCount = 0;
+        private int _mediumDifficultyCount = 0;
+        private int _hardDifficultyCount = 0;
+        private ObservableCollection<int> _monthlyRecipeCounts = new();
         private User? _currentUser;
 
         // My Recipes statistics properties
@@ -148,6 +175,9 @@ namespace Foodbook.Presentation.ViewModels
             _settingsService = settingsService;
             _authenticationService = authenticationService;
             
+            // Initialize NutritionViewModel
+            NutritionViewModel = new NutritionViewModel(nutritionService, aiService, recipeService);
+            
             // Initialize all commands
             LoadRecipesCommand = new RelayCommand(async () => await LoadRecipesAsync());
             SearchRecipesCommand = new RelayCommand(async () => await SearchRecipesAsync());
@@ -157,8 +187,8 @@ namespace Foodbook.Presentation.ViewModels
             GenerateRecipeCommand = new RelayCommand(async () => await GenerateRecipeAsync());
             JudgeDishCommand = new RelayCommand(async () => await JudgeDishAsync());
             GenerateShoppingListCommand = new RelayCommand(async () => await GenerateShoppingListAsync());
-            AnalyzeNutritionCommand = new RelayCommand(async () => await AnalyzeNutritionAsync());
             AnalyzeCustomNutritionCommand = new RelayCommand(async () => await AnalyzeCustomNutritionAsync());
+            OpenNutritionAnalysisCommand = new RelayCommand(async () => await OpenNutritionAnalysis());
             SelectTabCommand = new RelayCommand<string>(async (tabName) => await SelectTab(tabName));
             AddNewRecipeCommand = new RelayCommand(async () => await AddNewRecipeAsync());
             AddNewIngredientCommand = new RelayCommand(async () => await AddNewIngredientAsync());
@@ -224,8 +254,8 @@ namespace Foodbook.Presentation.ViewModels
             GenerateRecipeCommand = new RelayCommand(async () => await GenerateRecipeAsync());
             JudgeDishCommand = new RelayCommand(async () => await JudgeDishAsync());
             GenerateShoppingListCommand = new RelayCommand(async () => await GenerateShoppingListAsync());
-            AnalyzeNutritionCommand = new RelayCommand(async () => await AnalyzeNutritionAsync());
             AnalyzeCustomNutritionCommand = new RelayCommand(async () => await AnalyzeCustomNutritionAsync());
+            OpenNutritionAnalysisCommand = new RelayCommand(async () => await OpenNutritionAnalysis());
             SelectTabCommand = new RelayCommand<string>(async (tabName) => await SelectTab(tabName));
             AddNewRecipeCommand = new RelayCommand(async () => await AddNewRecipeAsync());
             AddNewIngredientCommand = new RelayCommand(async () => await AddNewIngredientAsync());
@@ -336,8 +366,8 @@ namespace Foodbook.Presentation.ViewModels
         public ICommand GenerateRecipeCommand { get; }
         public ICommand JudgeDishCommand { get; }
         public ICommand GenerateShoppingListCommand { get; }
-        public ICommand AnalyzeNutritionCommand { get; }
         public ICommand AnalyzeCustomNutritionCommand { get; }
+        public ICommand OpenNutritionAnalysisCommand { get; }
         public ICommand SelectTabCommand { get; }
         public ICommand AddNewRecipeCommand { get; }
         public ICommand AddNewIngredientCommand { get; }
@@ -464,6 +494,85 @@ namespace Foodbook.Presentation.ViewModels
             set => SetProperty(ref _recipeDistributionSeries, value);
         }
 
+        // Dashboard Chart Properties for hardcoded charts
+        public int TotalRecipeCount
+        {
+            get => _totalRecipeCount;
+            set => SetProperty(ref _totalRecipeCount, value);
+        }
+
+        public int MainDishesCount
+        {
+            get => _mainDishesCount;
+            set => SetProperty(ref _mainDishesCount, value);
+        }
+
+        public int DessertsCount
+        {
+            get => _dessertsCount;
+            set => SetProperty(ref _dessertsCount, value);
+        }
+
+        public int QuickMealsCount
+        {
+            get => _quickMealsCount;
+            set => SetProperty(ref _quickMealsCount, value);
+        }
+
+        public int CookingTime0To30Count
+        {
+            get => _cookingTime0To30Count;
+            set => SetProperty(ref _cookingTime0To30Count, value);
+        }
+
+        public int CookingTime30To60Count
+        {
+            get => _cookingTime30To60Count;
+            set => SetProperty(ref _cookingTime30To60Count, value);
+        }
+
+        public int CookingTime60To90Count
+        {
+            get => _cookingTime60To90Count;
+            set => SetProperty(ref _cookingTime60To90Count, value);
+        }
+
+        public int CookingTime90To120Count
+        {
+            get => _cookingTime90To120Count;
+            set => SetProperty(ref _cookingTime90To120Count, value);
+        }
+
+        public int CookingTime120PlusCount
+        {
+            get => _cookingTime120PlusCount;
+            set => SetProperty(ref _cookingTime120PlusCount, value);
+        }
+
+        public int EasyDifficultyCount
+        {
+            get => _easyDifficultyCount;
+            set => SetProperty(ref _easyDifficultyCount, value);
+        }
+
+        public int MediumDifficultyCount
+        {
+            get => _mediumDifficultyCount;
+            set => SetProperty(ref _mediumDifficultyCount, value);
+        }
+
+        public int HardDifficultyCount
+        {
+            get => _hardDifficultyCount;
+            set => SetProperty(ref _hardDifficultyCount, value);
+        }
+
+        public ObservableCollection<int> MonthlyRecipeCounts
+        {
+            get => _monthlyRecipeCounts;
+            set => SetProperty(ref _monthlyRecipeCounts, value);
+        }
+
         public User? CurrentUser
         {
             get => _currentUser;
@@ -569,8 +678,9 @@ namespace Foodbook.Presentation.ViewModels
                         
                         // Calculate statistics from real database data
                         MyTotalRecipes = Recipes.Count;
-                        MyAverageCookTime = Recipes.Average(r => r.CookTime);
-                        MyMostCommonDifficulty = Recipes.GroupBy(r => r.Difficulty).OrderByDescending(g => g.Count()).First().Key;
+                        MyAverageCookTime = Recipes.Any() ? Recipes.Average(r => r.CookTime) : 0;
+                        var difficultyGroup = Recipes.GroupBy(r => r.Difficulty).OrderByDescending(g => g.Count()).FirstOrDefault();
+                        MyMostCommonDifficulty = difficultyGroup?.Key ?? "Easy";
                         MyAIGeneratedRecipes = Recipes.Count(r => r.Category?.Contains("AI") == true || r.Title?.Contains("AI") == true);
                     }
                     else
@@ -1297,21 +1407,19 @@ namespace Foodbook.Presentation.ViewModels
             }
         }
 
-        private async Task AnalyzeNutritionAsync()
+        private async Task OpenNutritionAnalysis()
         {
             try
             {
-                // Log feature usage
-                await _loggingService.LogFeatureUsageAsync("Nutrition Analysis", "1", 
-                    "Opening Nutrition Analysis view for user interaction");
-                
-                // Show NutritionView instead of direct analysis
+                // Show NutritionView in a new window
                 var nutritionView = new Views.NutritionView();
+                nutritionView.DataContext = NutritionViewModel;
+                
                 var nutritionWindow = new Window
                 {
-                    Title = "🥗 Nutrition Analysis",
+                    Title = "🥗 Nutrition Analysis - FoodBook",
                     Content = nutritionView,
-                    Width = 1200,
+                    Width = 1400,
                     Height = 800,
                     WindowStartupLocation = WindowStartupLocation.CenterScreen,
                     Background = new SolidColorBrush(Color.FromRgb(248, 249, 250))
@@ -1320,11 +1428,11 @@ namespace Foodbook.Presentation.ViewModels
                 nutritionWindow.ShowDialog();
                 
                 StatusMessage = "🍎 Nutrition Analysis view opened successfully!";
+                await Task.CompletedTask;
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error opening nutrition analysis: {ex.Message}";
-                await _loggingService.LogErrorAsync("Nutrition Analysis", "1", ex, "Unexpected error opening nutrition analysis view");
             }
         }
 
@@ -1766,8 +1874,76 @@ namespace Foodbook.Presentation.ViewModels
                     }
                 ];
             }
+
+            // Calculate Dashboard Chart Data from real database
+            CalculateDashboardChartData(recipes);
             
             return Task.CompletedTask;
+        }
+
+        private void CalculateDashboardChartData(IEnumerable<Recipe>? recipes)
+        {
+            if (recipes?.Any() != true)
+            {
+                // Set default values when no recipes
+                TotalRecipeCount = 0;
+                MainDishesCount = 0;
+                DessertsCount = 0;
+                QuickMealsCount = 0;
+                CookingTime0To30Count = 0;
+                CookingTime30To60Count = 0;
+                CookingTime60To90Count = 0;
+                CookingTime90To120Count = 0;
+                CookingTime120PlusCount = 0;
+                EasyDifficultyCount = 0;
+                MediumDifficultyCount = 0;
+                HardDifficultyCount = 0;
+                MonthlyRecipeCounts.Clear();
+                return;
+            }
+
+            // Recipe Distribution by Category
+            TotalRecipeCount = recipes.Count();
+            
+            var categoryGroups = recipes
+                .GroupBy(r => r.Category?.ToLower() ?? "other")
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            MainDishesCount = categoryGroups.GetValueOrDefault("main dish", 0) + 
+                             categoryGroups.GetValueOrDefault("main dishes", 0) +
+                             categoryGroups.GetValueOrDefault("entree", 0);
+            
+            DessertsCount = categoryGroups.GetValueOrDefault("dessert", 0) + 
+                           categoryGroups.GetValueOrDefault("desserts", 0) +
+                           categoryGroups.GetValueOrDefault("sweet", 0);
+            
+            QuickMealsCount = categoryGroups.GetValueOrDefault("quick meal", 0) + 
+                             categoryGroups.GetValueOrDefault("quick meals", 0) +
+                             categoryGroups.GetValueOrDefault("fast", 0) +
+                             categoryGroups.GetValueOrDefault("snack", 0);
+
+            // Cooking Time Distribution
+            CookingTime0To30Count = recipes.Count(r => r.CookTime <= 30);
+            CookingTime30To60Count = recipes.Count(r => r.CookTime > 30 && r.CookTime <= 60);
+            CookingTime60To90Count = recipes.Count(r => r.CookTime > 60 && r.CookTime <= 90);
+            CookingTime90To120Count = recipes.Count(r => r.CookTime > 90 && r.CookTime <= 120);
+            CookingTime120PlusCount = recipes.Count(r => r.CookTime > 120);
+
+            // Difficulty Level Distribution
+            EasyDifficultyCount = recipes.Count(r => r.Difficulty?.ToLower() == "easy");
+            MediumDifficultyCount = recipes.Count(r => r.Difficulty?.ToLower() == "medium");
+            HardDifficultyCount = recipes.Count(r => r.Difficulty?.ToLower() == "hard");
+
+            // Monthly Recipe Creation (last 7 months)
+            MonthlyRecipeCounts.Clear();
+            for (int i = 6; i >= 0; i--)
+            {
+                var month = DateTime.Now.AddMonths(-i);
+                var monthRecipes = recipes.Count(r => 
+                    r.CreatedAt.Year == month.Year && 
+                    r.CreatedAt.Month == month.Month);
+                MonthlyRecipeCounts.Add(monthRecipes);
+            }
         }
 
         private void InitializeCharts()
@@ -2065,13 +2241,19 @@ namespace Foodbook.Presentation.ViewModels
 
                 StatusMessage = "Opening log viewer...";
                 var logViewer = new Views.LogViewerWindow(_loggingService);
+                
+                // Ensure the window opens immediately
+                logViewer.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                logViewer.Topmost = true; // Bring to front
                 logViewer.ShowDialog();
-                StatusMessage = "Log viewer opened";
+                
+                StatusMessage = "Log viewer opened successfully";
                 await Task.CompletedTask;
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error opening log viewer: {ex.Message}";
+                System.Diagnostics.Debug.WriteLine($"LogViewer Error: {ex.Message}");
             }
         }
 

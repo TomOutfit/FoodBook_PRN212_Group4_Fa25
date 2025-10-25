@@ -61,14 +61,14 @@
                                   Foreground="#111827"
                                   Margin="0,0,0,12"/>
                         <TextBlock x:Name="ScoreText"
-                                  Text="8/10" 
+                                  Text="--/10" 
                                   FontSize="48" 
                                   FontWeight="Bold" 
                                   Foreground="#4CAF50"
                                   HorizontalAlignment="Center"
                                   Margin="0,0,0,8"/>
                         <TextBlock x:Name="RatingText"
-                                  Text="Excellent" 
+                                  Text="Analyzing..." 
                                   FontSize="18" 
                                   FontWeight="SemiBold" 
                                   Foreground="#6B7280"
@@ -85,7 +85,7 @@
                                   Foreground="#111827"
                                   Margin="0,0,0,12"/>
                         <TextBlock x:Name="CommentText"
-                                  Text="Your dish looks amazing! Great presentation and technique." 
+                                  Text="AI is analyzing your dish..." 
                                   FontSize="14" 
                                   Foreground="#374151"
                                   TextWrapping="Wrap"/>
@@ -112,7 +112,7 @@
                                       Foreground="#111827"
                                       Margin="0,0,0,8"/>
                             <TextBlock x:Name="PresentationScoreText"
-                                      Text="8/10" 
+                                      Text="--/10" 
                                       FontSize="20" 
                                       FontWeight="Bold" 
                                       Foreground="#4CAF50"
@@ -129,7 +129,7 @@
                                       Foreground="#111827"
                                       Margin="0,0,0,8"/>
                             <TextBlock x:Name="ColorScoreText"
-                                      Text="9/10" 
+                                      Text="--/10" 
                                       FontSize="20" 
                                       FontWeight="Bold" 
                                       Foreground="#4CAF50"
@@ -146,7 +146,7 @@
                                       Foreground="#111827"
                                       Margin="0,0,0,8"/>
                             <TextBlock x:Name="TextureScoreText"
-                                      Text="7/10" 
+                                      Text="--/10" 
                                       FontSize="20" 
                                       FontWeight="Bold" 
                                       Foreground="#4CAF50"
@@ -163,7 +163,7 @@
                                       Foreground="#111827"
                                       Margin="0,0,0,8"/>
                             <TextBlock x:Name="PlatingScoreText"
-                                      Text="8/10" 
+                                      Text="--/10" 
                                       FontSize="20" 
                                       FontWeight="Bold" 
                                       Foreground="#4CAF50"
@@ -181,7 +181,7 @@
                                   Foreground="#111827"
                                   Margin="0,0,0,8"/>
                         <TextBlock x:Name="HealthNotesText"
-                                  Text="The dish appears to have good nutritional balance" 
+                                  Text="Health analysis in progress..." 
                                   FontSize="12" 
                                   Foreground="#6B7280"
                                   TextWrapping="Wrap"/>
@@ -197,7 +197,7 @@
                                   Foreground="#111827"
                                   Margin="0,0,0,8"/>
                         <TextBlock x:Name="ChefTipsText"
-                                  Text="• Use a white plate for better color contrast\n• Garnish should complement, not overwhelm the dish" 
+                                  Text="Chef tips will be generated based on AI analysis..." 
                                   FontSize="12" 
                                   Foreground="#6B7280"
                                   TextWrapping="Wrap"/>
@@ -213,7 +213,7 @@
                                   Foreground="#111827"
                                   Margin="0,0,0,8"/>
                         <TextBlock x:Name="SuggestionsText"
-                                  Text="• Consider adding a garnish for better visual appeal\n• Try different plating techniques\n• Experiment with seasoning" 
+                                  Text="AI suggestions will appear here after analysis..." 
                                   FontSize="12" 
                                   Foreground="#6B7280"
                                   TextWrapping="Wrap"/>
