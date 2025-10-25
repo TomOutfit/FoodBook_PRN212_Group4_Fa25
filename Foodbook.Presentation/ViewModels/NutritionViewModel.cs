@@ -2,6 +2,7 @@ using Foodbook.Business.Interfaces;
 using Foodbook.Business.Models;
 using Foodbook.Data.Entities;
 using Foodbook.Presentation.Views;
+using Foodbook.Presentation.Commands;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -369,11 +370,26 @@ namespace Foodbook.Presentation.ViewModels
 
         private void ClearAnalysis()
         {
+            // Clear analysis results
             AnalysisResult = null;
             AIAssessment = string.Empty;
             HealthAlerts.Clear();
             Recommendations.Clear();
             NutritionRecommendation = null;
+            
+            // Reset to default values
+            SelectedDataSource = "AI";
+            SelectedRecipe = null;
+            CustomRecipeText = string.Empty;
+            UserGoal = "Sức Khỏe Tổng Quát";
+            
+            // Trigger property change notifications for nutrition values
+            OnPropertyChanged(nameof(TotalCalories));
+            OnPropertyChanged(nameof(TotalProtein));
+            OnPropertyChanged(nameof(TotalCarbs));
+            OnPropertyChanged(nameof(TotalFat));
+            
+            System.Diagnostics.Debug.WriteLine("Analysis cleared and reset to default values");
         }
 
         private async Task LoadRecipesAsync()
@@ -388,10 +404,21 @@ namespace Foodbook.Presentation.ViewModels
                     Recipes.Add(recipe);
                 }
                 System.Diagnostics.Debug.WriteLine($"Loaded {Recipes.Count} recipes from FoodBook.sql");
+                
+                // Show success message if recipes were loaded
+                if (Recipes.Count > 0)
+                {
+                    System.Diagnostics.Debug.WriteLine($"✅ Successfully loaded {Recipes.Count} recipes from database");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("⚠️ No recipes found in database");
+                }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading recipes from FoodBook.sql: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"❌ Error loading recipes from FoodBook.sql: {ex.Message}");
+                // You could also show a user-friendly error message here
             }
         }
 

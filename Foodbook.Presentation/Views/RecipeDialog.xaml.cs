@@ -1,5 +1,7 @@
 using System.Windows;
 using Foodbook.Data.Entities;
+using Foodbook.Presentation.Services;
+using System.Windows.Media.Imaging;
 
 namespace Foodbook.Presentation.Views
 {
@@ -8,6 +10,7 @@ namespace Foodbook.Presentation.Views
     /// </summary>
     public partial class RecipeDialog : Window
     {
+        private readonly ImageService _imageService;
         public Recipe? Recipe { get; private set; }
         public bool IsEditMode { get; private set; }
 
@@ -15,6 +18,7 @@ namespace Foodbook.Presentation.Views
         {
             InitializeComponent();
             
+            _imageService = new ImageService();
             IsEditMode = recipe != null;
             Recipe = recipe ?? new Recipe
             {
@@ -77,6 +81,53 @@ namespace Foodbook.Presentation.Views
         {
             DialogResult = false;
             Close();
+        }
+
+        private async void PreviewImage_Click(object sender, RoutedEventArgs e)
+        {
+            var imageUrl = ImageUrlTextBox.Text?.Trim();
+            
+            if (string.IsNullOrEmpty(imageUrl))
+            {
+                MessageBox.Show("Please enter an image URL first.", "No URL", 
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (!_imageService.IsValidImageUrl(imageUrl))
+            {
+                MessageBox.Show("Please enter a valid image URL (jpg, jpeg, png, bmp, gif, webp).", "Invalid URL", 
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                // Show loading state
+                ImagePreviewBorder.Visibility = Visibility.Visible;
+                ImagePreview.Source = null;
+
+                var bitmap = await _imageService.LoadImageFromUrlAsync(imageUrl);
+                
+                if (bitmap != null)
+                {
+                    ImagePreview.Source = bitmap;
+                    MessageBox.Show("Image loaded successfully!", "Success", 
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    ImagePreviewBorder.Visibility = Visibility.Collapsed;
+                    MessageBox.Show("Failed to load image from URL. Please check the URL and try again.", "Load Failed", 
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                ImagePreviewBorder.Visibility = Visibility.Collapsed;
+                MessageBox.Show($"Error loading image: {ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }
