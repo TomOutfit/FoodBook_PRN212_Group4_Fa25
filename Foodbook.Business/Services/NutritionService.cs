@@ -889,28 +889,35 @@ namespace Foodbook.Business.Services
 
         private string CreateIngredientParsingPrompt(string recipeText)
         {
-            return $@"
-Bạn là chuyên gia dinh dưỡng và đầu bếp chuyên nghiệp. Hãy phân tích công thức sau và trích xuất thông tin nguyên liệu:
+            return $@"Bạn là chuyên gia dinh dưỡng và đầu bếp chuyên nghiệp với 20 năm kinh nghiệm. Hãy phân tích công thức sau và trích xuất thông tin nguyên liệu một cách chính xác:
 
-Công thức: {recipeText}
+CÔNG THỨC: {recipeText}
 
-Hãy trích xuất các nguyên liệu với định lượng và đơn vị. Trả về kết quả theo định dạng JSON:
+YÊU CẦU:
+1. Trích xuất TẤT CẢ nguyên liệu với định lượng chính xác
+2. Chuẩn hóa tên nguyên liệu (VD: thịt bò → beef, hành tây → onion)
+3. Ước tính định lượng hợp lý nếu không rõ ràng
+4. Phân loại đơn vị phù hợp (g, ml, piece, cup, tbsp, tsp)
 
+ĐỊNH DẠNG JSON:
 {{
   ""ingredients"": [
     {{
-      ""name"": ""tên nguyên liệu"",
+      ""name"": ""tên_nguyên_liệu_chuẩn"",
       ""quantity"": số_lượng,
-      ""unit"": ""đơn_vị""
+      ""unit"": ""đơn_vị"",
+      ""category"": ""protein|vegetable|grain|dairy|fat|spice""
     }}
-  ]
+  ],
+  ""servings"": số_phần_ăn,
+  ""cooking_method"": ""phương_pháp_nấu""
 }}
 
-Lưu ý:
-- Nếu không có đơn vị rõ ràng, sử dụng 'piece' cho nguyên liệu đếm được
-- Nếu không có số lượng rõ ràng, ước tính hợp lý
-- Chỉ trích xuất nguyên liệu thực phẩm, bỏ qua gia vị nhỏ như muối, tiêu
-";
+QUY TẮC:
+- Ưu tiên đơn vị metric (g, ml) thay vì imperial
+- Phân loại nguyên liệu để tính toán dinh dưỡng chính xác
+- Ước tính serving size để tính calories per serving
+- Bỏ qua gia vị nhỏ (muối, tiêu, đường) trừ khi có định lượng rõ ràng";
         }
 
         private string CreateHealthFeedbackPrompt(NutritionAnalysisResult nutrition)
