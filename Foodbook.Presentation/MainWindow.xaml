@@ -2050,7 +2050,7 @@
                                         <StackPanel Margin="0,0,0,12">
                                             <TextBlock Text="Theme" FontSize="14" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,6"/>
                                             <ComboBox SelectedValue="{Binding SelectedTheme}" Height="40" FontSize="14" SelectionChanged="ThemeComboBox_SelectionChanged">
-                                                <ComboBoxItem Content="🌞 Light Theme" Tag="Light"/>
+                                                <ComboBoxItem Content="🌞 Light Theme" Tag="Light" IsSelected="True"/>
                                                 <ComboBoxItem Content="🌙 Dark Theme" Tag="Dark"/>
                                             </ComboBox>
                                     </StackPanel>
@@ -2059,7 +2059,7 @@
                                             <TextBlock Text="Language" FontSize="14" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,6"/>
                                             <ComboBox SelectedValue="{Binding SelectedLanguage}" Height="40" FontSize="14" SelectionChanged="LanguageComboBox_SelectionChanged">
                                                 <ComboBoxItem Content="🇺🇸 English" Tag="English"/>
-                                                <ComboBoxItem Content="🇻🇳 Vietnamese" Tag="Vietnamese"/>
+                                                <ComboBoxItem Content="🇻🇳 Vietnamese" Tag="Vietnamese" IsSelected="True"/>
                                             </ComboBox>
                                     </StackPanel>
                                         

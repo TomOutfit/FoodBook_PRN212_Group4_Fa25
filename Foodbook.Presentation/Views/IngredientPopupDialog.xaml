@@ -193,7 +193,7 @@
                                          Background="White" 
                                          FontSize="14" 
                                          Height="40">
-                                    <ComboBoxItem Content="Protein"/>
+                                    <ComboBoxItem Content="Protein" IsSelected="True"/>
                                     <ComboBoxItem Content="Vegetable"/>
                                     <ComboBoxItem Content="Fruit"/>
                                     <ComboBoxItem Content="Grain"/>
@@ -208,9 +208,15 @@
                             <!-- Unit -->
                             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,16">
                                 <TextBlock Text="Unit" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                <ComboBox SelectedItem="{Binding Unit}" Style="{StaticResource ModernComboBox}">
+                                <ComboBox SelectedItem="{Binding Unit}" 
+                                         Padding="12" 
+                                         BorderThickness="1" 
+                                         BorderBrush="#E5E7EB" 
+                                         Background="White" 
+                                         FontSize="14" 
+                                         Height="40">
                                     <ComboBoxItem Content="kg"/>
-                                    <ComboBoxItem Content="g"/>
+                                    <ComboBoxItem Content="g" IsSelected="True"/>
                                     <ComboBoxItem Content="liter"/>
                                     <ComboBoxItem Content="ml"/>
                                     <ComboBoxItem Content="cup"/>
