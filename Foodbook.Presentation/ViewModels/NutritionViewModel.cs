@@ -7,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using System.Windows;
 
 namespace Foodbook.Presentation.ViewModels
 {
@@ -58,10 +59,21 @@ namespace Foodbook.Presentation.ViewModels
 
             System.Diagnostics.Debug.WriteLine("Commands initialized successfully");
 
-            // Load initial data
+            // Load initial data asynchronously but safely
             System.Diagnostics.Debug.WriteLine("Starting LoadRecipesAsync...");
-            // Load recipes from FoodBook.sql when ViewModel is created
-            _ = LoadRecipesAsync();
+            // Use Task.Run to avoid blocking the constructor and handle exceptions properly
+            Task.Run(async () =>
+            {
+                try
+                {
+                    await LoadRecipesAsync();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error loading recipes in constructor: {ex.Message}");
+                    // Don't rethrow - just log the error
+                }
+            });
             
             System.Diagnostics.Debug.WriteLine("=== NUTRITION VIEWMODEL CONSTRUCTOR COMPLETED ===");
         }
@@ -398,11 +410,17 @@ namespace Foodbook.Presentation.ViewModels
             {
                 System.Diagnostics.Debug.WriteLine("Loading recipes from FoodBook.sql...");
                 var recipes = await _recipeService.GetAllRecipesAsync();
-                Recipes.Clear();
-                foreach (var recipe in recipes)
+                
+                // Use Dispatcher to update UI thread safely
+                await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    Recipes.Add(recipe);
-                }
+                    Recipes.Clear();
+                    foreach (var recipe in recipes)
+                    {
+                        Recipes.Add(recipe);
+                    }
+                });
+                
                 System.Diagnostics.Debug.WriteLine($"Loaded {Recipes.Count} recipes from FoodBook.sql");
                 
                 // Show success message if recipes were loaded

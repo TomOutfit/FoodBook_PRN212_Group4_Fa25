@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Media;
 using Foodbook.Business.Interfaces;
 using Foodbook.Data.Entities;
+using Foodbook.Presentation.Views;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
@@ -21,6 +22,7 @@ namespace Foodbook.Presentation.ViewModels
         private readonly INutritionService _nutritionService;
         private readonly ILoggingService _loggingService;
         private readonly ISettingsService _settingsService;
+        private readonly ILocalizationService? _localizationService;
         private readonly IAuthenticationService? _authenticationService;
         public ILoggingService LoggingService => _loggingService;
 
@@ -63,6 +65,9 @@ namespace Foodbook.Presentation.ViewModels
         
         // Sidebar properties
         private bool _isSidebarCollapsed = false;
+        
+        // Log viewer state
+        private bool _isOpeningLogs = false;
 
         // Analytics properties
         // Removed - using _myTotalRecipes instead
@@ -163,6 +168,7 @@ namespace Foodbook.Presentation.ViewModels
             INutritionService nutritionService,
             ILoggingService loggingService,
             ISettingsService settingsService,
+            ILocalizationService localizationService,
             IAuthenticationService authenticationService)
         {
             _recipeService = recipeService;
@@ -173,6 +179,7 @@ namespace Foodbook.Presentation.ViewModels
             _nutritionService = nutritionService;
             _loggingService = loggingService;
             _settingsService = settingsService;
+            _localizationService = localizationService;
             _authenticationService = authenticationService;
             
             // Initialize NutritionViewModel
@@ -212,7 +219,7 @@ namespace Foodbook.Presentation.ViewModels
             RefreshProfileCommand = new RelayCommand(async () => await LoadCurrentUserAsync());
             TestDatabaseConnectionCommand = new RelayCommand(async () => await TestDatabaseConnectionAsync());
             ConfigureAICommand = new RelayCommand(async () => await ConfigureAISettingsAsync());
-            ViewLogsCommand = new RelayCommand(async () => await ViewLogsAsync());
+            ViewLogsCommand = new RelayCommand(() => { ViewLogsAsync(); return Task.CompletedTask; });
             RefreshUserProfileCommand = new RelayCommand(async () => await LoadCurrentUserAsync());
             ToggleSidebarCommand = new RelayCommand(async () => await ToggleSidebarAsync());
             RefreshDashboardCommand = new RelayCommand(async () => await RefreshDashboardDataAsync());
@@ -227,6 +234,9 @@ namespace Foodbook.Presentation.ViewModels
             NavigateToGrainsCommand = new RelayCommand(async () => await NavigateToIngredientCategory("Grains"));
             NavigateToVegetablesCommand = new RelayCommand(async () => await NavigateToIngredientCategory("Vegetables"));
             NavigateToSpicesCommand = new RelayCommand(async () => await NavigateToIngredientCategory("Spices"));
+            
+            // Load settings asynchronously on initialization
+            _ = LoadSettingsAsync();
         }
 
         // Parameterless constructor for fallback
@@ -279,7 +289,7 @@ namespace Foodbook.Presentation.ViewModels
             RefreshProfileCommand = new RelayCommand(async () => await LoadCurrentUserAsync());
             TestDatabaseConnectionCommand = new RelayCommand(async () => await TestDatabaseConnectionAsync());
             ConfigureAICommand = new RelayCommand(async () => await ConfigureAISettingsAsync());
-            ViewLogsCommand = new RelayCommand(async () => await ViewLogsAsync());
+            ViewLogsCommand = new RelayCommand(() => { ViewLogsAsync(); return Task.CompletedTask; });
             RefreshUserProfileCommand = new RelayCommand(async () => await LoadCurrentUserAsync());
             ToggleSidebarCommand = new RelayCommand(async () => await ToggleSidebarAsync());
             
@@ -420,7 +430,41 @@ namespace Foodbook.Presentation.ViewModels
         public string SelectedLanguage
         {
             get => _selectedLanguage;
-            set => SetProperty(ref _selectedLanguage, value);
+            set
+            {
+                if (SetProperty(ref _selectedLanguage, value))
+                {
+                    // Update localization service
+                    if (_localizationService != null)
+                    {
+                        _localizationService.ChangeLanguage(value);
+                        // Trigger notification for all localization properties
+                        OnPropertyChanged(nameof(Loc_Dashboard));
+                        OnPropertyChanged(nameof(Loc_MyRecipes));
+                        OnPropertyChanged(nameof(Loc_Ingredients));
+                        OnPropertyChanged(nameof(Loc_ShoppingList));
+                        OnPropertyChanged(nameof(Loc_Analytics));
+                        OnPropertyChanged(nameof(Loc_Settings));
+                        OnPropertyChanged(nameof(Loc_ApplicationSettings));
+                        OnPropertyChanged(nameof(Loc_Theme));
+                        OnPropertyChanged(nameof(Loc_Language));
+                        OnPropertyChanged(nameof(Loc_DefaultServings));
+                        OnPropertyChanged(nameof(Loc_EnableNotifications));
+                        OnPropertyChanged(nameof(Loc_SaveSettings));
+                        OnPropertyChanged(nameof(Loc_UserProfile));
+                        OnPropertyChanged(nameof(Loc_Username));
+                        OnPropertyChanged(nameof(Loc_Email));
+                        OnPropertyChanged(nameof(Loc_TotalRecipes));
+                        OnPropertyChanged(nameof(Loc_MainDishes));
+                        OnPropertyChanged(nameof(Loc_Desserts));
+                        OnPropertyChanged(nameof(Loc_QuickMeals));
+                        OnPropertyChanged(nameof(Loc_AverageCookTime));
+                        OnPropertyChanged(nameof(Loc_MostUsedIngredient));
+                        OnPropertyChanged(nameof(Loc_AIRecipe));
+                        OnPropertyChanged(nameof(Loc_FavoriteRecipes));
+                    }
+                }
+            }
         }
         
         public bool NotificationsEnabled
@@ -434,6 +478,31 @@ namespace Foodbook.Presentation.ViewModels
             get => _defaultServings;
             set => SetProperty(ref _defaultServings, value);
         }
+        
+        // Localization Properties
+        public string Loc_Dashboard => _localizationService?.GetString("Dashboard") ?? "Dashboard";
+        public string Loc_MyRecipes => _localizationService?.GetString("My Recipes") ?? "My Recipes";
+        public string Loc_Ingredients => _localizationService?.GetString("Ingredients") ?? "Ingredients";
+        public string Loc_ShoppingList => _localizationService?.GetString("Shopping List") ?? "Shopping List";
+        public string Loc_Analytics => _localizationService?.GetString("Analytics") ?? "Analytics";
+        public string Loc_Settings => _localizationService?.GetString("Settings") ?? "Settings";
+        public string Loc_ApplicationSettings => _localizationService?.GetString("Application Settings") ?? "Application Settings";
+        public string Loc_Theme => _localizationService?.GetString("Theme") ?? "Theme";
+        public string Loc_Language => _localizationService?.GetString("Language") ?? "Language";
+        public string Loc_DefaultServings => _localizationService?.GetString("Default Servings") ?? "Default Servings";
+        public string Loc_EnableNotifications => _localizationService?.GetString("Enable Notifications") ?? "Enable Notifications";
+        public string Loc_SaveSettings => _localizationService?.GetString("Save Settings") ?? "Save Settings";
+        public string Loc_UserProfile => _localizationService?.GetString("User Profile") ?? "User Profile";
+        public string Loc_Username => _localizationService?.GetString("Username") ?? "Username";
+        public string Loc_Email => _localizationService?.GetString("Email") ?? "Email";
+        public string Loc_TotalRecipes => _localizationService?.GetString("Total Recipes") ?? "Total Recipes";
+        public string Loc_MainDishes => _localizationService?.GetString("Main Dishes") ?? "Main Dishes";
+        public string Loc_Desserts => _localizationService?.GetString("Desserts") ?? "Desserts";
+        public string Loc_QuickMeals => _localizationService?.GetString("Quick Meals") ?? "Quick Meals";
+        public string Loc_AverageCookTime => _localizationService?.GetString("Average Cook Time") ?? "Average Cook Time";
+        public string Loc_MostUsedIngredient => _localizationService?.GetString("Most Used Ingredient") ?? "Most Used Ingredient";
+        public string Loc_AIRecipe => _localizationService?.GetString("AI Recipes") ?? "AI Recipes";
+        public string Loc_FavoriteRecipes => _localizationService?.GetString("Favorite Recipes") ?? "Favorite Recipes";
 
         // Analytics Properties
         // Removed - using MyTotalRecipes instead
@@ -1353,6 +1422,7 @@ namespace Foodbook.Presentation.ViewModels
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             try
             {
+                Console.WriteLine("=== GENERATE SHOPPING LIST STARTED ===");
                 IsLoading = true;
                 StatusMessage = "Generating smart shopping list...";
                 
@@ -1370,7 +1440,62 @@ namespace Foodbook.Presentation.ViewModels
                         new Recipe { Id = 3, Title = "Sample Recipe 3", UserId = 1 }
                     };
                 
-                var shoppingList = await _shoppingListService.GenerateSmartShoppingListAsync(selectedRecipes, 1);
+                Console.WriteLine($"Selected {selectedRecipes.Count} recipes for shopping list");
+                
+                // Create a simple shopping list for testing
+                var shoppingList = new ShoppingListResult
+                {
+                    ListName = "Test Shopping List",
+                    GeneratedAt = DateTime.Now,
+                    RecipeNames = selectedRecipes.Select(r => r.Title).ToList(),
+                    TotalItems = 5,
+                    EstimatedCost = 25.50m,
+                    EstimatedShoppingTime = TimeSpan.FromMinutes(30),
+                    Categories = new List<ShoppingCategory>
+                    {
+                        new ShoppingCategory
+                        {
+                            Name = "Vegetables",
+                            Icon = "🥬",
+                            StoreSection = "Produce",
+                            CategoryTotal = 12.50m,
+                            ShoppingOrder = "Start here for fresh produce",
+                            Items = new List<ShoppingItem>
+                            {
+                                new ShoppingItem { Name = "Tomatoes", Quantity = 2m, Unit = "lbs", EstimatedPrice = 4.50m, IsChecked = false },
+                                new ShoppingItem { Name = "Onions", Quantity = 1m, Unit = "bag", EstimatedPrice = 3.00m, IsChecked = false },
+                                new ShoppingItem { Name = "Lettuce", Quantity = 1m, Unit = "head", EstimatedPrice = 5.00m, IsChecked = false }
+                            }
+                        },
+                        new ShoppingCategory
+                        {
+                            Name = "Dairy",
+                            Icon = "🥛",
+                            StoreSection = "Dairy",
+                            CategoryTotal = 13.00m,
+                            ShoppingOrder = "Cold section - keep refrigerated",
+                            Items = new List<ShoppingItem>
+                            {
+                                new ShoppingItem { Name = "Milk", Quantity = 1m, Unit = "gallon", EstimatedPrice = 4.50m, IsChecked = false },
+                                new ShoppingItem { Name = "Cheese", Quantity = 8m, Unit = "oz", EstimatedPrice = 8.50m, IsChecked = false }
+                            }
+                        }
+                    },
+                    Tips = new List<string>
+                    {
+                        "Start with produce section for freshest items",
+                        "Check expiration dates on dairy products",
+                        "Bring reusable bags to reduce waste"
+                    },
+                    StoreSuggestions = new List<string>
+                    {
+                        "Visit produce section first",
+                        "Then dairy and meat sections",
+                        "End with dry goods and frozen items"
+                    }
+                };
+                
+                Console.WriteLine($"Created test shopping list with {shoppingList.TotalItems} items");
                 
                 // Optimize the shopping list
                 var optimizedList = await _shoppingListService.OptimizeShoppingListAsync(shoppingList);
@@ -1383,9 +1508,13 @@ namespace Foodbook.Presentation.ViewModels
                     stopwatch.Elapsed);
                 
                 // Show shopping list dialog
-                var shoppingDialog = new Views.ShoppingListDialog();
+                Console.WriteLine("Creating shopping list dialog...");
+                var shoppingDialog = new Views.ShoppingListDialog(_shoppingListService);
+                Console.WriteLine("Setting shopping list data...");
                 shoppingDialog.SetShoppingList(optimizedList);
+                Console.WriteLine("Showing dialog...");
                 shoppingDialog.ShowDialog();
+                Console.WriteLine("Dialog closed");
                 
                 StatusMessage = $"🛒 Smart shopping list generated! {optimizedList.TotalItems} items, " +
                               $"${optimizedList.EstimatedCost:F2} estimated cost, " +
@@ -1398,6 +1527,8 @@ namespace Foodbook.Presentation.ViewModels
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"ERROR in GenerateShoppingListAsync: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 StatusMessage = $"Error generating shopping list: {ex.Message}";
                 await _loggingService.LogErrorAsync("Smart Shopping List", "1", ex, "Unexpected error in shopping list generation");
             }
@@ -1512,15 +1643,43 @@ namespace Foodbook.Presentation.ViewModels
             try
             {
                 var settings = await _settingsService.GetSettingsAsync();
-                SelectedTheme = settings.Theme;
-                SelectedLanguage = settings.Language;
+                
+                // Ensure default values if empty
+                SelectedTheme = string.IsNullOrWhiteSpace(settings.Theme) ? "Light" : settings.Theme;
+                var loadedLanguage = string.IsNullOrWhiteSpace(settings.Language) ? "English" : settings.Language;
                 NotificationsEnabled = settings.NotificationsEnabled;
-                DefaultServings = settings.DefaultServings;
+                DefaultServings = settings.DefaultServings > 0 ? settings.DefaultServings : 4;
+                
+                // Update localization service before setting SelectedLanguage (to avoid triggering update twice)
+                if (_localizationService != null)
+                {
+                    _localizationService.ChangeLanguage(loadedLanguage);
+                }
+                
+                SelectedLanguage = loadedLanguage;
+                
+                // If the loaded values are different from defaults, update them
+                if (SelectedTheme != settings.Theme || SelectedLanguage != settings.Language || DefaultServings != settings.DefaultServings)
+                {
+                    var updatedSettings = new AppSettings
+                    {
+                        Theme = SelectedTheme,
+                        Language = SelectedLanguage,
+                        NotificationsEnabled = NotificationsEnabled,
+                        DefaultServings = DefaultServings
+                    };
+                    await _settingsService.SaveSettingsAsync(updatedSettings);
+                }
                 
                 StatusMessage = "Settings loaded successfully";
             }
             catch (Exception ex)
             {
+                // Use default values on error
+                SelectedTheme = "Light";
+                SelectedLanguage = "English";
+                NotificationsEnabled = true;
+                DefaultServings = 4;
                 StatusMessage = $"Error loading settings: {ex.Message}";
             }
         }
@@ -2229,31 +2388,41 @@ namespace Foodbook.Presentation.ViewModels
             }
         }
 
-        private async Task ViewLogsAsync()
+        private void ViewLogsAsync()
         {
+            // Prevent multiple simultaneous calls
+            if (_isOpeningLogs)
+            {
+                return;
+            }
+
+            _isOpeningLogs = true;
+            
             try
             {
                 if (_loggingService == null)
                 {
-                    StatusMessage = "Logging service is not available";
+                    MessageBox.Show("Logging service is not available.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                StatusMessage = "Opening log viewer...";
+                // Open dialog directly
                 var logViewer = new Views.LogViewerWindow(_loggingService);
-                
-                // Ensure the window opens immediately
                 logViewer.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-                logViewer.Topmost = true; // Bring to front
+                logViewer.Topmost = true;
+                
                 logViewer.ShowDialog();
                 
-                StatusMessage = "Log viewer opened successfully";
-                await Task.CompletedTask;
+                StatusMessage = "Log viewer closed";
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Error opening log viewer: {ex.Message}";
+                MessageBox.Show($"Error opening log viewer: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 System.Diagnostics.Debug.WriteLine($"LogViewer Error: {ex.Message}");
+            }
+            finally
+            {
+                _isOpeningLogs = false;
             }
         }
 

@@ -10,6 +10,7 @@
         <converters:TabVisibilityConverter x:Key="TabVisibilityConverter"/>
         <converters:SidebarWidthConverter x:Key="SidebarWidthConverter"/>
         <converters:SidebarVisibilityConverter x:Key="SidebarVisibilityConverter"/>
+        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
          
     </Application.Resources>
 </Application>

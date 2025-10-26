@@ -15,49 +15,73 @@ namespace Foodbook.Presentation;
 /// </summary>
 public partial class MainWindow : Window
 {
+    private IServiceScope? _serviceScope;
+
     public MainWindow()
     {
         InitializeComponent();
 
         try
         {
+            // Create a scope for the MainViewModel
+            _serviceScope = ServiceContainer.CreateScope();
+            
             // Get services from ServiceContainer and create ViewModel manually
-            var recipeService = ServiceContainer.GetService<IRecipeService>();
-            var ingredientService = ServiceContainer.GetService<IIngredientService>();
-            var aiService = ServiceContainer.GetService<IAIService>();
-            var userService = ServiceContainer.GetService<IUserService>();
-            var shoppingListService = ServiceContainer.GetService<IShoppingListService>();
-            var nutritionService = ServiceContainer.GetService<INutritionService>();
-            var loggingService = ServiceContainer.GetService<ILoggingService>();
-            var settingsService = ServiceContainer.GetService<ISettingsService>();
-            var authenticationService = ServiceContainer.GetService<IAuthenticationService>();
+            var recipeService = _serviceScope.ServiceProvider.GetRequiredService<IRecipeService>();
+            var ingredientService = _serviceScope.ServiceProvider.GetRequiredService<IIngredientService>();
+            var aiService = _serviceScope.ServiceProvider.GetRequiredService<IAIService>();
+            var userService = _serviceScope.ServiceProvider.GetRequiredService<IUserService>();
+            var shoppingListService = _serviceScope.ServiceProvider.GetRequiredService<IShoppingListService>();
+            var nutritionService = _serviceScope.ServiceProvider.GetRequiredService<INutritionService>();
+            var loggingService = _serviceScope.ServiceProvider.GetRequiredService<ILoggingService>();
+            var settingsService = _serviceScope.ServiceProvider.GetRequiredService<ISettingsService>();
+            var localizationService = _serviceScope.ServiceProvider.GetRequiredService<ILocalizationService>();
+            var authenticationService = _serviceScope.ServiceProvider.GetRequiredService<IAuthenticationService>();
 
             var viewModel = new MainViewModel(
                 recipeService, ingredientService, aiService, userService,
-                shoppingListService, nutritionService, loggingService, settingsService, authenticationService);
+                shoppingListService, nutritionService, loggingService, settingsService, localizationService, authenticationService);
             DataContext = viewModel;
         }
         catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine($"Error initializing main window: {ex}");
             // Fallback: create a simple ViewModel without DI
             MessageBox.Show($"Error initializing main window: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             // Create a simple ViewModel as fallback
             DataContext = new MainViewModel();
+            _serviceScope?.Dispose();
         }
 
         // Load settings when window loads
-        Loaded += async (s, e) =>
+        Loaded += MainWindow_Loaded;
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        // Dispose the scope when the window is closed
+        _serviceScope?.Dispose();
+        base.OnClosed(e);
+    }
+
+    private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+        // Load settings when window loads
+        if (DataContext is MainViewModel vm && vm.LoadSettingsCommand.CanExecute(null))
         {
-            if (DataContext is MainViewModel vm && vm.LoadSettingsCommand.CanExecute(null))
+            vm.LoadSettingsCommand.Execute(null);
+            
+            // Apply loaded settings immediately
+            Task.Run(async () =>
             {
-                vm.LoadSettingsCommand.Execute(null);
-                
-                // Apply loaded settings immediately
                 await Task.Delay(100); // Small delay to ensure settings are loaded
-                ApplyTheme(vm.SelectedTheme);
-                ApplyLanguage(vm.SelectedLanguage);
-            }
-        };
+                Dispatcher.Invoke(() =>
+                {
+                    ApplyTheme(vm.SelectedTheme);
+                    ApplyLanguage(vm.SelectedLanguage);
+                });
+            });
+        }
     }
 
     private void OpenImageAnalysis_Click(object sender, RoutedEventArgs e)
@@ -120,20 +144,6 @@ public partial class MainWindow : Window
         {
             WindowState = WindowState.Maximized;
             MaximizeButton.Content = "🗗";
-        }
-    }
-
-    private void ViewLogsButton_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var loggingService = ((MainViewModel)DataContext).LoggingService;
-            var logViewer = new Views.LogViewerWindow(loggingService);
-            logViewer.ShowDialog();
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Error opening log viewer: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -204,17 +214,34 @@ public partial class MainWindow : Window
 
     private void ApplyTheme(string? theme)
     {
-        if (theme == "Dark")
+        try
         {
-            // Apply dark theme
-            this.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.DarkSlateGray);
-            // You can add more dark theme styling here
+            if (theme == "Dark")
+            {
+                // Apply dark theme
+                this.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.DarkSlateGray);
+                // You can add more dark theme styling here
+            }
+            else
+            {
+                // Apply light theme (default)
+                this.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.WhiteSmoke);
+                // You can add more light theme styling here
+            }
         }
-        else
+        catch (Exception ex)
         {
-            // Apply light theme (default)
-            this.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.WhiteSmoke);
-            // You can add more light theme styling here
+            System.Diagnostics.Debug.WriteLine($"Error applying theme '{theme}': {ex.Message}");
+            // Fallback to default theme
+            try
+            {
+                this.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.WhiteSmoke);
+            }
+            catch
+            {
+                // If even the fallback fails, just log it
+                System.Diagnostics.Debug.WriteLine("Failed to apply fallback theme");
+            }
         }
     }
 

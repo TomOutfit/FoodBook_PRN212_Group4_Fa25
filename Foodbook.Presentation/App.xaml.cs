@@ -84,7 +84,17 @@ public partial class App : Application
             }
             
             // Show login window first
-            var authService = serviceProvider.GetRequiredService<IAuthenticationService>();
+            IAuthenticationService authService;
+            try
+            {
+                authService = serviceProvider.GetRequiredService<IAuthenticationService>();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to initialize authentication service: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            
             var loginWindow = new LoginWindow(authService);
             
             // Handle login success event
