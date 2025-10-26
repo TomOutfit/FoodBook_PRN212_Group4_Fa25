@@ -8,31 +8,45 @@ namespace Foodbook.Business.Services
     public class RecipeService : IRecipeService
     {
         private readonly FoodbookDbContext _context;
+        private readonly IUnsplashImageService? _imageService;
 
-        public RecipeService(FoodbookDbContext context)
+        public RecipeService(FoodbookDbContext context, IUnsplashImageService? imageService = null)
         {
             _context = context;
+            _imageService = imageService;
         }
 
         public async Task<IEnumerable<Recipe>> GetAllRecipesAsync()
         {
-            return await _context.Recipes
+            var recipes = await _context.Recipes
                 .Include(r => r.User)
                 .Include(r => r.RecipeIngredients)
                     .ThenInclude(ri => ri.Ingredient)
                 .Include(r => r.Ratings)
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
+
+            // Tự động lấy ảnh cho các recipes chưa có ảnh
+            await LoadMissingImagesAsync(recipes);
+
+            return recipes;
         }
 
         public async Task<Recipe?> GetRecipeByIdAsync(int id)
         {
-            return await _context.Recipes
+            var recipe = await _context.Recipes
                 .Include(r => r.User)
                 .Include(r => r.RecipeIngredients)
                     .ThenInclude(ri => ri.Ingredient)
                 .Include(r => r.Ratings)
                 .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (recipe != null && string.IsNullOrEmpty(recipe.ImageUrl))
+            {
+                await LoadMissingImageAsync(recipe);
+            }
+
+            return recipe;
         }
 
         public async Task<IEnumerable<Recipe>> SearchRecipesAsync(string? name, string? ingredient, int? cookTime, string? difficulty)
@@ -46,7 +60,7 @@ namespace Foodbook.Business.Services
 
             if (!string.IsNullOrEmpty(name))
             {
-                query = query.Where(r => r.Title.Contains(name) || r.Description.Contains(name));
+                query = query.Where(r => (r.Title != null && r.Title.Contains(name)) || (r.Description != null && r.Description.Contains(name)));
             }
 
             if (!string.IsNullOrEmpty(ingredient))
@@ -64,7 +78,12 @@ namespace Foodbook.Business.Services
                 query = query.Where(r => r.Difficulty == difficulty);
             }
 
-            return await query.OrderByDescending(r => r.CreatedAt).ToListAsync();
+            var recipes = await query.OrderByDescending(r => r.CreatedAt).ToListAsync();
+            
+            // Tự động lấy ảnh cho các recipes chưa có ảnh
+            await LoadMissingImagesAsync(recipes);
+
+            return recipes;
         }
 
         public async Task<Recipe> CreateRecipeAsync(Recipe recipe)
@@ -118,7 +137,7 @@ namespace Foodbook.Business.Services
 
         public async Task<IEnumerable<Recipe>> GetRecipesByUserIdAsync(int userId)
         {
-            return await _context.Recipes
+            var recipes = await _context.Recipes
                 .Include(r => r.User)
                 .Include(r => r.RecipeIngredients)
                     .ThenInclude(ri => ri.Ingredient)
@@ -126,6 +145,11 @@ namespace Foodbook.Business.Services
                 .Where(r => r.UserId == userId)
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
+
+            // Tự động lấy ảnh cho các recipes chưa có ảnh
+            await LoadMissingImagesAsync(recipes);
+
+            return recipes;
         }
 
         public async Task<double> GetAverageRatingAsync(int recipeId)
@@ -136,6 +160,56 @@ namespace Foodbook.Business.Services
                 .ToListAsync();
 
             return ratings.Any() ? ratings.Average() : 0.0;
+        }
+
+        // Helper methods để tự động load ảnh từ Internet
+        private async Task LoadMissingImagesAsync(IEnumerable<Recipe> recipes)
+        {
+            var recipesToLoad = recipes.Where(r => string.IsNullOrEmpty(r.ImageUrl)).ToList();
+            
+            // Process images in parallel but with limited concurrency to avoid overwhelming the API
+            var semaphore = new SemaphoreSlim(3, 3); // Limit to 3 concurrent requests
+            var tasks = recipesToLoad.Select(async recipe =>
+            {
+                await semaphore.WaitAsync();
+                try
+                {
+                    await LoadMissingImageAsync(recipe);
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            });
+            
+            await Task.WhenAll(tasks);
+        }
+
+        private async Task LoadMissingImageAsync(Recipe recipe)
+        {
+            try
+            {
+                // Chỉ fetch ảnh nếu có imageService
+                if (_imageService != null && !string.IsNullOrEmpty(recipe.Title))
+                {
+                    // Lấy ảnh từ Internet dựa trên tên món ăn
+                    var imageUrl = await _imageService.SearchFoodImageAsync(recipe.Title);
+                    
+                    if (!string.IsNullOrEmpty(imageUrl))
+                    {
+                        // Chỉ set URL cho object, không update database ngay
+                        // Database sẽ được update sau khi recipe được save trong session hiện tại
+                        recipe.ImageUrl = imageUrl;
+                        recipe.UpdatedAt = DateTime.UtcNow;
+                        
+                        Console.WriteLine($"✅ Đã tải ảnh cho: {recipe.Title}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️ Không thể tải ảnh cho {recipe.Title}: {ex.Message}");
+            }
         }
     }
 }

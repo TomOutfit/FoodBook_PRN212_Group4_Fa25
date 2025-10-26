@@ -13,14 +13,16 @@ namespace Foodbook.Business.Services
         private readonly HttpClient _httpClient;
         private readonly string _geminiApiKey;
         private readonly string _geminiApiUrl;
+        private readonly IUnsplashImageService? _imageService;
         
-        public AIService(IConfiguration configuration)
+        public AIService(IConfiguration configuration, IUnsplashImageService? imageService = null)
         {
             _httpClient = new HttpClient();
             _geminiApiKey = configuration["GeminiAPI:ApiKey"] ?? "AIzaSyDbkwn-D3KRo1YW4fLZHJeQSFr2p6UMWvw";
             var model = configuration["GeminiAPI:Model"] ?? "gemini-2.0-flash-exp";
             var baseUrl = configuration["GeminiAPI:BaseUrl"] ?? "https://generativelanguage.googleapis.com/v1beta/models";
             _geminiApiUrl = $"{baseUrl}/{model}:generateContent";
+            _imageService = imageService;
         }
         public async Task<ChefJudgeResult> JudgeDishAsync(string imagePath, string evaluationMode = "Casual")
         {
@@ -119,7 +121,7 @@ namespace Foodbook.Business.Services
                 var recipeResult = await CallGeminiTextAPI(systemPrompt);
                 
                 // Parse the result into Recipe object
-                var recipe = ParseRecipeFromGeminiResponse(recipeResult, ingredientNames, dishName, servings);
+                var recipe = await ParseRecipeFromGeminiResponse(recipeResult, ingredientNames, dishName, servings);
                 
                 return recipe;
             }
@@ -453,7 +455,7 @@ Provide your recipe in the following JSON format:
             }
         }
 
-        private Recipe ParseRecipeFromGeminiResponse(string response, IEnumerable<string> ingredientNames, string dishName, int servings)
+        private async Task<Recipe> ParseRecipeFromGeminiResponse(string response, IEnumerable<string> ingredientNames, string dishName, int servings)
         {
             try
             {
@@ -467,6 +469,20 @@ Provide your recipe in the following JSON format:
                     
                     if (recipeData != null)
                     {
+                        // Lấy ảnh thực từ Internet cho món ăn (nếu có imageService)
+                        var imageUrl = "";
+                        if (_imageService != null)
+                        {
+                            try
+                            {
+                                imageUrl = await _imageService.SearchFoodImageAsync(dishName) ?? "";
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Image fetch error: {ex.Message}");
+                            }
+                        }
+                        
                         return new Recipe
                         {
                             Title = recipeData.title ?? dishName,
@@ -475,7 +491,7 @@ Provide your recipe in the following JSON format:
                             CookTime = recipeData.cookTime ?? 30,
                             Difficulty = recipeData.difficulty ?? "Medium",
                             Servings = servings,
-                            ImageUrl = "",
+                            ImageUrl = imageUrl,
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow
                         };
@@ -483,16 +499,16 @@ Provide your recipe in the following JSON format:
                 }
                 
                 // Fallback if JSON parsing fails
-                return GetFallbackRecipe(ingredientNames, dishName, servings).Result;
+                return await GetFallbackRecipe(ingredientNames, dishName, servings);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"JSON parsing error: {ex.Message}");
-                return GetFallbackRecipe(ingredientNames, dishName, servings).Result;
+                return await GetFallbackRecipe(ingredientNames, dishName, servings);
             }
         }
 
-        private Task<Recipe> GetFallbackRecipe(IEnumerable<string> ingredientNames, string dishName, int servings)
+        private async Task<Recipe> GetFallbackRecipe(IEnumerable<string> ingredientNames, string dishName, int servings)
         {
             // Enhanced AI recipe generation with intelligent analysis
             var random = new Random();
@@ -511,7 +527,21 @@ Provide your recipe in the following JSON format:
             var instructions = GenerateIntelligentInstructions(ingredients, cookingStyle, cuisineType, cookingTime);
             var description = GenerateRecipeDescription(recipeTitle, ingredients, cuisineType, servings);
             
-            return Task.FromResult(new Recipe
+            // Tải ảnh thực từ Internet cho món ăn (nếu có imageService)
+            var imageUrl = "";
+            if (_imageService != null)
+            {
+                try
+                {
+                    imageUrl = await _imageService.SearchFoodImageAsync(recipeTitle) ?? "";
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Image fetch error: {ex.Message}");
+                }
+            }
+            
+            return new Recipe
             {
                 Title = recipeTitle,
                 Description = description,
@@ -519,10 +549,10 @@ Provide your recipe in the following JSON format:
                 CookTime = cookingTime,
                 Difficulty = difficulty,
                 Servings = servings,
-                ImageUrl = "",
+                ImageUrl = imageUrl,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
-            });
+            };
         }
 
         private async Task<string> CallGeminiVisionAPI(string imageBase64, string systemPrompt)

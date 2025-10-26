@@ -8,6 +8,8 @@ namespace Foodbook.Business.Interfaces
         Task<ShoppingListResult> GenerateShoppingListFromIngredientsAsync(IEnumerable<string> ingredientNames, int userId);
         Task<IEnumerable<ShoppingCategory>> GetShoppingCategoriesAsync();
         Task<ShoppingListResult> OptimizeShoppingListAsync(ShoppingListResult shoppingList);
+        Task<string> ExportShoppingListToNotesAsync(ShoppingListResult shoppingList, string listName);
+        Task<ShoppingListResult> GenerateShoppingListFromMealPlanAsync(IEnumerable<MealPlanItem> mealPlanItems, int userId);
     }
 
     public class ShoppingListResult
@@ -19,6 +21,11 @@ namespace Foodbook.Business.Interfaces
         public TimeSpan EstimatedShoppingTime { get; set; }
         public List<string> StoreSuggestions { get; set; } = new();
         public List<string> Tips { get; set; } = new();
+        public List<string> RecipeNames { get; set; } = new();
+        public DateTime GeneratedAt { get; set; }
+        public string ListName { get; set; } = string.Empty;
+        public bool IsOptimized { get; set; }
+        public decimal PotentialSavings { get; set; }
     }
 
     public class ShoppingItem
@@ -32,6 +39,13 @@ namespace Foodbook.Business.Interfaces
         public decimal EstimatedPrice { get; set; }
         public string Notes { get; set; } = string.Empty;
         public List<string> Substitutions { get; set; } = new();
+        public int RecipeCount { get; set; }
+        public string StoreSection { get; set; } = string.Empty;
+        public int Priority { get; set; }
+        public bool IsChecked { get; set; }
+        public string NutritionalInfo { get; set; } = string.Empty;
+        public bool IsBulkPurchase { get; set; }
+        public decimal BulkSavings { get; set; }
     }
 
     public class ShoppingCategory
@@ -41,5 +55,18 @@ namespace Foodbook.Business.Interfaces
         public string Color { get; set; } = string.Empty;
         public List<ShoppingItem> Items { get; set; } = new();
         public int Priority { get; set; }
+        public string StoreSection { get; set; } = string.Empty;
+        public string ShoppingOrder { get; set; } = string.Empty;
+        public decimal CategoryTotal { get; set; }
+        public int ItemCount => Items.Count;
+    }
+
+    // Helper class for meal planning integration
+    public class MealPlanItem
+    {
+        public Recipe Recipe { get; set; } = new();
+        public DateTime PlannedDate { get; set; }
+        public int Servings { get; set; }
+        public string MealType { get; set; } = string.Empty; // Breakfast, Lunch, Dinner, Snack
     }
 }
