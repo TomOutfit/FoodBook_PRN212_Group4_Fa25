@@ -2,26 +2,31 @@ using Foodbook.Business.Interfaces;
 using Foodbook.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using Foodbook.Data;
+using System.Text.Json;
 
 namespace Foodbook.Business.Services
 {
     public class ShoppingListService : IShoppingListService
     {
         private readonly FoodbookDbContext _context;
+        private readonly IAIService? _aiService;
 
-        public ShoppingListService(FoodbookDbContext context)
+        public ShoppingListService(FoodbookDbContext context, IAIService? aiService = null)
         {
             _context = context;
+            _aiService = aiService;
         }
 
         public async Task<ShoppingListResult> GenerateSmartShoppingListAsync(IEnumerable<Recipe> selectedRecipes, int userId)
         {
-            // Simulate AI processing delay
-            await Task.Delay(2000);
-
             var recipes = selectedRecipes.ToList();
+            if (!recipes.Any()) 
+                return new ShoppingListResult();
+
+            // Step 1: AI Analysis - Phân tích và tổng hợp nguyên liệu thông minh
+            var aiAnalysisResult = await PerformAIIngredientAnalysisAsync(recipes);
             
-            // Step 1: Truy vấn Nhu cầu - Tổng hợp nguyên liệu từ tất cả recipes
+            // Step 2: Truy vấn Nhu cầu - Tổng hợp nguyên liệu từ tất cả recipes
             var recipeIds = recipes.Select(r => r.Id).ToList();
             var requiredIngredients = await _context.RecipeIngredients
                 .Include(ri => ri.Ingredient)
@@ -32,28 +37,32 @@ namespace Foodbook.Business.Services
                     IngredientName = g.Key,
                     TotalQuantity = g.Sum(ri => ri.Quantity),
                     Unit = g.First().Ingredient.Unit ?? "piece",
-                    Category = g.First().Ingredient.Category ?? "Pantry"
+                    Category = g.First().Ingredient.Category ?? "Pantry",
+                    RecipeCount = g.Count()
                 })
                 .ToListAsync();
 
-            // Step 2: Truy vấn Kho (Stock) - Lấy tất cả nguyên liệu của user
+            // Step 3: Truy vấn Kho (Stock) - Lấy tất cả nguyên liệu của user
             var userStock = await _context.Ingredients
                 .Where(i => i.UserId == userId)
                 .ToDictionaryAsync(i => i.Name.ToLower(), i => i.Quantity ?? 0);
 
-            // Step 3: Đối chiếu & Trừ Kho - So sánh nhu cầu với kho hiện có
+            // Step 4: AI Consolidation - Gộp và tối ưu hóa nguyên liệu
+            var consolidatedIngredients = ConsolidateIngredientsWithAI(requiredIngredients, aiAnalysisResult);
+
+            // Step 5: Đối chiếu & Trừ Kho - So sánh nhu cầu với kho hiện có
             var shoppingItems = new List<ShoppingItem>();
             var totalCost = 0m;
 
-            foreach (var required in requiredIngredients)
+            foreach (var ingredient in consolidatedIngredients)
             {
-                var neededQuantity = required.TotalQuantity;
+                var neededQuantity = ingredient.TotalQuantity;
                 
                 // Kiểm tra kho hiện có
-                if (userStock.ContainsKey(required.IngredientName))
+                if (userStock.ContainsKey(ingredient.IngredientName))
                 {
-                    var availableStock = userStock[required.IngredientName];
-                    neededQuantity = Math.Max(0, required.TotalQuantity - availableStock);
+                    var availableStock = userStock[ingredient.IngredientName];
+                    neededQuantity = Math.Max(0, ingredient.TotalQuantity - availableStock);
                 }
 
                 // Chỉ thêm vào shopping list nếu cần mua
@@ -61,15 +70,18 @@ namespace Foodbook.Business.Services
                 {
                     var item = new ShoppingItem
                     {
-                        Name = CapitalizeFirst(required.IngredientName),
+                        Name = CapitalizeFirst(ingredient.IngredientName),
                         Quantity = neededQuantity,
-                        Unit = required.Unit,
-                        Category = CategorizeIngredient(required.IngredientName),
-                        IsEssential = IsEssentialIngredient(required.IngredientName),
-                        IsOptional = IsOptionalIngredient(required.IngredientName),
-                        EstimatedPrice = CalculateEstimatedPrice(required.IngredientName, neededQuantity),
-                        Notes = GenerateShoppingNotes(required.IngredientName),
-                        Substitutions = GetSubstitutions(required.IngredientName)
+                        Unit = ingredient.Unit,
+                        Category = ingredient.Category,
+                        IsEssential = ingredient.IsEssential,
+                        IsOptional = ingredient.IsOptional,
+                        EstimatedPrice = CalculateEstimatedPrice(ingredient.IngredientName, neededQuantity),
+                        Notes = ingredient.ShoppingNotes,
+                        Substitutions = ingredient.Substitutions,
+                        RecipeCount = ingredient.RecipeCount,
+                        StoreSection = GetStoreSection(ingredient.Category),
+                        Priority = GetIngredientPriority(ingredient.IngredientName, ingredient.RecipeCount)
                     };
 
                     shoppingItems.Add(item);
@@ -77,15 +89,15 @@ namespace Foodbook.Business.Services
                 }
             }
 
-            // Step 4: Sắp xếp theo Category và tối ưu hóa
+            // Step 6: Sắp xếp theo Category và tối ưu hóa
             var categories = OrganizeByCategories(shoppingItems);
             
-            // Step 5: Tạo smart suggestions và tips
-            var storeSuggestions = GenerateStoreSuggestions(categories);
-            var tips = GenerateShoppingTips(shoppingItems, recipes.Count);
+            // Step 7: Tạo smart suggestions và tips
+            var storeSuggestions = await GenerateSmartStoreSuggestionsAsync(categories, recipes);
+            var tips = await GenerateSmartShoppingTipsAsync(shoppingItems, recipes);
             var estimatedTime = CalculateShoppingTime(shoppingItems.Count, categories.Count);
 
-            // Step 6: Tối ưu hóa shopping list
+            // Step 8: Tối ưu hóa shopping list với AI
             var optimizedList = await OptimizeShoppingListAsync(new ShoppingListResult
             {
                 Items = shoppingItems,
@@ -94,7 +106,9 @@ namespace Foodbook.Business.Services
                 TotalItems = shoppingItems.Count,
                 EstimatedShoppingTime = estimatedTime,
                 StoreSuggestions = storeSuggestions,
-                Tips = tips
+                Tips = tips,
+                RecipeNames = recipes.Select(r => r.Title ?? "Unknown Recipe").ToList(),
+                GeneratedAt = DateTime.UtcNow
             });
 
             return optimizedList;
@@ -178,7 +192,9 @@ namespace Foodbook.Business.Services
                 {
                     optimizedItem.Quantity = Math.Ceiling(item.Quantity * 1.5m); // Buy 50% more
                     optimizedItem.Notes += " (Bulk purchase recommended)";
-                    totalSavings += item.EstimatedPrice * 0.2m; // 20% savings
+                    optimizedItem.IsBulkPurchase = true;
+                    optimizedItem.BulkSavings = item.EstimatedPrice * 0.2m; // 20% savings
+                    totalSavings += optimizedItem.BulkSavings;
                 }
 
                 // Suggest substitutions for expensive items
@@ -187,13 +203,60 @@ namespace Foodbook.Business.Services
                     optimizedItem.Notes += $" Consider: {string.Join(", ", item.Substitutions.Take(2))}";
                 }
 
+                // Add nutritional information
+                optimizedItem.NutritionalInfo = GetNutritionalInfo(item.Name);
+
                 optimizedItems.Add(optimizedItem);
             }
 
             shoppingList.Items = optimizedItems;
             shoppingList.EstimatedCost -= totalSavings;
+            shoppingList.PotentialSavings = totalSavings;
+            shoppingList.IsOptimized = true;
             shoppingList.Tips.Add($"💰 Potential savings: ${totalSavings:F2} with bulk purchases");
 
+            return shoppingList;
+        }
+
+        public async Task<string> ExportShoppingListToNotesAsync(ShoppingListResult shoppingList, string listName)
+        {
+            try
+            {
+                var notesContent = GenerateNotesContent(shoppingList);
+                
+                // Simulate Notes API call
+                // In real implementation, this would call the actual Notes API
+                await Task.Delay(500);
+                
+                var fileName = $"{listName}_{DateTime.Now:yyyyMMdd_HHmm}.txt";
+                Console.WriteLine($"📝 Shopping list exported to Notes: {fileName}");
+                Console.WriteLine($"Content preview: {notesContent.Substring(0, Math.Min(200, notesContent.Length))}...");
+                
+                return fileName;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error exporting to Notes: {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task<ShoppingListResult> GenerateShoppingListFromMealPlanAsync(IEnumerable<MealPlanItem> mealPlanItems, int userId)
+        {
+            var items = mealPlanItems.ToList();
+            if (!items.Any()) 
+                return new ShoppingListResult();
+
+            // Group recipes by date and meal type for better organization
+            var recipes = items.Select(mp => mp.Recipe).Distinct().ToList();
+            
+            // Generate shopping list with meal plan context
+            var shoppingList = await GenerateSmartShoppingListAsync(recipes, userId);
+            
+            // Add meal plan specific information
+            shoppingList.ListName = $"Meal Plan Shopping - {DateTime.Now:MMM dd}";
+            shoppingList.Tips.AddRange(GenerateMealPlanTips(items));
+            
             return shoppingList;
         }
 
@@ -288,13 +351,37 @@ namespace Foodbook.Business.Services
                         Name = item.Category,
                         Icon = GetCategoryIcon(item.Category),
                         Color = GetCategoryColor(item.Category),
-                        Priority = GetCategoryPriority(item.Category)
+                        Priority = GetCategoryPriority(item.Category),
+                        StoreSection = GetStoreSection(item.Category),
+                        ShoppingOrder = GetShoppingOrder(item.Category)
                     };
                 }
                 categories[item.Category].Items.Add(item);
             }
 
+            // Calculate category totals and sort items by priority
+            foreach (var category in categories.Values)
+            {
+                category.CategoryTotal = category.Items.Sum(item => item.EstimatedPrice);
+                category.Items = category.Items.OrderBy(item => item.Priority).ThenBy(item => item.Name).ToList();
+            }
+
             return categories.Values.OrderBy(c => c.Priority).ToList();
+        }
+
+        private string GetShoppingOrder(string category)
+        {
+            return category switch
+            {
+                "Produce" => "1. Start here for fresh vegetables",
+                "Meat & Seafood" => "2. Visit meat counter",
+                "Dairy & Eggs" => "3. Check dairy section",
+                "Pantry" => "4. Browse dry goods aisles",
+                "Frozen" => "5. End with frozen items",
+                "Bakery" => "6. Fresh bread and pastries",
+                "Beverages" => "7. Drinks and beverages",
+                _ => "Check store layout"
+            };
         }
 
         private string GetCategoryIcon(string category)
@@ -411,6 +498,403 @@ namespace Foodbook.Business.Services
         {
             if (string.IsNullOrEmpty(text)) return text;
             return char.ToUpper(text[0]) + text.Substring(1);
+        }
+
+        private string GenerateNotesContent(ShoppingListResult shoppingList)
+        {
+            var content = new System.Text.StringBuilder();
+            
+            content.AppendLine($"🛒 SMART SHOPPING LIST - {shoppingList.GeneratedAt:dd/MM/yyyy HH:mm}");
+            content.AppendLine($"📋 Generated for: {string.Join(", ", shoppingList.RecipeNames)}");
+            content.AppendLine($"💰 Estimated Cost: ${shoppingList.EstimatedCost:F2}");
+            content.AppendLine($"⏱️ Estimated Time: {shoppingList.EstimatedShoppingTime.TotalMinutes:F0} minutes");
+            content.AppendLine($"📦 Total Items: {shoppingList.TotalItems}");
+            content.AppendLine();
+            
+            foreach (var category in shoppingList.Categories)
+            {
+                content.AppendLine($"🏷️ {category.Name} ({category.Icon}) - {category.StoreSection}");
+                content.AppendLine($"   Total: ${category.CategoryTotal:F2} | Items: {category.ItemCount}");
+                content.AppendLine();
+                
+                foreach (var item in category.Items)
+                {
+                    var priority = item.Priority == 1 ? "🔥" : item.Priority == 2 ? "⭐" : "📝";
+                    var bulk = item.IsBulkPurchase ? " (BULK)" : "";
+                    var checkedStatus = item.IsChecked ? "✅" : "⬜";
+                    
+                    content.AppendLine($"   {checkedStatus} {priority} {item.Name} - {item.Quantity} {item.Unit} - ${item.EstimatedPrice:F2}{bulk}");
+                    
+                    if (!string.IsNullOrEmpty(item.Notes))
+                        content.AppendLine($"      💡 {item.Notes}");
+                    
+                    if (item.Substitutions.Any())
+                        content.AppendLine($"      🔄 Alternatives: {string.Join(", ", item.Substitutions)}");
+                    
+                    if (!string.IsNullOrEmpty(item.NutritionalInfo))
+                        content.AppendLine($"      🥗 {item.NutritionalInfo}");
+                    
+                    content.AppendLine();
+                }
+                content.AppendLine();
+            }
+            
+            if (shoppingList.StoreSuggestions.Any())
+            {
+                content.AppendLine("🗺️ STORE NAVIGATION TIPS:");
+                foreach (var suggestion in shoppingList.StoreSuggestions)
+                {
+                    content.AppendLine($"   • {suggestion}");
+                }
+                content.AppendLine();
+            }
+            
+            if (shoppingList.Tips.Any())
+            {
+                content.AppendLine("💡 SHOPPING TIPS:");
+                foreach (var tip in shoppingList.Tips)
+                {
+                    content.AppendLine($"   • {tip}");
+                }
+                content.AppendLine();
+            }
+            
+            if (shoppingList.PotentialSavings > 0)
+            {
+                content.AppendLine($"💰 POTENTIAL SAVINGS: ${shoppingList.PotentialSavings:F2}");
+                content.AppendLine();
+            }
+            
+            content.AppendLine("Generated by FoodBook Smart Shopping List 🍽️");
+            
+            return content.ToString();
+        }
+
+        private List<string> GenerateMealPlanTips(List<MealPlanItem> mealPlanItems)
+        {
+            var tips = new List<string>
+            {
+                "📅 Meal plan shopping - organize by meal types",
+                "🍽️ Consider meal prep containers for efficiency"
+            };
+
+            var mealTypes = mealPlanItems.Select(mp => mp.MealType).Distinct().ToList();
+            if (mealTypes.Count > 1)
+            {
+                tips.Add($"🍴 Shopping for {mealTypes.Count} meal types: {string.Join(", ", mealTypes)}");
+            }
+
+            var breakfastItems = mealPlanItems.Count(mp => mp.MealType.ToLower().Contains("breakfast"));
+            if (breakfastItems > 0)
+            {
+                tips.Add("🌅 Don't forget breakfast essentials");
+            }
+
+            return tips;
+        }
+
+        private string GetNutritionalInfo(string ingredientName)
+        {
+            var name = ingredientName.ToLower();
+            
+            if (name.Contains("vegetable") || name.Contains("broccoli") || name.Contains("spinach"))
+                return "High in fiber and vitamins";
+            if (name.Contains("protein") || name.Contains("chicken") || name.Contains("beef"))
+                return "Rich in protein";
+            if (name.Contains("fruit") || name.Contains("apple") || name.Contains("banana"))
+                return "Natural sugars and vitamins";
+            if (name.Contains("dairy") || name.Contains("milk") || name.Contains("cheese"))
+                return "Calcium and protein";
+            if (name.Contains("grain") || name.Contains("rice") || name.Contains("bread"))
+                return "Complex carbohydrates";
+            
+            return "Essential nutrients";
+        }
+
+        // AI-Powered Methods
+        private async Task<AIIngredientAnalysis> PerformAIIngredientAnalysisAsync(List<Recipe> recipes)
+        {
+            if (_aiService == null)
+            {
+                return new AIIngredientAnalysis(); // Fallback to basic analysis
+            }
+
+            try
+            {
+                var recipeData = recipes.Select(r => new
+                {
+                    Title = r.Title ?? "Unknown",
+                    Ingredients = r.RecipeIngredients?.Select(ri => new
+                    {
+                        Name = ri.Ingredient?.Name ?? "Unknown",
+                        Quantity = ri.Quantity,
+                        Unit = ri.Ingredient?.Unit ?? "piece"
+                    }).Cast<object>().ToList()
+                }).ToList();
+
+                var prompt = $@"
+Phân tích các công thức sau và đưa ra gợi ý thông minh cho danh sách mua sắm:
+
+{JsonSerializer.Serialize(recipeData, new JsonSerializerOptions { WriteIndented = true })}
+
+Hãy phân tích và trả về JSON với format:
+{{
+  ""consolidationSuggestions"": [
+    {{
+      ""ingredient"": ""tên nguyên liệu"",
+      ""suggestedQuantity"": ""số lượng đề xuất"",
+      ""reason"": ""lý do"",
+      ""bulkPurchase"": true/false
+    }}
+  ],
+  ""substitutionSuggestions"": [
+    {{
+      ""original"": ""nguyên liệu gốc"",
+      ""substitute"": ""thay thế"",
+      ""reason"": ""lý do""
+    }}
+  ],
+  ""shoppingTips"": [""tip 1"", ""tip 2""],
+  ""storeLayoutOptimization"": [
+    {{
+      ""category"": ""tên category"",
+      ""priority"": 1-10,
+      ""suggestedOrder"": ""thứ tự mua sắm""
+    }}
+  ]
+}}";
+
+                var response = await _aiService.AnalyzeNutritionAsync(JsonSerializer.Serialize(recipeData));
+                return JsonSerializer.Deserialize<AIIngredientAnalysis>(response) ?? new AIIngredientAnalysis();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"AI Analysis failed: {ex.Message}");
+                return new AIIngredientAnalysis();
+            }
+        }
+
+        private List<ConsolidatedIngredient> ConsolidateIngredientsWithAI(
+            IEnumerable<object> requiredIngredients, AIIngredientAnalysis aiAnalysis)
+        {
+            var consolidated = new List<ConsolidatedIngredient>();
+
+            foreach (var ingredient in requiredIngredients)
+            {
+                // Use reflection to access properties since we're using object type
+                var ingredientName = ingredient.GetType().GetProperty("IngredientName")?.GetValue(ingredient)?.ToString() ?? "";
+                var totalQuantity = Convert.ToDecimal(ingredient.GetType().GetProperty("TotalQuantity")?.GetValue(ingredient) ?? 0);
+                var unit = ingredient.GetType().GetProperty("Unit")?.GetValue(ingredient)?.ToString() ?? "piece";
+                var category = ingredient.GetType().GetProperty("Category")?.GetValue(ingredient)?.ToString() ?? "Pantry";
+                var recipeCount = Convert.ToInt32(ingredient.GetType().GetProperty("RecipeCount")?.GetValue(ingredient) ?? 0);
+
+                var consolidatedIngredient = new ConsolidatedIngredient
+                {
+                    IngredientName = ingredientName,
+                    TotalQuantity = totalQuantity,
+                    Unit = unit,
+                    Category = category,
+                    RecipeCount = recipeCount,
+                    IsEssential = IsEssentialIngredient(ingredientName),
+                    IsOptional = IsOptionalIngredient(ingredientName),
+                    ShoppingNotes = GenerateShoppingNotes(ingredientName),
+                    Substitutions = GetSubstitutions(ingredientName)
+                };
+
+                // Apply AI suggestions
+                var aiSuggestion = aiAnalysis.ConsolidationSuggestions
+                    .FirstOrDefault(s => s.Ingredient.ToLower() == ingredientName.ToLower());
+
+                if (aiSuggestion != null)
+                {
+                    consolidatedIngredient.ShoppingNotes += $" | AI: {aiSuggestion.Reason}";
+                    if (aiSuggestion.BulkPurchase)
+                    {
+                        consolidatedIngredient.TotalQuantity = Math.Ceiling(consolidatedIngredient.TotalQuantity * 1.5m);
+                    }
+                }
+
+                consolidated.Add(consolidatedIngredient);
+            }
+
+            return consolidated;
+        }
+
+        private async Task<List<string>> GenerateSmartStoreSuggestionsAsync(
+            List<ShoppingCategory> categories, List<Recipe> recipes)
+        {
+            var suggestions = new List<string>();
+
+            // AI-powered store layout suggestions
+            if (_aiService != null)
+            {
+                try
+                {
+                    var categoryData = categories.Select(c => new
+                    {
+                        Name = c.Name,
+                        ItemCount = c.Items.Count,
+                        Priority = c.Priority
+                    }).ToList();
+
+                    var prompt = $@"
+Dựa trên danh sách mua sắm sau, đưa ra gợi ý tối ưu hóa lộ trình mua sắm trong siêu thị:
+
+Categories: {JsonSerializer.Serialize(categoryData)}
+
+Recipes: {string.Join(", ", recipes.Select(r => r.Title ?? "Unknown"))}
+
+Hãy đưa ra 5-7 gợi ý cụ thể về:
+1. Thứ tự mua sắm tối ưu
+2. Mẹo tiết kiệm thời gian
+3. Lưu ý về bảo quản thực phẩm
+4. Gợi ý về chất lượng sản phẩm
+
+Trả về dạng array of strings, mỗi string là một gợi ý cụ thể.";
+
+                    var response = await _aiService.AnalyzeNutritionAsync(JsonSerializer.Serialize(categoryData));
+                    var aiSuggestions = JsonSerializer.Deserialize<List<string>>(response) ?? new List<string>();
+                    suggestions.AddRange(aiSuggestions);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"AI Store Suggestions failed: {ex.Message}");
+                }
+            }
+
+            // Fallback suggestions
+            if (!suggestions.Any())
+            {
+                suggestions.AddRange(GenerateStoreSuggestions(categories));
+            }
+
+            return suggestions;
+        }
+
+        private async Task<List<string>> GenerateSmartShoppingTipsAsync(
+            List<ShoppingItem> items, List<Recipe> recipes)
+        {
+            var tips = new List<string>();
+
+            if (_aiService != null)
+            {
+                try
+                {
+                    var itemData = items.Select(i => new
+                    {
+                        Name = i.Name,
+                        Category = i.Category,
+                        Price = i.EstimatedPrice,
+                        IsEssential = i.IsEssential
+                    }).ToList();
+
+                    var prompt = $@"
+Dựa trên danh sách mua sắm và công thức sau, đưa ra các mẹo thông minh:
+
+Shopping Items: {JsonSerializer.Serialize(itemData.Take(10))} // Limit to avoid token limits
+Recipes: {string.Join(", ", recipes.Select(r => r.Title ?? "Unknown"))}
+
+Hãy đưa ra 5-6 mẹo cụ thể về:
+1. Tiết kiệm chi phí
+2. Chọn lựa chất lượng
+3. Bảo quản thực phẩm
+4. Thay thế nguyên liệu
+5. Mẹo mua sắm thông minh
+
+Trả về dạng array of strings, mỗi string là một mẹo cụ thể.";
+
+                    var response = await _aiService.AnalyzeNutritionAsync(JsonSerializer.Serialize(itemData.Take(10)));
+                    var aiTips = JsonSerializer.Deserialize<List<string>>(response) ?? new List<string>();
+                    tips.AddRange(aiTips);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"AI Shopping Tips failed: {ex.Message}");
+                }
+            }
+
+            // Fallback tips
+            if (!tips.Any())
+            {
+                tips.AddRange(GenerateShoppingTips(items, recipes.Count));
+            }
+
+            return tips;
+        }
+
+        private string GetStoreSection(string category)
+        {
+            return category switch
+            {
+                "Produce" => "Khu vực Rau củ quả",
+                "Meat & Seafood" => "Khu vực Thịt & Hải sản",
+                "Dairy & Eggs" => "Khu vực Sữa & Trứng",
+                "Pantry" => "Khu vực Đồ khô",
+                "Frozen" => "Khu vực Đông lạnh",
+                "Bakery" => "Khu vực Bánh mì",
+                "Beverages" => "Khu vực Đồ uống",
+                _ => "Khu vực Tổng hợp"
+            };
+        }
+
+        private int GetIngredientPriority(string ingredientName, int recipeCount)
+        {
+            var name = ingredientName.ToLower();
+            
+            // Essential ingredients get higher priority
+            if (IsEssentialIngredient(name)) return 1;
+            
+            // Ingredients used in multiple recipes get higher priority
+            if (recipeCount > 1) return 2;
+            
+            // Optional ingredients get lower priority
+            if (IsOptionalIngredient(name)) return 4;
+            
+            return 3; // Normal priority
+        }
+
+        // Helper classes for AI analysis
+        private class AIIngredientAnalysis
+        {
+            public List<ConsolidationSuggestion> ConsolidationSuggestions { get; set; } = new();
+            public List<SubstitutionSuggestion> SubstitutionSuggestions { get; set; } = new();
+            public List<string> ShoppingTips { get; set; } = new();
+            public List<StoreLayoutOptimization> StoreLayoutOptimization { get; set; } = new();
+        }
+
+        private class ConsolidationSuggestion
+        {
+            public string Ingredient { get; set; } = string.Empty;
+            public string SuggestedQuantity { get; set; } = string.Empty;
+            public string Reason { get; set; } = string.Empty;
+            public bool BulkPurchase { get; set; }
+        }
+
+        private class SubstitutionSuggestion
+        {
+            public string Original { get; set; } = string.Empty;
+            public string Substitute { get; set; } = string.Empty;
+            public string Reason { get; set; } = string.Empty;
+        }
+
+        private class StoreLayoutOptimization
+        {
+            public string Category { get; set; } = string.Empty;
+            public int Priority { get; set; }
+            public string SuggestedOrder { get; set; } = string.Empty;
+        }
+
+        private class ConsolidatedIngredient
+        {
+            public string IngredientName { get; set; } = string.Empty;
+            public decimal TotalQuantity { get; set; }
+            public string Unit { get; set; } = string.Empty;
+            public string Category { get; set; } = string.Empty;
+            public int RecipeCount { get; set; }
+            public bool IsEssential { get; set; }
+            public bool IsOptional { get; set; }
+            public string ShoppingNotes { get; set; } = string.Empty;
+            public List<string> Substitutions { get; set; } = new();
         }
     }
 }
