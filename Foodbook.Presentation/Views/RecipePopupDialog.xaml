@@ -111,7 +111,7 @@
                             <StackPanel Grid.Row="0" Grid.Column="1" Margin="8,0,0,16">
                                 <TextBlock Text="Category" FontWeight="SemiBold" Margin="0,0,0,4"/>
                                 <ComboBox SelectedItem="{Binding Category}">
-                                    <ComboBoxItem Content="Main Dish"/>
+                                    <ComboBoxItem Content="Main Dish" IsSelected="True"/>
                                     <ComboBoxItem Content="Appetizer"/>
                                     <ComboBoxItem Content="Dessert"/>
                                     <ComboBoxItem Content="Soup"/>
@@ -136,7 +136,7 @@
                             <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,8,16">
                                 <TextBlock Text="Difficulty *" FontWeight="SemiBold" Margin="0,0,0,4"/>
                                 <ComboBox SelectedValue="{Binding Difficulty}">
-                                    <ComboBoxItem Content="Easy" Tag="Easy"/>
+                                    <ComboBoxItem Content="Easy" Tag="Easy" IsSelected="True"/>
                                     <ComboBoxItem Content="Medium" Tag="Medium"/>
                                     <ComboBoxItem Content="Hard" Tag="Hard"/>
                                 </ComboBox>

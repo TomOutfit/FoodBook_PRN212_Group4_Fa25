@@ -78,8 +78,21 @@
     </Window.Resources>
     
     <Grid>
-        <!-- Background with overlay -->
-        <Grid Background="#1F2937" Opacity="0.95"/>
+        <!-- Beautiful gradient background -->
+        <Grid.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#667eea" Offset="0"/>
+                <GradientStop Color="#764ba2" Offset="0.5"/>
+                <GradientStop Color="#f093fb" Offset="1"/>
+            </LinearGradientBrush>
+        </Grid.Background>
+
+        <!-- Decorative overlay -->
+        <Grid Opacity="0.1">
+            <Ellipse Fill="White" Width="300" Height="300" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-150,-150,0,0"/>
+            <Ellipse Fill="White" Width="200" Height="200" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-100,-100"/>
+            <Ellipse Fill="White" Width="150" Height="150" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,50,0,0"/>
+        </Grid>
         
         <!-- Main Content -->
         <Grid>
@@ -93,6 +106,12 @@
                     Background="White" 
                     Margin="50,50,25,50" 
                     CornerRadius="12">
+                <Border.Effect>
+                    <DropShadowEffect Color="#000000" 
+                                      BlurRadius="20" 
+                                      ShadowDepth="0" 
+                                      Opacity="0.3"/>
+                </Border.Effect>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <Grid Margin="40">
                         <Grid.RowDefinitions>
@@ -228,13 +247,21 @@
             
             <!-- Food Image Background -->
             <Border Grid.Column="1" 
-                    Background="#1F2937" 
                     Margin="25,50,50,50" 
                     CornerRadius="12">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#4facfe" Offset="0"/>
+                        <GradientStop Color="#00f2fe" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Border.Effect>
+                    <DropShadowEffect Color="#000000" 
+                                      BlurRadius="15" 
+                                      ShadowDepth="0" 
+                                      Opacity="0.2"/>
+                </Border.Effect>
                 <Grid>
-                    <!-- Food-themed background with Italian colors -->
-                    <Rectangle Fill="#2D3748" RadiusX="12" RadiusY="12"/>
-                    
                     <!-- Decorative food elements -->
                     <StackPanel HorizontalAlignment="Center" 
                                 VerticalAlignment="Center"
@@ -242,17 +269,38 @@
                         <TextBlock Text="👨‍🍳" 
                                    FontSize="120" 
                                    HorizontalAlignment="Center"
-                                   Margin="0,0,0,20"/>
+                                   Margin="0,0,0,20">
+                            <TextBlock.Effect>
+                                <DropShadowEffect Color="White" 
+                                                  BlurRadius="10" 
+                                                  ShadowDepth="0" 
+                                                  Opacity="0.8"/>
+                            </TextBlock.Effect>
+                        </TextBlock>
                         <TextBlock Text="Join Our Community" 
                                    FontSize="24" 
                                    FontWeight="Bold" 
                                    Foreground="White"
                                    HorizontalAlignment="Center"
-                                   Margin="0,0,0,8"/>
+                                   Margin="0,0,0,8">
+                            <TextBlock.Effect>
+                                <DropShadowEffect Color="#000000" 
+                                                  BlurRadius="5" 
+                                                  ShadowDepth="1" 
+                                                  Opacity="0.5"/>
+                            </TextBlock.Effect>
+                        </TextBlock>
                         <TextBlock Text="Share your culinary journey" 
                                    FontSize="18" 
-                                   Foreground="#E5E7EB"
-                                   HorizontalAlignment="Center"/>
+                                   Foreground="#F0F9FF"
+                                   HorizontalAlignment="Center">
+                            <TextBlock.Effect>
+                                <DropShadowEffect Color="#000000" 
+                                                  BlurRadius="3" 
+                                                  ShadowDepth="1" 
+                                                  Opacity="0.3"/>
+                            </TextBlock.Effect>
+                        </TextBlock>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -263,11 +311,11 @@
                 HorizontalAlignment="Right" 
                 VerticalAlignment="Top" 
                 Margin="0,20,20,0"
-                Width="32" 
-                Height="32"
+                Width="36" 
+                Height="36"
                 Background="Transparent"
                 Foreground="White"
-                FontSize="16"
+                FontSize="18"
                 FontWeight="Bold"
                 BorderThickness="0"
                 Click="Close_Click"
@@ -278,7 +326,7 @@
                         <Setter.Value>
                             <ControlTemplate TargetType="Button">
                                 <Border Background="{TemplateBinding Background}" 
-                                        CornerRadius="16">
+                                        CornerRadius="18">
                                     <ContentPresenter HorizontalAlignment="Center" 
                                                     VerticalAlignment="Center"/>
                                 </Border>
@@ -287,11 +335,17 @@
                     </Setter>
                     <Style.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="#374151"/>
+                            <Setter Property="Background" Value="#FF6B6B"/>
                         </Trigger>
                     </Style.Triggers>
                 </Style>
             </Button.Style>
+            <Button.Effect>
+                <DropShadowEffect Color="#000000" 
+                                  BlurRadius="8" 
+                                  ShadowDepth="2" 
+                                  Opacity="0.3"/>
+            </Button.Effect>
         </Button>
     </Grid>
 </Window>
