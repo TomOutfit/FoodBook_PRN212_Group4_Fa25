@@ -9,7 +9,7 @@
         WindowStartupLocation="CenterScreen"
         Background="#F1F5F9"
         WindowStyle="None"
-        AllowsTransparency="True"
+        AllowsTransparency="False"
         ResizeMode="CanResize">
 
     <Window.Resources>
@@ -224,7 +224,7 @@
                             <Button.Content>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="🏠" FontSize="16" Margin="0,0,8,0"/>
-                                    <TextBlock Text="Dashboard" FontSize="14" VerticalAlignment="Center"
+                                    <TextBlock Text="{Binding Loc_Dashboard}" FontSize="14" VerticalAlignment="Center"
                                                Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Invert}"/>
                                 </StackPanel>
                             </Button.Content>
@@ -247,7 +247,7 @@
                             <Button.Content>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="📚" FontSize="16" Margin="0,0,8,0"/>
-                                    <TextBlock Text="My Recipes" FontSize="14" VerticalAlignment="Center"
+                                    <TextBlock Text="{Binding Loc_MyRecipes}" FontSize="14" VerticalAlignment="Center"
                                                Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Invert}"/>
                                 </StackPanel>
                             </Button.Content>
@@ -270,7 +270,7 @@
                             <Button.Content>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="🥘" FontSize="16" Margin="0,0,8,0"/>
-                                    <TextBlock Text="Ingredients" FontSize="14" VerticalAlignment="Center"
+                                    <TextBlock Text="{Binding Loc_Ingredients}" FontSize="14" VerticalAlignment="Center"
                                                Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Invert}"/>
                                 </StackPanel>
                             </Button.Content>
@@ -316,7 +316,7 @@
                             <Button.Content>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="📊" FontSize="16" Margin="0,0,8,0"/>
-                                    <TextBlock Text="Analytics" FontSize="14" VerticalAlignment="Center"
+                                    <TextBlock Text="{Binding Loc_Analytics}" FontSize="14" VerticalAlignment="Center"
                                                Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Invert}"/>
                                 </StackPanel>
                             </Button.Content>
@@ -339,7 +339,7 @@
                             <Button.Content>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="⚙️" FontSize="16" Margin="0,0,8,0"/>
-                                    <TextBlock Text="Settings" FontSize="14" VerticalAlignment="Center"
+                                    <TextBlock Text="{Binding Loc_Settings}" FontSize="14" VerticalAlignment="Center"
                                                Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Invert}"/>
                                 </StackPanel>
                             </Button.Content>
@@ -780,70 +780,126 @@
                             </Border>
                         </StackPanel>
 
-                        <!-- Recipes Content - Redesigned -->
+                        <!-- Recipes Content - Modern Redesign -->
                         <StackPanel Visibility="{Binding SelectedTab, Converter={StaticResource TabVisibilityConverter}, ConverterParameter=Recipes}">
-                            <!-- Header Section -->
-                            <Grid Margin="0,0,0,24">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                
-                                <!-- Title and Stats -->
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="📚 Recipe Collection" FontSize="32" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,8"/>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding Recipes.Count, StringFormat={}{0} recipes}" FontSize="16" Foreground="#6B7280" Margin="0,0,16,0"/>
-                                        <TextBlock Text="•" FontSize="16" Foreground="#D1D5DB" Margin="0,0,16,0"/>
-                                        <TextBlock Text="Updated: Today" FontSize="16" Foreground="#6B7280"/>
+                            <!-- Modern Header with Gradient Background -->
+                            <Border Background="White" CornerRadius="20" Padding="32" Margin="0,0,0,24">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#4CAF50" Direction="270" ShadowDepth="8" Opacity="0.15" BlurRadius="20"/>
+                                </Border.Effect>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <!-- Enhanced Title Section -->
+                                    <StackPanel Grid.Column="0">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                            <Border Background="#4CAF50" CornerRadius="12" Padding="8" Margin="0,0,16,0">
+                                                <TextBlock Text="🍽️" FontSize="24" Foreground="White"/>
+                                            </Border>
+                                            <StackPanel>
+                                                <TextBlock Text="My Recipe Collection" FontSize="36" FontWeight="Bold" Foreground="#1F2937"/>
+                                                <TextBlock Text="Discover, create, and manage your culinary masterpieces" FontSize="16" Foreground="#6B7280" Margin="0,4,0,0"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                        
+                                        <!-- Enhanced Stats Row -->
+                                        <Grid Margin="0,8,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            
+                                            <Border Grid.Column="0" Background="#E8F5E8" CornerRadius="8" Padding="12,8" Margin="0,0,12,0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="📚" FontSize="14" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="{Binding Recipes.Count, StringFormat={}{0}}" FontSize="16" FontWeight="Bold" Foreground="#4CAF50"/>
+                                                    <TextBlock Text=" recipes" FontSize="14" Foreground="#6B7280" Margin="4,0,0,0"/>
+                                                </StackPanel>
+                                            </Border>
+                                            
+                                            <Border Grid.Column="1" Background="#FFF3E0" CornerRadius="8" Padding="12,8" Margin="0,0,12,0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="⭐" FontSize="14" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="{Binding MyAverageCookTime, StringFormat={}{0:F0}}" FontSize="16" FontWeight="Bold" Foreground="#FF9800"/>
+                                                    <TextBlock Text=" avg min" FontSize="14" Foreground="#6B7280" Margin="4,0,0,0"/>
+                                                </StackPanel>
+                                            </Border>
+                                            
+                                            <Border Grid.Column="2" Background="#E3F2FD" CornerRadius="8" Padding="12,8" Margin="0,0,12,0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="🔥" FontSize="14" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="{Binding MyMostCommonDifficulty}" FontSize="16" FontWeight="Bold" Foreground="#2196F3"/>
+                                                </StackPanel>
+                                            </Border>
+                                            
+                                            <Border Grid.Column="3" Background="#F3E5F5" CornerRadius="8" Padding="12,8">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="🤖" FontSize="14" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="{Binding MyAIGeneratedRecipes}" FontSize="16" FontWeight="Bold" Foreground="#9C27B0"/>
+                                                    <TextBlock Text=" AI recipes" FontSize="14" Foreground="#6B7280" Margin="4,0,0,0"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
                                     </StackPanel>
-                                </StackPanel>
-                                
-                                <!-- Quick Actions -->
-                                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                    <Button Content="➕ Add Recipe" 
-                                            Background="#4CAF50"
-                                            Foreground="White"
-                                            FontSize="14"
-                                            FontWeight="SemiBold"
-                                            Padding="20,12"
-                                            BorderThickness="0"
-                                            Margin="0,0,8,0"
-                                            Command="{Binding AddRecipeCommand}"/>
-                                    <Button Content="📊 Analytics" 
-                                            Background="#8B5CF6"
-                                            Foreground="White"
-                                            FontSize="14"
-                                            FontWeight="SemiBold"
-                                            Padding="20,12"
-                                            BorderThickness="0"
-                                            Command="{Binding ViewRecipeAnalyticsCommand}"/>
-                                </StackPanel>
-                            </Grid>
+                                    
+                                    <!-- Modern Action Buttons -->
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                                        <Button Background="#4CAF50" Foreground="White" FontSize="14" FontWeight="SemiBold" 
+                                                Padding="24,16" BorderThickness="0" Margin="0,0,12,0"
+                                                Command="{Binding AddRecipeCommand}">
+                                            <Button.Content>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="➕" FontSize="16" Margin="0,0,8,0"/>
+                                                    <TextBlock Text="Add Recipe"/>
+                                                </StackPanel>
+                                            </Button.Content>
+                                        </Button>
+                                        
+                                        <Button Background="#8B5CF6" Foreground="White" FontSize="14" FontWeight="SemiBold" 
+                                                Padding="24,16" BorderThickness="0"
+                                                Command="{Binding ViewRecipeAnalyticsCommand}">
+                                            <Button.Content>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="📊" FontSize="16" Margin="0,0,8,0"/>
+                                                    <TextBlock Text="Analytics"/>
+                                                </StackPanel>
+                                            </Button.Content>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
 
-                            <!-- Enhanced Search and Filter Section -->
-                            <Border Background="White" CornerRadius="16" Padding="24" Margin="0,0,0,20">
+                            <!-- Modern Search and Filter Section -->
+                            <Border Background="White" CornerRadius="20" Padding="32" Margin="0,0,0,24">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="4" Opacity="0.08" BlurRadius="16"/>
+                                </Border.Effect>
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
                                     
-                                    <!-- Search Bar -->
-                                    <Border Grid.Row="0" Background="#F8F9FA" CornerRadius="12" Padding="16,12" Margin="0,0,0,16">
+                                    <!-- Enhanced Search Bar -->
+                                    <Border Grid.Row="0" Background="#F8FAFC" CornerRadius="16" Padding="20,16" Margin="0,0,0,20">
                                         <Grid>
                                             <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                                                     Background="Transparent"
                                                     BorderThickness="0"
                                                     FontSize="16"
                                                     VerticalAlignment="Center"
-                                                    Padding="0,0,40,0"/>
+                                                    Padding="0,0,50,0"/>
                                             <TextBlock Text="🔍 Search recipes, ingredients, or cooking methods..." 
                                                       Foreground="#9CA3AF" 
                                                       FontSize="16"
                                                       VerticalAlignment="Center"
                                                       IsHitTestVisible="False"
-                                                      Margin="0,0,40,0">
+                                                      Margin="0,0,50,0">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -858,556 +914,447 @@
                                                     </Style>
                                                 </TextBlock.Style>
                                             </TextBlock>
-                                            <Button Content="🔍" 
-                                                   Background="#4CAF50"
-                                                   Foreground="White"
-                                                   Width="32" Height="32"
-                                                   FontSize="14" 
-                                                   BorderThickness="0"
-                                                   HorizontalAlignment="Right"
-                                                   Command="{Binding SearchRecipesCommand}"/>
+                                            <Button Background="#4CAF50" Foreground="White" Width="40" Height="40" 
+                                                   FontSize="16" BorderThickness="0" HorizontalAlignment="Right" 
+                                                   Command="{Binding SearchRecipesCommand}">
+                                                <TextBlock Text="🔍"/>
+                                            </Button>
                                         </Grid>
                                     </Border>
                                     
-                                    <!-- Advanced Filters -->
+                                    <!-- Modern Filter Tabs -->
                                     <Grid Grid.Row="1">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         
-                                        <!-- Category Filter Tabs -->
-                                        <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                            <!-- All Recipes Tab -->
-                                            <Button Padding="12,6" Margin="0,0,6,0" Cursor="Hand" 
-                                                    Command="{Binding FilterByCategoryCommand}" CommandParameter="All"
-                                                    BorderThickness="0">
-                                                <Button.Style>
-                                                    <Style TargetType="Button">
-                                                        <Setter Property="Background" Value="#4CAF50"/>
-                                                        <Setter Property="Template">
-                                                            <Setter.Value>
-                                                                <ControlTemplate TargetType="Button">
-                                                                    <Border Background="{TemplateBinding Background}" 
-                                                                            CornerRadius="20" 
-                                                                            Padding="{TemplateBinding Padding}">
-                                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                                    </Border>
-                                                                </ControlTemplate>
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding SelectedCategory}" Value="All">
-                                                                <Setter Property="Background" Value="#4CAF50"/>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding SelectedCategory}" Value="">
-                                                                <Setter Property="Background" Value="#4CAF50"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Button.Style>
-                                                <TextBlock Text="{Binding Recipes.Count, StringFormat={}All ({0})}" 
-                                                              Foreground="White" 
-                                                              FontWeight="Bold"
-                                                              FontSize="13"/>
-                                            </Button>
-                                            
-                                            <!-- Main Dishes Tab -->
-                                            <Button Padding="12,6" Margin="0,0,6,0" Cursor="Hand"
-                                                    Command="{Binding FilterByCategoryCommand}" CommandParameter="Main Dishes"
-                                                    BorderThickness="0">
-                                                <Button.Style>
-                                                    <Style TargetType="Button">
-                                                        <Setter Property="Background" Value="#F1F5F9"/>
-                                                        <Setter Property="Template">
-                                                            <Setter.Value>
-                                                                <ControlTemplate TargetType="Button">
-                                                                    <Border Background="{TemplateBinding Background}" 
-                                                                            CornerRadius="20" 
-                                                                            Padding="{TemplateBinding Padding}">
-                                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <!-- Category Filter Pills -->
+                                        <ScrollViewer Grid.Column="0" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+                                            <StackPanel Orientation="Horizontal">
+                                                <!-- All Recipes Pill -->
+                                                <Border Padding="16,10" Margin="0,0,8,0" CornerRadius="20" 
+                                                        Background="#4CAF50" Cursor="Hand">
+                                                    <Border.InputBindings>
+                                                        <MouseBinding Gesture="LeftClick" Command="{Binding FilterByCategoryCommand}" CommandParameter="All"/>
+                                                    </Border.InputBindings>
+                                                    <TextBlock Text="{Binding Recipes.Count, StringFormat={}All ({0})}" 
+                                                              Foreground="White" FontWeight="SemiBold" FontSize="14"/>
                                                 </Border>
-                                                                </ControlTemplate>
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding SelectedCategory}" Value="Main Dishes">
-                                                                <Setter Property="Background" Value="#4CAF50"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Button.Style>
+                                                
+                                                <!-- Main Dishes Pill -->
+                                                <Border Padding="16,10" Margin="0,0,8,0" CornerRadius="20" 
+                                                        Background="#F1F5F9" Cursor="Hand">
+                                                    <Border.InputBindings>
+                                                        <MouseBinding Gesture="LeftClick" Command="{Binding FilterByCategoryCommand}" CommandParameter="Main Dishes"/>
+                                                    </Border.InputBindings>
                                                     <TextBlock Text="🍽️ Main Dishes" 
-                                                             Foreground="#374151" 
-                                                             FontWeight="Medium"
-                                                             FontSize="13"/>
-                                            </Button>
-                                            
-                                            <!-- Desserts Tab -->
-                                            <Button Padding="12,6" Margin="0,0,6,0" Cursor="Hand"
-                                                    Command="{Binding FilterByCategoryCommand}" CommandParameter="Desserts"
-                                                    BorderThickness="0">
-                                                <Button.Style>
-                                                    <Style TargetType="Button">
-                                                        <Setter Property="Background" Value="#F1F5F9"/>
-                                                        <Setter Property="Template">
-                                                            <Setter.Value>
-                                                                <ControlTemplate TargetType="Button">
-                                                                    <Border Background="{TemplateBinding Background}" 
-                                                                            CornerRadius="20" 
-                                                                            Padding="{TemplateBinding Padding}">
-                                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                              Foreground="#374151" FontWeight="Medium" FontSize="14"/>
                                                 </Border>
-                                                                </ControlTemplate>
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding SelectedCategory}" Value="Desserts">
-                                                                <Setter Property="Background" Value="#4CAF50"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Button.Style>
+                                                
+                                                <!-- Desserts Pill -->
+                                                <Border Padding="16,10" Margin="0,0,8,0" CornerRadius="20" 
+                                                        Background="#F1F5F9" Cursor="Hand">
+                                                    <Border.InputBindings>
+                                                        <MouseBinding Gesture="LeftClick" Command="{Binding FilterByCategoryCommand}" CommandParameter="Desserts"/>
+                                                    </Border.InputBindings>
                                                     <TextBlock Text="🍰 Desserts" 
-                                                             Foreground="#374151" 
-                                                             FontWeight="Medium"
-                                                             FontSize="13"/>
-                                            </Button>
-                                            
-                                            <!-- Quick Recipes Tab -->
-                                            <Button Padding="12,6" Margin="0,0,6,0" Cursor="Hand"
-                                                    Command="{Binding FilterByCategoryCommand}" CommandParameter="Quick"
-                                                    BorderThickness="0">
-                                                <Button.Style>
-                                                    <Style TargetType="Button">
-                                                        <Setter Property="Background" Value="#F1F5F9"/>
-                                                        <Setter Property="Template">
-                                                            <Setter.Value>
-                                                                <ControlTemplate TargetType="Button">
-                                                                    <Border Background="{TemplateBinding Background}" 
-                                                                            CornerRadius="20" 
-                                                                            Padding="{TemplateBinding Padding}">
-                                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                              Foreground="#374151" FontWeight="Medium" FontSize="14"/>
                                                 </Border>
-                                                                </ControlTemplate>
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding SelectedCategory}" Value="Quick">
-                                                                <Setter Property="Background" Value="#4CAF50"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Button.Style>
-                                                    <TextBlock Text="⚡ Quick" 
-                                                             Foreground="#374151" 
-                                                             FontWeight="Medium"
-                                                             FontSize="13"/>
-                                            </Button>
+                                                
+                                                <!-- Quick Recipes Pill -->
+                                                <Border Padding="16,10" Margin="0,0,8,0" CornerRadius="20" 
+                                                        Background="#F1F5F9" Cursor="Hand">
+                                                    <Border.InputBindings>
+                                                        <MouseBinding Gesture="LeftClick" Command="{Binding FilterByCategoryCommand}" CommandParameter="Quick"/>
+                                                    </Border.InputBindings>
+                                                    <TextBlock Text="⚡ Quick Recipes" 
+                                                              Foreground="#374151" FontWeight="Medium" FontSize="14"/>
+                                                </Border>
+                                                
+                                                <!-- Healthy Recipes Pill -->
+                                                <Border Padding="16,10" Margin="0,0,8,0" CornerRadius="20" 
+                                                        Background="#F1F5F9" Cursor="Hand">
+                                                    <Border.InputBindings>
+                                                        <MouseBinding Gesture="LeftClick" Command="{Binding FilterByCategoryCommand}" CommandParameter="Healthy"/>
+                                                    </Border.InputBindings>
+                                                    <TextBlock Text="🥗 Healthy" 
+                                                              Foreground="#374151" FontWeight="Medium" FontSize="14"/>
+                                                </Border>
                                             </StackPanel>
+                                        </ScrollViewer>
                                         
-                                        <!-- Sort Options -->
-                                        <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                            <TextBlock Text="Sort:" FontSize="14" Foreground="#6B7280" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                            <ComboBox SelectedItem="{Binding SortBy}" Width="140" Height="36" FontSize="14">
-                                                <ComboBoxItem Content="Name A-Z"/>
-                                                <ComboBoxItem Content="Name Z-A"/>
-                                                <ComboBoxItem Content="Time"/>
-                                                <ComboBoxItem Content="Time Desc"/>
-                                                <ComboBoxItem Content="Difficulty"/>
-                                                <ComboBoxItem Content="Difficulty Desc"/>
-                                                <ComboBoxItem Content="Date Created"/>
-                                            </ComboBox>
-                                        </StackPanel>
+                                        <!-- Modern Sort Dropdown -->
+                                        <Border Grid.Column="1" Background="#F8FAFC" CornerRadius="12" Padding="16,12">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="Sort by:" FontSize="14" Foreground="#6B7280" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <ComboBox SelectedItem="{Binding SortBy}" Width="160" Height="40" FontSize="14" 
+                                                         Background="White" BorderThickness="0">
+                                                    <ComboBoxItem Content="📝 Name A-Z" IsSelected="True"/>
+                                                    <ComboBoxItem Content="📝 Name Z-A"/>
+                                                    <ComboBoxItem Content="⏱️ Time (Low to High)"/>
+                                                    <ComboBoxItem Content="⏱️ Time (High to Low)"/>
+                                                    <ComboBoxItem Content="🔥 Difficulty (Easy to Hard)"/>
+                                                    <ComboBoxItem Content="🔥 Difficulty (Hard to Easy)"/>
+                                                    <ComboBoxItem Content="📅 Date Created"/>
+                                                </ComboBox>
+                                            </StackPanel>
+                                        </Border>
                                     </Grid>
-                            </Grid>
+                                </Grid>
                             </Border>
 
-                            <!-- Recipe Grid with Enhanced Cards -->
+                            <!-- Modern Recipe Grid -->
                             <Grid>
-                                    <ItemsControl ItemsSource="{Binding Recipes}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
+                                <ItemsControl ItemsSource="{Binding Recipes}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
                                             <UniformGrid Columns="3" Margin="0,0,0,24"/>
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                        <Border Background="White" 
-                                                CornerRadius="16" 
-                                                Padding="0" 
-                                                Margin="8"
-                                                Cursor="Hand"
-                                                Width="300" 
-                                                Height="350">
-                                            <Border.Effect>
-                                                <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="4" Opacity="0.1" BlurRadius="12"/>
-                                            </Border.Effect>
-                                            
-                                                    <Grid>
-                                                        <Grid.RowDefinitions>
-                                                    <RowDefinition Height="140"/>
-                                                            <RowDefinition Height="*"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="White" CornerRadius="20" Padding="0" Margin="12" 
+                                                    Cursor="Hand" MinWidth="320" MaxWidth="380">
+                                                <Border.Effect>
+                                                    <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="6" Opacity="0.12" BlurRadius="20"/>
+                                                </Border.Effect>
+                                                
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="200"/>
+                                                        <RowDefinition Height="*"/>
                                                         <RowDefinition Height="Auto"/>
-                                                        </Grid.RowDefinitions>
+                                                    </Grid.RowDefinitions>
 
-                                                <!-- Recipe Image -->
-                                                <Border Grid.Row="0" CornerRadius="16,16,0,0" Background="#F8FAFC">
-                                                    <Grid>
-                                                        <!-- Actual Recipe Image -->
-                                                        <Image Source="{Binding ImageUrl, Converter={StaticResource ImageUrlConverter}}" 
-                                                               Stretch="UniformToFill" 
-                                                               HorizontalAlignment="Center" 
-                                                               VerticalAlignment="Center"
-                                                               Width="140" 
-                                                               Height="140"/>
-                                                        
-                                                        <!-- Fallback Placeholder -->
-                                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                                   Visibility="{Binding ImageUrl, Converter={StaticResource NullToVisibilityConverter}}">
-                                                            <TextBlock Text="🍽️" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                                                            <TextBlock Text="Recipe Image" FontSize="12" Foreground="#6B7280" HorizontalAlignment="Center"/>
-                                                        </StackPanel>
-                                                        
-                                                        <!-- Loading Overlay -->
-                                                        <Border Background="#80000000" 
-                                                                CornerRadius="16,16,0,0"
-                                                                Visibility="Collapsed">
-                                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                                <TextBlock Text="⏳" FontSize="24" HorizontalAlignment="Center" Foreground="White"/>
-                                                                <TextBlock Text="Loading..." FontSize="10" HorizontalAlignment="Center" Foreground="White"/>
+                                                    <!-- Recipe Image with Overlay -->
+                                                    <Border Grid.Row="0" CornerRadius="20,20,0,0" Background="#F8FAFC">
+                                                        <Grid>
+                                                            <!-- Recipe Image -->
+                                                            <Image Source="{Binding ImageUrl, Converter={StaticResource ImageUrlConverter}}" 
+                                                                   Stretch="UniformToFill" 
+                                                                   HorizontalAlignment="Center" 
+                                                                   VerticalAlignment="Center"
+                                                                   MinWidth="200" MaxWidth="300"
+                                                                   MinHeight="200" MaxHeight="200"/>
+                                                            
+                                                            <!-- Fallback Placeholder -->
+                                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                       Visibility="{Binding ImageUrl, Converter={StaticResource NullToVisibilityConverter}}">
+                                                                <Border Background="#4CAF50" CornerRadius="50" Padding="20" Margin="0,0,0,12">
+                                                                    <TextBlock Text="🍽️" FontSize="48" Foreground="White"/>
+                                                                </Border>
+                                                                <TextBlock Text="Recipe Image" FontSize="14" Foreground="#6B7280" HorizontalAlignment="Center"/>
                                                             </StackPanel>
-                                                        </Border>
-                                                    </Grid>
-                                                </Border>
+                                                            
+                                                            <!-- Category Badge -->
+                                                            <Border Background="#4CAF50" CornerRadius="12" Padding="8,4" 
+                                                                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="16,16,0,0">
+                                                                <TextBlock Text="{Binding Category}" FontSize="12" FontWeight="SemiBold" Foreground="White"/>
+                                                            </Border>
+                                                            
+                                                            <!-- Difficulty Badge -->
+                                                            <Border Background="#FF9800" CornerRadius="12" Padding="8,4" 
+                                                                    HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,16,16,0">
+                                                                <TextBlock Text="{Binding Difficulty}" FontSize="12" FontWeight="SemiBold" Foreground="White"/>
+                                                            </Border>
+                                                        </Grid>
+                                                    </Border>
 
-                                                <!-- Recipe Info -->
-                                                <StackPanel Grid.Row="1" Margin="16,16,16,0">
-                                                            <TextBlock Text="{Binding Title}" 
-                                                              FontSize="16" 
-                                                              FontWeight="Bold" 
-                                                              Foreground="#111827"
-                                                              TextWrapping="Wrap"
-                                                              Margin="0,0,0,8"
-                                                              MaxHeight="40"/>
-                                                    
-                                                            <TextBlock Text="{Binding Description}" 
-                                                              FontSize="13" 
-                                                              Foreground="#6B7280" 
-                                                              TextWrapping="Wrap"
-                                                              MaxHeight="50"
-                                                              Margin="0,0,0,12"/>
+                                                    <!-- Recipe Info -->
+                                                    <StackPanel Grid.Row="1" Margin="24,20,24,0">
+                                                        <TextBlock Text="{Binding Title}" FontSize="20" FontWeight="Bold" 
+                                                                 Foreground="#111827" TextWrapping="Wrap" Margin="0,0,0,8" MaxHeight="60"/>
+                                                        
+                                                        <TextBlock Text="{Binding Description}" FontSize="14" 
+                                                                 Foreground="#6B7280" TextWrapping="Wrap" MaxHeight="60" Margin="0,0,0,16"/>
 
-                                                    <!-- Recipe Stats -->
-                                                    <Grid Margin="0,0,0,12">
-                                                                <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*"/>
-                                                                    <ColumnDefinition Width="*"/>
-                                                                    <ColumnDefinition Width="*"/>
-                                                                </Grid.ColumnDefinitions>
+                                                        <!-- Recipe Stats -->
+                                                        <Grid Margin="0,0,0,16">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                            </Grid.ColumnDefinitions>
 
-                                                                <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                                            <TextBlock Text="⏱️" FontSize="12" Margin="0,0,4,0"/>
-                                                            <TextBlock Text="{Binding CookTime}" FontSize="12" Foreground="#374151" FontWeight="Medium"/>
-                                                            <TextBlock Text=" min" FontSize="12" Foreground="#6B7280"/>
+                                                            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                                                <Border Background="#E8F5E8" CornerRadius="6" Padding="6,4" Margin="0,0,8,0">
+                                                                    <TextBlock Text="⏱️" FontSize="12"/>
+                                                                </Border>
+                                                                <StackPanel>
+                                                                    <TextBlock Text="{Binding CookTime}" FontSize="14" Foreground="#4CAF50" FontWeight="SemiBold"/>
+                                                                    <TextBlock Text="minutes" FontSize="11" Foreground="#6B7280"/>
                                                                 </StackPanel>
+                                                            </StackPanel>
 
-                                                                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                                            <TextBlock Text="🔥" FontSize="12" Margin="0,0,4,0"/>
-                                                            <TextBlock Text="{Binding Difficulty}" FontSize="12" Foreground="#374151" FontWeight="Medium"/>
-                                                        </StackPanel>
-
-                                                        <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                                            <TextBlock Text="👥" FontSize="12" Margin="0,0,4,0"/>
-                                                            <TextBlock Text="4" FontSize="12" Foreground="#374151" FontWeight="Medium"/>
-                                                            <TextBlock Text=" people" FontSize="12" Foreground="#6B7280"/>
+                                                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                                <Border Background="#FFF3E0" CornerRadius="6" Padding="6,4" Margin="0,0,8,0">
+                                                                    <TextBlock Text="🔥" FontSize="12"/>
+                                                                </Border>
+                                                                <StackPanel>
+                                                                    <TextBlock Text="{Binding Difficulty}" FontSize="14" Foreground="#FF9800" FontWeight="SemiBold"/>
+                                                                    <TextBlock Text="level" FontSize="11" Foreground="#6B7280"/>
                                                                 </StackPanel>
-                                                            </Grid>
+                                                            </StackPanel>
+
+                                                            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                                                <Border Background="#E3F2FD" CornerRadius="6" Padding="6,4" Margin="0,0,8,0">
+                                                                    <TextBlock Text="👥" FontSize="12"/>
+                                                                </Border>
+                                                                <StackPanel>
+                                                                    <TextBlock Text="4" FontSize="14" Foreground="#2196F3" FontWeight="SemiBold"/>
+                                                                    <TextBlock Text="servings" FontSize="11" Foreground="#6B7280"/>
+                                                                </StackPanel>
+                                                            </StackPanel>
+                                                        </Grid>
                                                     </StackPanel>
 
-                                                <!-- Action Buttons -->
-                                                <Border Grid.Row="2" Background="#F8FAFC" CornerRadius="0,0,16,16" Padding="16,12">
-                                                    <Grid>
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*"/>
-                                                            <ColumnDefinition Width="*"/>
-                                                        </Grid.ColumnDefinitions>
-                                                        
-                                                        <Button Grid.Column="0" Content="👁️ View" 
-                                                                Background="#4CAF50"
-                                                                Foreground="White"
-                                                                FontSize="13"
-                                                                FontWeight="SemiBold"
-                                                                Padding="12,8"
-                                                                BorderThickness="0"
-                                                                Margin="0,0,4,0"
-                                                                Command="{Binding DataContext.ViewRecipeCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                CommandParameter="{Binding}"/>
-                                                        
-                                                        <Button Grid.Column="1" Content="✏️ Edit" 
-                                                                Background="#6B7280"
-                                                                Foreground="White"
-                                                                FontSize="13"
-                                                                FontWeight="SemiBold"
-                                                                Padding="12,8"
-                                                                BorderThickness="0"
-                                                                Margin="4,0,0,0"
-                                                                Command="{Binding DataContext.EditRecipeCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                CommandParameter="{Binding}"/>
-                                                    </Grid>
+                                                    <!-- Action Buttons -->
+                                                    <Border Grid.Row="2" Background="#F8FAFC" CornerRadius="0,0,20,20" Padding="24,16">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            
+                                                            <Button Grid.Column="0" Background="#4CAF50" Foreground="White" 
+                                                                    FontSize="14" FontWeight="SemiBold" Padding="16,12" 
+                                                                    BorderThickness="0" Margin="0,0,6,0"
+                                                                    Command="{Binding DataContext.ViewRecipeCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                    CommandParameter="{Binding}">
+                                                                <Button.Content>
+                                                                    <StackPanel Orientation="Horizontal">
+                                                                        <TextBlock Text="👁️" FontSize="14" Margin="0,0,6,0"/>
+                                                                        <TextBlock Text="View"/>
+                                                                    </StackPanel>
+                                                                </Button.Content>
+                                                            </Button>
+                                                            
+                                                            <Button Grid.Column="1" Background="#6B7280" Foreground="White" 
+                                                                    FontSize="14" FontWeight="SemiBold" Padding="16,12" 
+                                                                    BorderThickness="0" Margin="6,0,0,0"
+                                                                    Command="{Binding DataContext.EditRecipeCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                    CommandParameter="{Binding}">
+                                                                <Button.Content>
+                                                                    <StackPanel Orientation="Horizontal">
+                                                                        <TextBlock Text="✏️" FontSize="14" Margin="0,0,6,0"/>
+                                                                        <TextBlock Text="Edit"/>
+                                                                    </StackPanel>
+                                                                </Button.Content>
+                                                            </Button>
+                                                        </Grid>
                                                     </Border>
-                                                    </Grid>
-                                                </Border>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
                             </Grid>
 
-                            <!-- Empty State -->
-                            <Border Background="White" CornerRadius="16" Padding="40" Margin="0,40,0,0" 
+                            <!-- Modern Empty State -->
+                            <Border Background="White" CornerRadius="20" Padding="60" Margin="0,40,0,0" 
                                     Visibility="{Binding Recipes.Count, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="4" Opacity="0.08" BlurRadius="16"/>
+                                </Border.Effect>
                                 <StackPanel HorizontalAlignment="Center">
-                                    <TextBlock Text="🍽️" FontSize="64" HorizontalAlignment="Center" Margin="0,0,0,16"/>
-                                    <TextBlock Text="No recipes yet" FontSize="24" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                                    <TextBlock Text="Start building your recipe collection!" FontSize="16" Foreground="#6B7280" HorizontalAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,24"/>
-                                    <Button Content="➕ Add Your First Recipe" 
-                                            Background="#4CAF50"
-                                            Foreground="White"
-                                            FontSize="16"
-                                            FontWeight="SemiBold"
-                                            Padding="24,16"
-                                            BorderThickness="0"
-                                            Command="{Binding AddRecipeCommand}"/>
+                                    <Border Background="#F8FAFC" CornerRadius="50" Padding="30" Margin="0,0,0,24">
+                                        <TextBlock Text="🍽️" FontSize="72" HorizontalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="No recipes yet" FontSize="28" FontWeight="Bold" Foreground="#1F2937" 
+                                               HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                                    <TextBlock Text="Start building your culinary collection! Add your first recipe to get started." 
+                                               FontSize="16" Foreground="#6B7280" HorizontalAlignment="Center" 
+                                               TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,32"/>
+                                    <Button Background="#4CAF50" Foreground="White" FontSize="16" FontWeight="SemiBold" 
+                                            Padding="32,16" BorderThickness="0"
+                                            Command="{Binding AddRecipeCommand}">
+                                        <Button.Content>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="➕" FontSize="18" Margin="0,0,8,0"/>
+                                                <TextBlock Text="Add Your First Recipe"/>
+                                            </StackPanel>
+                                        </Button.Content>
+                                    </Button>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
 
-                        <!-- Ingredients Content -->
+                        <!-- Ingredients Content - Modern Redesign -->
                         <StackPanel Visibility="{Binding SelectedTab, Converter={StaticResource TabVisibilityConverter}, ConverterParameter=Ingredients}">
-                            <!-- Header Section -->
-                            <Grid Margin="0,0,0,24">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                
-                                <!-- Title and Stats -->
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="🥘 My Ingredients" FontSize="32" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,8"/>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding Ingredients.Count, StringFormat={}{0} ingredients}" FontSize="16" Foreground="#6B7280" Margin="0,0,16,0"/>
-                                        <TextBlock Text="•" FontSize="16" Foreground="#D1D5DB" Margin="0,0,16,0"/>
-                                        <TextBlock Text="Updated: Today" FontSize="16" Foreground="#6B7280"/>
-                                    </StackPanel>
-                                </StackPanel>
-                                
-                                <!-- Quick Actions -->
-                                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                    <Button Content="➕ Add Ingredient" 
-                                            Background="#4CAF50"
-                                            Foreground="White"
-                                            FontSize="14"
-                                            FontWeight="SemiBold"
-                                            Padding="20,12"
-                                            BorderThickness="0"
-                                            Margin="0,0,8,0"
-                                            Command="{Binding AddIngredientCommand}"/>
-                                    <Button Content="📊 Analytics" 
-                                            Background="#8B5CF6"
-                                            Foreground="White"
-                                            FontSize="14"
-                                            FontWeight="SemiBold"
-                                            Padding="20,12"
-                                            BorderThickness="0"
-                                            Command="{Binding ViewIngredientAnalyticsCommand}"/>
-                                </StackPanel>
-                            </Grid>
-                            
-                            <!-- Ingredient Filter Section -->
-                            <Border Background="White" CornerRadius="16" Padding="24" Margin="0,0,0,20">
+                            <!-- Modern Header with Enhanced Design -->
+                            <Border Background="White" CornerRadius="20" Padding="32" Margin="0,0,0,24">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#FF6B6B" Direction="270" ShadowDepth="8" Opacity="0.15" BlurRadius="20"/>
+                                </Border.Effect>
                                 <Grid>
-                                <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
+                                    <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     
-                                    <!-- Category Filter Tabs -->
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                        <!-- All Ingredients Tab -->
-                                        <Button Padding="12,8" Margin="0,0,6,0" Cursor="Hand" 
-                                                Command="{Binding NavigateToAllIngredientsCommand}"
-                                                BorderThickness="0">
-                                            <Button.Style>
-                                                <Style TargetType="Button">
-                                                    <Setter Property="Background" Value="#4CAF50"/>
-                                                    <Setter Property="Template">
-                                                        <Setter.Value>
-                                                            <ControlTemplate TargetType="Button">
-                                                                <Border Background="{TemplateBinding Background}" 
-                                                                        CornerRadius="16" 
-                                                                        Padding="{TemplateBinding Padding}">
-                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                                </Border>
-                                                            </ControlTemplate>
-                                                        </Setter.Value>
-                                                    </Setter>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding SelectedIngredientCategory}" Value="All">
-                                                            <Setter Property="Background" Value="#4CAF50"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding SelectedIngredientCategory}" Value="">
-                                                            <Setter Property="Background" Value="#4CAF50"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Button.Style>
-                                            <TextBlock Text="{Binding Ingredients.Count, StringFormat={}All ({0})}" 
-                                                      Foreground="White" 
-                                                      FontWeight="SemiBold"
-                                                      FontSize="13"/>
-                                        </Button>
+                                    <!-- Enhanced Title Section -->
+                                    <StackPanel Grid.Column="0">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                            <Border Background="#FF6B6B" CornerRadius="12" Padding="8" Margin="0,0,16,0">
+                                                <TextBlock Text="🥘" FontSize="24" Foreground="White"/>
+                                            </Border>
+                                            <StackPanel>
+                                                <TextBlock Text="My Ingredient Pantry" FontSize="36" FontWeight="Bold" Foreground="#1F2937"/>
+                                                <TextBlock Text="Organize, discover, and manage your culinary ingredients" FontSize="16" Foreground="#6B7280" Margin="0,4,0,0"/>
+                                            </StackPanel>
+                                        </StackPanel>
                                         
-                                        <!-- Proteins Tab -->
-                                        <Button Padding="12,8" Margin="0,0,6,0" Cursor="Hand"
-                                                Command="{Binding NavigateToProteinsCommand}"
-                                                BorderThickness="0">
-                                            <Button.Style>
-                                                <Style TargetType="Button">
-                                                    <Setter Property="Background" Value="#F8F9FA"/>
-                                                    <Setter Property="Template">
-                                                        <Setter.Value>
-                                                            <ControlTemplate TargetType="Button">
-                                                                <Border Background="{TemplateBinding Background}" 
-                                                                        CornerRadius="16" 
-                                                                        Padding="{TemplateBinding Padding}">
-                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                                </Border>
-                                                            </ControlTemplate>
-                                                        </Setter.Value>
-                                                    </Setter>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding SelectedIngredientCategory}" Value="Proteins">
-                                                            <Setter Property="Background" Value="#4CAF50"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Button.Style>
-                                            <TextBlock Text="🥩 Proteins" 
-                                                     Foreground="#6B7280" 
-                                                     FontWeight="Medium"
-                                                     FontSize="13"/>
-                                        </Button>
-                                        
-                                        <!-- Grains Tab -->
-                                        <Button Padding="12,8" Margin="0,0,6,0" Cursor="Hand"
-                                                Command="{Binding NavigateToGrainsCommand}"
-                                                BorderThickness="0">
-                                            <Button.Style>
-                                                <Style TargetType="Button">
-                                                    <Setter Property="Background" Value="#F8F9FA"/>
-                                                    <Setter Property="Template">
-                                                        <Setter.Value>
-                                                            <ControlTemplate TargetType="Button">
-                                                                <Border Background="{TemplateBinding Background}" 
-                                                                        CornerRadius="16" 
-                                                                        Padding="{TemplateBinding Padding}">
-                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                                </Border>
-                                                            </ControlTemplate>
-                                                        </Setter.Value>
-                                                    </Setter>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding SelectedIngredientCategory}" Value="Grains">
-                                                            <Setter Property="Background" Value="#4CAF50"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Button.Style>
-                                            <TextBlock Text="🌾 Grains" 
-                                                     Foreground="#6B7280" 
-                                                     FontWeight="Medium"
-                                                     FontSize="13"/>
-                                        </Button>
-                                        
-                                        <!-- Vegetables Tab -->
-                                        <Button Padding="12,8" Margin="0,0,6,0" Cursor="Hand"
-                                                Command="{Binding NavigateToVegetablesCommand}"
-                                                BorderThickness="0">
-                                            <Button.Style>
-                                                <Style TargetType="Button">
-                                                    <Setter Property="Background" Value="#F8F9FA"/>
-                                                    <Setter Property="Template">
-                                                        <Setter.Value>
-                                                            <ControlTemplate TargetType="Button">
-                                                                <Border Background="{TemplateBinding Background}" 
-                                                                        CornerRadius="16" 
-                                                                        Padding="{TemplateBinding Padding}">
-                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                                </Border>
-                                                            </ControlTemplate>
-                                                        </Setter.Value>
-                                                    </Setter>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding SelectedIngredientCategory}" Value="Vegetables">
-                                                            <Setter Property="Background" Value="#4CAF50"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Button.Style>
-                                            <TextBlock Text="🥕 Vegetables" 
-                                                     Foreground="#6B7280" 
-                                                     FontWeight="Medium"
-                                                     FontSize="13"/>
-                                        </Button>
-                                        
-                                        <!-- Spices Tab -->
-                                        <Button Padding="12,8" Margin="0,0,6,0" Cursor="Hand"
-                                                Command="{Binding NavigateToSpicesCommand}"
-                                                BorderThickness="0">
-                                            <Button.Style>
-                                                <Style TargetType="Button">
-                                                    <Setter Property="Background" Value="#F8F9FA"/>
-                                                    <Setter Property="Template">
-                                                        <Setter.Value>
-                                                            <ControlTemplate TargetType="Button">
-                                                                <Border Background="{TemplateBinding Background}" 
-                                                                        CornerRadius="16" 
-                                                                        Padding="{TemplateBinding Padding}">
-                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                                </Border>
-                                                            </ControlTemplate>
-                                                        </Setter.Value>
-                                                    </Setter>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding SelectedIngredientCategory}" Value="Spices">
-                                                            <Setter Property="Background" Value="#4CAF50"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Button.Style>
-                                            <TextBlock Text="🌶️ Spices" 
-                                                     Foreground="#6B7280" 
-                                                     FontWeight="Medium"
-                                                     FontSize="13"/>
-                                        </Button>
+                                        <!-- Enhanced Stats Row -->
+                                        <Grid Margin="0,8,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            
+                                            <Border Grid.Column="0" Background="#FFEBEE" CornerRadius="8" Padding="12,8" Margin="0,0,12,0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="🥘" FontSize="14" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="{Binding Ingredients.Count, StringFormat={}{0}}" FontSize="16" FontWeight="Bold" Foreground="#FF6B6B"/>
+                                                    <TextBlock Text=" ingredients" FontSize="14" Foreground="#6B7280" Margin="4,0,0,0"/>
+                                                </StackPanel>
+                                            </Border>
+                                            
+                                            <Border Grid.Column="1" Background="#E8F5E8" CornerRadius="8" Padding="12,8" Margin="0,0,12,0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="🥩" FontSize="14" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="Proteins" FontSize="16" FontWeight="Bold" Foreground="#4CAF50"/>
+                                                </StackPanel>
+                                            </Border>
+                                            
+                                            <Border Grid.Column="2" Background="#FFF3E0" CornerRadius="8" Padding="12,8" Margin="0,0,12,0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="🌾" FontSize="14" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="Grains" FontSize="16" FontWeight="Bold" Foreground="#FF9800"/>
+                                                </StackPanel>
+                                            </Border>
+                                            
+                                            <Border Grid.Column="3" Background="#F3E5F5" CornerRadius="8" Padding="12,8">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="🧂" FontSize="14" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="Spices" FontSize="16" FontWeight="Bold" Foreground="#9C27B0"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
                                     </StackPanel>
                                     
-                                    <!-- Sort Options -->
-                                    <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                        <TextBlock Text="Sort:" FontSize="14" Foreground="#6B7280" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                        <ComboBox SelectedItem="{Binding IngredientSortBy}" Width="140" Height="36" FontSize="14">
-                                            <ComboBoxItem Content="Name A-Z"/>
-                                            <ComboBoxItem Content="Name Z-A"/>
-                                            <ComboBoxItem Content="Category"/>
-                                            <ComboBoxItem Content="Date Added"/>
-                                        </ComboBox>
+                                    <!-- Modern Action Buttons -->
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                                        <Button Background="#FF6B6B" Foreground="White" FontSize="14" FontWeight="SemiBold" 
+                                                Padding="24,16" BorderThickness="0" Margin="0,0,12,0"
+                                                Command="{Binding AddIngredientCommand}">
+                                            <Button.Content>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="➕" FontSize="16" Margin="0,0,8,0"/>
+                                                    <TextBlock Text="Add Ingredient"/>
+                                                </StackPanel>
+                                            </Button.Content>
+                                        </Button>
+                                        
+                                        <Button Background="#8B5CF6" Foreground="White" FontSize="14" FontWeight="SemiBold" 
+                                                Padding="24,16" BorderThickness="0"
+                                                Command="{Binding ViewIngredientAnalyticsCommand}">
+                                            <Button.Content>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="📊" FontSize="16" Margin="0,0,8,0"/>
+                                                    <TextBlock Text="Analytics"/>
+                                                </StackPanel>
+                                            </Button.Content>
+                                        </Button>
                                     </StackPanel>
                                 </Grid>
                             </Border>
                             
-                            <!-- Ingredient Categories Overview -->
+                            <!-- Modern Ingredient Filter Section -->
+                            <Border Background="White" CornerRadius="20" Padding="32" Margin="0,0,0,24">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="4" Opacity="0.08" BlurRadius="16"/>
+                                </Border.Effect>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <!-- Category Filter Pills -->
+                                    <ScrollViewer Grid.Column="0" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+                                        <StackPanel Orientation="Horizontal">
+                                            <!-- All Ingredients Pill -->
+                                            <Border Padding="16,10" Margin="0,0,8,0" CornerRadius="20" 
+                                                    Background="#FF6B6B" Cursor="Hand">
+                                                <Border.InputBindings>
+                                                    <MouseBinding Gesture="LeftClick" Command="{Binding NavigateToAllIngredientsCommand}"/>
+                                                </Border.InputBindings>
+                                                <TextBlock Text="{Binding Ingredients.Count, StringFormat={}All ({0})}" 
+                                                          Foreground="White" FontWeight="SemiBold" FontSize="14"/>
+                                            </Border>
+                                            
+                                            <!-- Proteins Pill -->
+                                            <Border Padding="16,10" Margin="0,0,8,0" CornerRadius="20" 
+                                                    Background="#F1F5F9" Cursor="Hand">
+                                                <Border.InputBindings>
+                                                    <MouseBinding Gesture="LeftClick" Command="{Binding NavigateToProteinsCommand}"/>
+                                                </Border.InputBindings>
+                                                <TextBlock Text="🥩 Proteins" 
+                                                          Foreground="#374151" FontWeight="Medium" FontSize="14"/>
+                                            </Border>
+                                            
+                                            <!-- Grains Pill -->
+                                            <Border Padding="16,10" Margin="0,0,8,0" CornerRadius="20" 
+                                                    Background="#F1F5F9" Cursor="Hand">
+                                                <Border.InputBindings>
+                                                    <MouseBinding Gesture="LeftClick" Command="{Binding NavigateToGrainsCommand}"/>
+                                                </Border.InputBindings>
+                                                <TextBlock Text="🌾 Grains" 
+                                                          Foreground="#374151" FontWeight="Medium" FontSize="14"/>
+                                            </Border>
+                                            
+                                            <!-- Vegetables Pill -->
+                                            <Border Padding="16,10" Margin="0,0,8,0" CornerRadius="20" 
+                                                    Background="#F1F5F9" Cursor="Hand">
+                                                <Border.InputBindings>
+                                                    <MouseBinding Gesture="LeftClick" Command="{Binding NavigateToVegetablesCommand}"/>
+                                                </Border.InputBindings>
+                                                <TextBlock Text="🥕 Vegetables" 
+                                                          Foreground="#374151" FontWeight="Medium" FontSize="14"/>
+                                            </Border>
+                                            
+                                            <!-- Spices Pill -->
+                                            <Border Padding="16,10" Margin="0,0,8,0" CornerRadius="20" 
+                                                    Background="#F1F5F9" Cursor="Hand">
+                                                <Border.InputBindings>
+                                                    <MouseBinding Gesture="LeftClick" Command="{Binding NavigateToSpicesCommand}"/>
+                                                </Border.InputBindings>
+                                                <TextBlock Text="🧂 Spices" 
+                                                          Foreground="#374151" FontWeight="Medium" FontSize="14"/>
+                                            </Border>
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                    
+                                    <!-- Modern Sort Dropdown -->
+                                    <Border Grid.Column="1" Background="#F8FAFC" CornerRadius="12" Padding="16,12">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Sort by:" FontSize="14" Foreground="#6B7280" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                            <ComboBox SelectedItem="{Binding IngredientSortBy}" Width="160" Height="40" FontSize="14" 
+                                                     Background="White" BorderThickness="0">
+                                                <ComboBoxItem Content="📝 Name A-Z" IsSelected="True"/>
+                                                <ComboBoxItem Content="📝 Name Z-A"/>
+                                                <ComboBoxItem Content="📂 Category"/>
+                                                <ComboBoxItem Content="📅 Date Added"/>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                            
+                            <!-- Modern Ingredient Categories Overview -->
                             <Grid Margin="0,0,0,24">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -1417,50 +1364,58 @@
                                 </Grid.ColumnDefinitions>
 
                                 <!-- Proteins -->
-                                <Border Grid.Column="0" Background="White" CornerRadius="12" Padding="16" Margin="0,0,4,0" Cursor="Hand">
+                                <Border Grid.Column="0" Background="White" CornerRadius="16" Padding="20" Margin="0,0,6,0" Cursor="Hand">
                                     <Border.Effect>
-                                        <DropShadowEffect Color="#FF6B6B" Direction="270" ShadowDepth="4" Opacity="0.1" BlurRadius="10"/>
+                                        <DropShadowEffect Color="#FF6B6B" Direction="270" ShadowDepth="6" Opacity="0.12" BlurRadius="16"/>
                                     </Border.Effect>
                                     <StackPanel>
-                                        <TextBlock Text="🥩" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                                        <TextBlock Text="Proteins" FontSize="16" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="10 items" FontSize="12" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                        <Border Background="#FFEBEE" CornerRadius="12" Padding="12" Margin="0,0,0,12">
+                                            <TextBlock Text="🥩" FontSize="28" HorizontalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="Proteins" FontSize="18" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                                        <TextBlock Text="10 items" FontSize="14" Foreground="#6B7280" HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </Border>
 
                                 <!-- Grains -->
-                                <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="16" Margin="2,0" Cursor="Hand">
+                                <Border Grid.Column="1" Background="White" CornerRadius="16" Padding="20" Margin="3,0" Cursor="Hand">
                                     <Border.Effect>
-                                        <DropShadowEffect Color="#FFB74D" Direction="270" ShadowDepth="4" Opacity="0.1" BlurRadius="10"/>
+                                        <DropShadowEffect Color="#FFB74D" Direction="270" ShadowDepth="6" Opacity="0.12" BlurRadius="16"/>
                                     </Border.Effect>
                                     <StackPanel>
-                                        <TextBlock Text="🌾" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                                        <TextBlock Text="Grains" FontSize="16" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="8 items" FontSize="12" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                        <Border Background="#FFF3E0" CornerRadius="12" Padding="12" Margin="0,0,0,12">
+                                            <TextBlock Text="🌾" FontSize="28" HorizontalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="Grains" FontSize="18" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                                        <TextBlock Text="8 items" FontSize="14" Foreground="#6B7280" HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </Border>
 
                                 <!-- Vegetables -->
-                                <Border Grid.Column="2" Background="White" CornerRadius="12" Padding="16" Margin="2,0" Cursor="Hand">
+                                <Border Grid.Column="2" Background="White" CornerRadius="16" Padding="20" Margin="3,0" Cursor="Hand">
                                     <Border.Effect>
-                                        <DropShadowEffect Color="#4CAF50" Direction="270" ShadowDepth="4" Opacity="0.1" BlurRadius="10"/>
+                                        <DropShadowEffect Color="#4CAF50" Direction="270" ShadowDepth="6" Opacity="0.12" BlurRadius="16"/>
                                     </Border.Effect>
                                     <StackPanel>
-                                        <TextBlock Text="🥕" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                                        <TextBlock Text="Vegetables" FontSize="16" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="14 items" FontSize="12" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                        <Border Background="#E8F5E8" CornerRadius="12" Padding="12" Margin="0,0,0,12">
+                                            <TextBlock Text="🥕" FontSize="28" HorizontalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="Vegetables" FontSize="18" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                                        <TextBlock Text="14 items" FontSize="14" Foreground="#6B7280" HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </Border>
 
                                 <!-- Spices -->
-                                <Border Grid.Column="3" Background="White" CornerRadius="12" Padding="16" Margin="4,0,0,0" Cursor="Hand">
+                                <Border Grid.Column="3" Background="White" CornerRadius="16" Padding="20" Margin="6,0,0,0" Cursor="Hand">
                                     <Border.Effect>
-                                        <DropShadowEffect Color="#9C27B0" Direction="270" ShadowDepth="4" Opacity="0.1" BlurRadius="10"/>
+                                        <DropShadowEffect Color="#9C27B0" Direction="270" ShadowDepth="6" Opacity="0.12" BlurRadius="16"/>
                                     </Border.Effect>
                                     <StackPanel>
-                                        <TextBlock Text="🧂" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                                        <TextBlock Text="Spices" FontSize="16" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="25 items" FontSize="12" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                        <Border Background="#F3E5F5" CornerRadius="12" Padding="12" Margin="0,0,0,12">
+                                            <TextBlock Text="🧂" FontSize="28" HorizontalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="Spices" FontSize="18" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                                        <TextBlock Text="25 items" FontSize="14" Foreground="#6B7280" HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </Border>
                             </Grid>
@@ -1632,7 +1587,8 @@
                                               FontSize="14" 
                                               Foreground="#6B7280"
                                               TextWrapping="Wrap"
-                                              Margin="0,0,0,12"/>
+                                              Margin="0,0,0,16"
+                                              Height="60"/>
                                         <Button Content="📸 Upload Photo &amp; Judge" 
                                            Background="#8B5CF6"
                                            Foreground="White"
@@ -1653,7 +1609,8 @@
                                               FontSize="14" 
                                               Foreground="#6B7280"
                                               TextWrapping="Wrap"
-                                              Margin="0,0,0,12"/>
+                                              Margin="0,0,0,16"
+                                              Height="60"/>
                                        <Button Content="🎲 Generate Recipe" 
                                            Background="#4CAF50"
                                            Foreground="White"
@@ -1682,7 +1639,8 @@
                                               FontSize="14" 
                                               Foreground="#6B7280"
                                               TextWrapping="Wrap"
-                                              Margin="0,0,0,12"/>
+                                              Margin="0,0,0,16"
+                                              Height="60"/>
                                         <Button Content="📋 Generate Shopping List" 
                                            Background="#F59E0B"
                                            Foreground="White"
@@ -1703,18 +1661,19 @@
                                               FontSize="14" 
                                               Foreground="#6B7280"
                                               TextWrapping="Wrap"
-                                              Margin="0,0,0,12"/>
+                                              Margin="0,0,0,16"
+                                              Height="60"/>
                                        
                                        <!-- Nutrition Analysis Button -->
                                        <Button Content="🥗 Analyze Nutrition" 
                                            Background="#E74C3C"
                                            Foreground="White"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
                                            Padding="16,12"
-                                           FontWeight="Bold"
-                                           FontSize="16"
-                                           Cursor="Hand"
-                                           Command="{Binding OpenNutritionAnalysisCommand}"
-                                           HorizontalAlignment="Stretch"/>
+                                           BorderThickness="0"
+                                           HorizontalAlignment="Stretch"
+                                           Command="{Binding OpenNutritionAnalysisCommand}"/>
                                     </StackPanel>
                                 </Border>
                             </Grid>
@@ -2045,35 +2004,35 @@
                                 <!-- Application Settings -->
                                 <Border Grid.Column="0" Background="White" CornerRadius="12" Padding="20" Margin="0,0,8,0">
                                     <StackPanel>
-                                        <TextBlock Text="🔧 Application Settings" FontSize="18" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,16"/>
+                                        <TextBlock Text="{Binding Loc_ApplicationSettings}" FontSize="18" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,16"/>
                                         
                                         <StackPanel Margin="0,0,0,12">
-                                            <TextBlock Text="Theme" FontSize="14" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,6"/>
-                                            <ComboBox SelectedValue="{Binding SelectedTheme}" Height="40" FontSize="14" SelectionChanged="ThemeComboBox_SelectionChanged">
-                                                <ComboBoxItem Content="🌞 Light Theme" Tag="Light" IsSelected="True"/>
+                                            <TextBlock Text="{Binding Loc_Theme}" FontSize="14" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,6"/>
+                                            <ComboBox SelectedValue="{Binding SelectedTheme, Mode=TwoWay}" SelectedValuePath="Tag" Height="40" FontSize="14" SelectionChanged="ThemeComboBox_SelectionChanged">
+                                                <ComboBoxItem Content="🌞 Light Theme" Tag="Light"/>
                                                 <ComboBoxItem Content="🌙 Dark Theme" Tag="Dark"/>
                                             </ComboBox>
                                     </StackPanel>
                                         
                                         <StackPanel Margin="0,0,0,12">
-                                            <TextBlock Text="Language" FontSize="14" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,6"/>
-                                            <ComboBox SelectedValue="{Binding SelectedLanguage}" Height="40" FontSize="14" SelectionChanged="LanguageComboBox_SelectionChanged">
+                                            <TextBlock Text="{Binding Loc_Language}" FontSize="14" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,6"/>
+                                            <ComboBox SelectedValue="{Binding SelectedLanguage, Mode=TwoWay}" SelectedValuePath="Tag" Height="40" FontSize="14" SelectionChanged="LanguageComboBox_SelectionChanged">
                                                 <ComboBoxItem Content="🇺🇸 English" Tag="English"/>
-                                                <ComboBoxItem Content="🇻🇳 Vietnamese" Tag="Vietnamese" IsSelected="True"/>
+                                                <ComboBoxItem Content="🇻🇳 Vietnamese" Tag="Vietnamese"/>
                                             </ComboBox>
                                     </StackPanel>
                                         
                                         <StackPanel Margin="0,0,0,12">
-                                            <TextBlock Text="Default Servings" FontSize="14" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,6"/>
-                                            <TextBox Text="{Binding DefaultServings}" Height="40" FontSize="14" Padding="12,8"/>
+                                            <TextBlock Text="{Binding Loc_DefaultServings}" FontSize="14" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,6"/>
+                                            <TextBox Text="{Binding DefaultServings, Mode=TwoWay}" Height="40" FontSize="14" Padding="12,8"/>
                                     </StackPanel>
                                         
                                         <StackPanel Margin="0,0,0,16">
-                                            <CheckBox IsChecked="{Binding NotificationsEnabled}" Content="🔔 Enable Notifications" 
+                                            <CheckBox IsChecked="{Binding NotificationsEnabled, Mode=TwoWay}" Content="{Binding Loc_EnableNotifications}" 
                                                       FontSize="14" Foreground="#374151" VerticalAlignment="Center"/>
                                         </StackPanel>
                                         
-                                        <Button Content="💾 Save Settings" 
+                                        <Button Content="{Binding Loc_SaveSettings}" 
                                                 Background="#4CAF50"
                                                 Foreground="White"
                                                 FontSize="14"
@@ -2088,15 +2047,15 @@
                                 <!-- User Profile Settings -->
                                 <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="20" Margin="8,0,0,0">
                                     <StackPanel>
-                                        <TextBlock Text="👤 User Profile" FontSize="18" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,16"/>
+                                        <TextBlock Text="{Binding Loc_UserProfile}" FontSize="18" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,16"/>
 
                                         <StackPanel Margin="0,0,0,12">
-                                            <TextBlock Text="Username" FontSize="14" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,6"/>
+                                            <TextBlock Text="{Binding Loc_Username}" FontSize="14" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,6"/>
                                             <TextBox Text="admin" Height="40" FontSize="14" Padding="12,8" IsReadOnly="True"/>
                                         </StackPanel>
 
                                         <StackPanel Margin="0,0,0,12">
-                                            <TextBlock Text="Email" FontSize="14" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,6"/>
+                                            <TextBlock Text="{Binding Loc_Email}" FontSize="14" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,6"/>
                                             <TextBox Text="admin@foodbook.com" Height="40" FontSize="14" Padding="12,8" IsReadOnly="True"/>
                                         </StackPanel>
 
