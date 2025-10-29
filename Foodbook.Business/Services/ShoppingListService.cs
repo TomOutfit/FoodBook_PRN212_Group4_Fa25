@@ -42,10 +42,19 @@ namespace Foodbook.Business.Services
                 })
                 .ToListAsync();
 
-            // Step 3: Truy vấn Kho (Stock) - Lấy tất cả nguyên liệu của user
-            var userStock = await _context.Ingredients
+            // Step 3: Truy vấn Kho (Stock) - Lấy tất cả nguyên liệu của user (kèm đơn vị)
+            var userStockList = await _context.Ingredients
                 .Where(i => i.UserId == userId)
-                .ToDictionaryAsync(i => i.Name.ToLower(), i => i.Quantity ?? 0);
+                .Select(i => new
+                {
+                    Name = i.Name.ToLower(),
+                    Quantity = i.Quantity ?? 0,
+                    Unit = i.Unit ?? ""
+                })
+                .ToListAsync();
+            var userStock = userStockList
+                .GroupBy(x => x.Name)
+                .ToDictionary(g => g.Key, g => new { Quantity = g.Sum(x => x.Quantity), Unit = g.First().Unit });
 
             // Step 4: AI Consolidation - Gộp và tối ưu hóa nguyên liệu
             var consolidatedIngredients = ConsolidateIngredientsWithAI(requiredIngredients, aiAnalysisResult);
@@ -57,12 +66,13 @@ namespace Foodbook.Business.Services
             foreach (var ingredient in consolidatedIngredients)
             {
                 var neededQuantity = ingredient.TotalQuantity;
-                
-                // Kiểm tra kho hiện có
+
+                // Kiểm tra kho hiện có với chuyển đổi đơn vị cơ bản
                 if (userStock.ContainsKey(ingredient.IngredientName))
                 {
-                    var availableStock = userStock[ingredient.IngredientName];
-                    neededQuantity = Math.Max(0, ingredient.TotalQuantity - availableStock);
+                    var stock = userStock[ingredient.IngredientName];
+                    var availableInRequiredUnit = ConvertQuantity(stock.Quantity, stock.Unit, ingredient.Unit);
+                    neededQuantity = Math.Max(0, ingredient.TotalQuantity - availableInRequiredUnit);
                 }
 
                 // Chỉ thêm vào shopping list nếu cần mua
@@ -112,6 +122,60 @@ namespace Foodbook.Business.Services
             });
 
             return optimizedList;
+        }
+
+        private decimal ConvertQuantity(decimal quantity, string fromUnit, string toUnit)
+        {
+            var from = (fromUnit ?? string.Empty).Trim().ToLower();
+            var to = (toUnit ?? string.Empty).Trim().ToLower();
+
+            if (string.IsNullOrEmpty(from) || string.IsNullOrEmpty(to) || from == to)
+                return quantity;
+
+            // Mass conversions
+            if ((from == "kg" && to == "g") || (from == "kilogram" && to == "gram"))
+                return quantity * 1000m;
+            if ((from == "g" && to == "kg") || (from == "gram" && to == "kilogram"))
+                return quantity / 1000m;
+
+            // Volume conversions
+            if ((from == "liter" || from == "l") && (to == "ml"))
+                return quantity * 1000m;
+            if ((from == "ml") && (to == "liter" || to == "l"))
+                return quantity / 1000m;
+
+            // Culinary spoons/cups (approximate)
+            // 1 cup = 240 ml, 1 tbsp = 15 ml, 1 tsp = 5 ml
+            if (IsCupSpoon(from) && IsCupSpoon(to))
+            {
+                var ml = quantity * UnitToMl(from);
+                return ml / UnitToMl(to);
+            }
+
+            // Piece/dozen
+            if (from == "dozen" && to == "piece") return quantity * 12m;
+            if (from == "piece" && to == "dozen") return quantity / 12m;
+
+            // Fallback: no conversion known
+            return quantity;
+        }
+
+        private bool IsCupSpoon(string unit)
+        {
+            var u = (unit ?? string.Empty).Trim().ToLower();
+            return u == "cup" || u == "tbsp" || u == "tsp";
+        }
+
+        private decimal UnitToMl(string unit)
+        {
+            var u = (unit ?? string.Empty).Trim().ToLower();
+            return u switch
+            {
+                "cup" => 240m,
+                "tbsp" => 15m,
+                "tsp" => 5m,
+                _ => 1m
+            };
         }
 
         public async Task<ShoppingListResult> GenerateShoppingListFromIngredientsAsync(IEnumerable<string> ingredientNames, int userId)

@@ -29,6 +29,17 @@ namespace Foodbook.Data.Entities
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        // Inventory management fields
+        public DateTime? ExpiryDate { get; set; }
+
+        public DateTime? PurchasedAt { get; set; }
+
+        [MaxLength(50)]
+        public string? Location { get; set; }
+
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal? MinQuantity { get; set; }
+
         // Navigation properties
         public virtual ICollection<RecipeIngredient> RecipeIngredients { get; set; } = new List<RecipeIngredient>();
         

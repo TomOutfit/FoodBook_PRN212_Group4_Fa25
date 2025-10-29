@@ -41,10 +41,11 @@ public partial class App : Application
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                 .Build();
             
-            var connectionString = configuration.GetConnectionString("DefaultConnection");
+            var connectionString = configuration.GetConnectionString("DBDefault")
+                ?? configuration.GetConnectionString("DefaultConnection");
             if (string.IsNullOrEmpty(connectionString))
             {
-                throw new InvalidOperationException("Connection string 'DefaultConnection' not found in appsettings.json");
+                throw new InvalidOperationException("Connection string 'DBDefault' (or 'DefaultConnection') not found in appsettings.json");
             }
             
             // Add configuration to DI container

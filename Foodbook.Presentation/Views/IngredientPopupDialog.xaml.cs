@@ -42,6 +42,12 @@ namespace Foodbook.Presentation.Views
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
+            if (viewModel.ExpiryDate == null)
+            {
+                MessageBox.Show("Please select an expiry date.", "Validation Error",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
             // Create or update ingredient
             if (IsEditMode && Ingredient != null)
@@ -52,6 +58,10 @@ namespace Foodbook.Presentation.Views
                 Ingredient.NutritionInfo = viewModel.NutritionInfo;
                 Ingredient.Unit = viewModel.Unit;
                 Ingredient.Quantity = viewModel.Quantity;
+                Ingredient.ExpiryDate = viewModel.ExpiryDate;
+                Ingredient.PurchasedAt = viewModel.PurchasedAt;
+                Ingredient.Location = viewModel.Location;
+                Ingredient.MinQuantity = viewModel.MinQuantity;
             }
             else
             {
@@ -63,6 +73,10 @@ namespace Foodbook.Presentation.Views
                     NutritionInfo = viewModel.NutritionInfo,
                     Unit = viewModel.Unit,
                     Quantity = viewModel.Quantity,
+                    ExpiryDate = viewModel.ExpiryDate,
+                    PurchasedAt = viewModel.PurchasedAt ?? DateTime.UtcNow,
+                    Location = viewModel.Location,
+                    MinQuantity = viewModel.MinQuantity,
                     UserId = 1, // Default user ID
                     CreatedAt = DateTime.UtcNow
                 };
@@ -86,6 +100,10 @@ namespace Foodbook.Presentation.Views
         public string NutritionInfo { get; set; } = string.Empty;
         public string Unit { get; set; } = string.Empty;
         public decimal Quantity { get; set; }
+        public DateTime? ExpiryDate { get; set; }
+        public DateTime? PurchasedAt { get; set; }
+        public string Location { get; set; } = string.Empty;
+        public decimal? MinQuantity { get; set; }
 
         public IngredientViewModel() { }
 
@@ -96,6 +114,10 @@ namespace Foodbook.Presentation.Views
             NutritionInfo = ingredient.NutritionInfo ?? string.Empty;
             Unit = ingredient.Unit ?? string.Empty;
             Quantity = ingredient.Quantity ?? 0;
+            ExpiryDate = ingredient.ExpiryDate;
+            PurchasedAt = ingredient.PurchasedAt;
+            Location = ingredient.Location ?? string.Empty;
+            MinQuantity = ingredient.MinQuantity;
         }
     }
 }

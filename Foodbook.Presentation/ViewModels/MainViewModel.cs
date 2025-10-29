@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 using Foodbook.Business.Interfaces;
@@ -97,6 +98,19 @@ namespace Foodbook.Presentation.ViewModels
         private int _hardDifficultyCount = 0;
         private ObservableCollection<int> _monthlyRecipeCounts = new();
         private User? _currentUser;
+        private string _greeting = string.Empty;
+
+        // Dashboard KPI properties (FoodBook context)
+        private int _totalIngredients;
+        private int _expiringSoonCount;
+        private int _expiredCount;
+        private int _aiOperationsCount;
+        private int _aiErrorCount;
+        private int _totalLogsCount;
+        private ObservableCollection<KeyValuePair<string,int>> _topIngredients = new();
+
+        // Serialize DB access to avoid DbContext concurrent usage across async flows
+        private readonly SemaphoreSlim _dbAccessLock = new(1, 1);
 
         // My Recipes statistics properties
         private int _myTotalRecipes = 0;
@@ -308,6 +322,14 @@ namespace Foodbook.Presentation.ViewModels
             NavigateToVegetablesCommand = new RelayCommand(async () => await NavigateToIngredientCategory("Vegetables"));
             NavigateToSpicesCommand = new RelayCommand(async () => await NavigateToIngredientCategory("Spices"));
             
+            // Paging commands (always executable; page is clamped in setter)
+            NextPageCommand = new RelayCommand(
+                () => { CurrentPage = Math.Min(CurrentPage + 1, TotalPages == 0 ? 1 : TotalPages); return Task.CompletedTask; }
+            );
+            PrevPageCommand = new RelayCommand(
+                () => { CurrentPage = Math.Max(CurrentPage - 1, 1); return Task.CompletedTask; }
+            );
+
             // Load current user
             try
             {
@@ -323,6 +345,66 @@ namespace Foodbook.Presentation.ViewModels
         {
             get => _recipes;
             set => SetProperty(ref _recipes, value);
+        }
+
+        // Paging for Recipes (3 cards per page)
+        private ObservableCollection<Recipe> _pagedRecipes = new();
+        public ObservableCollection<Recipe> PagedRecipes
+        {
+            get => _pagedRecipes;
+            set => SetProperty(ref _pagedRecipes, value);
+        }
+
+        private int _pageSize = 3;
+        public int PageSize
+        {
+            get => _pageSize;
+            set { if (SetProperty(ref _pageSize, value)) UpdatePaging(); }
+        }
+
+        private int _currentPage = 1;
+        public int CurrentPage
+        {
+            get => _currentPage;
+            set 
+            { 
+                var v = Math.Max(1, Math.Min(value, TotalPages == 0 ? 1 : TotalPages)); 
+                if (SetProperty(ref _currentPage, v)) 
+                { 
+                    UpdatePaging();
+                    // notify command system to re-evaluate can-execute for paging buttons
+                    System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+                }
+            }
+        }
+
+        private int _totalPages;
+        public int TotalPages
+        {
+            get => _totalPages;
+            private set => SetProperty(ref _totalPages, value);
+        }
+
+        // Paging options for quick jump
+        private ObservableCollection<int> _pageOptions = new();
+        public ObservableCollection<int> PageOptions
+        {
+            get => _pageOptions;
+            private set => SetProperty(ref _pageOptions, value);
+        }
+
+        private int _selectedPage = 1;
+        public int SelectedPage
+        {
+            get => _selectedPage;
+            set
+            {
+                if (SetProperty(ref _selectedPage, value))
+                {
+                    // Keep CurrentPage in sync when user jumps via selector
+                    CurrentPage = value;
+                }
+            }
         }
 
         public ObservableCollection<Ingredient> Ingredients
@@ -368,6 +450,13 @@ namespace Foodbook.Presentation.ViewModels
             set => SetProperty(ref _selectedTab, value);
         }
 
+        // Smart Pantry overview counters
+        public int PantryExpiringSoon3Days { get; set; }
+        public int PantryExpiringSoon7Days { get; set; }
+        public int PantryExpired { get; set; }
+        public int PantryNeedRestock { get; set; }
+        public int PantryOverstock { get; set; }
+
         public ICommand LoadRecipesCommand { get; }
         public ICommand SearchRecipesCommand { get; }
         public ICommand LoadIngredientsCommand { get; }
@@ -404,6 +493,8 @@ namespace Foodbook.Presentation.ViewModels
         public ICommand RefreshUserProfileCommand { get; }
         public ICommand ToggleSidebarCommand { get; }
         public ICommand RefreshDashboardCommand { get; } = null!;
+        public ICommand NextPageCommand { get; } = null!;
+        public ICommand PrevPageCommand { get; } = null!;
         
         // Ingredient Filter Commands
         public ICommand SortIngredientsByCommand { get; } = null!;
@@ -430,41 +521,7 @@ namespace Foodbook.Presentation.ViewModels
         public string SelectedLanguage
         {
             get => _selectedLanguage;
-            set
-            {
-                if (SetProperty(ref _selectedLanguage, value))
-                {
-                    // Update localization service
-                    if (_localizationService != null)
-                    {
-                        _localizationService.ChangeLanguage(value);
-                        // Trigger notification for all localization properties
-                        OnPropertyChanged(nameof(Loc_Dashboard));
-                        OnPropertyChanged(nameof(Loc_MyRecipes));
-                        OnPropertyChanged(nameof(Loc_Ingredients));
-                        OnPropertyChanged(nameof(Loc_ShoppingList));
-                        OnPropertyChanged(nameof(Loc_Analytics));
-                        OnPropertyChanged(nameof(Loc_Settings));
-                        OnPropertyChanged(nameof(Loc_ApplicationSettings));
-                        OnPropertyChanged(nameof(Loc_Theme));
-                        OnPropertyChanged(nameof(Loc_Language));
-                        OnPropertyChanged(nameof(Loc_DefaultServings));
-                        OnPropertyChanged(nameof(Loc_EnableNotifications));
-                        OnPropertyChanged(nameof(Loc_SaveSettings));
-                        OnPropertyChanged(nameof(Loc_UserProfile));
-                        OnPropertyChanged(nameof(Loc_Username));
-                        OnPropertyChanged(nameof(Loc_Email));
-                        OnPropertyChanged(nameof(Loc_TotalRecipes));
-                        OnPropertyChanged(nameof(Loc_MainDishes));
-                        OnPropertyChanged(nameof(Loc_Desserts));
-                        OnPropertyChanged(nameof(Loc_QuickMeals));
-                        OnPropertyChanged(nameof(Loc_AverageCookTime));
-                        OnPropertyChanged(nameof(Loc_MostUsedIngredient));
-                        OnPropertyChanged(nameof(Loc_AIRecipe));
-                        OnPropertyChanged(nameof(Loc_FavoriteRecipes));
-                    }
-                }
-            }
+            set => SetProperty(ref _selectedLanguage, value);
         }
         
         public bool NotificationsEnabled
@@ -648,6 +705,55 @@ namespace Foodbook.Presentation.ViewModels
             set => SetProperty(ref _currentUser, value);
         }
 
+        public string Greeting
+        {
+            get => _greeting;
+            set => SetProperty(ref _greeting, value);
+        }
+
+        // Exposed Dashboard KPI bindings
+        public int TotalIngredients
+        {
+            get => _totalIngredients;
+            set => SetProperty(ref _totalIngredients, value);
+        }
+
+        public int ExpiringSoonCount
+        {
+            get => _expiringSoonCount;
+            set => SetProperty(ref _expiringSoonCount, value);
+        }
+
+        public int ExpiredCount
+        {
+            get => _expiredCount;
+            set => SetProperty(ref _expiredCount, value);
+        }
+
+        public int AIOperationsCount
+        {
+            get => _aiOperationsCount;
+            set => SetProperty(ref _aiOperationsCount, value);
+        }
+
+        public int AIErrorCount
+        {
+            get => _aiErrorCount;
+            set => SetProperty(ref _aiErrorCount, value);
+        }
+
+        public int TotalLogsCount
+        {
+            get => _totalLogsCount;
+            set => SetProperty(ref _totalLogsCount, value);
+        }
+
+        public ObservableCollection<KeyValuePair<string,int>> TopIngredients
+        {
+            get => _topIngredients;
+            set => SetProperty(ref _topIngredients, value);
+        }
+
         // My Recipes Statistics Properties
         public int MyTotalRecipes
         {
@@ -671,6 +777,28 @@ namespace Foodbook.Presentation.ViewModels
         {
             get => _myAIGeneratedRecipes;
             set => SetProperty(ref _myAIGeneratedRecipes, value);
+        }
+
+        // New analytics KPIs to differentiate Dashboard vs Analytics
+        private double _pantryCoveragePercent;
+        public double PantryCoveragePercent
+        {
+            get => _pantryCoveragePercent;
+            set => SetProperty(ref _pantryCoveragePercent, value);
+        }
+
+        private double _aiEngagementPercent;
+        public double AIEngagementPercent
+        {
+            get => _aiEngagementPercent;
+            set => SetProperty(ref _aiEngagementPercent, value);
+        }
+
+        private double _averageRating;
+        public double AverageRating
+        {
+            get => _averageRating;
+            set => SetProperty(ref _averageRating, value);
         }
 
         // Recipe Collection Properties
@@ -718,6 +846,7 @@ namespace Foodbook.Presentation.ViewModels
             try
             {
                 IsLoading = true;
+                await _dbAccessLock.WaitAsync();
                 StatusMessage = "Loading recipes from database...";
                 
                 // Check if service is available
@@ -761,6 +890,7 @@ namespace Foodbook.Presentation.ViewModels
                         MyAIGeneratedRecipes = 0;
                     }
                 });
+                UpdatePaging();
             }
             catch (Exception ex)
             {
@@ -779,6 +909,7 @@ namespace Foodbook.Presentation.ViewModels
             }
             finally
             {
+                if (_dbAccessLock.CurrentCount == 0) _dbAccessLock.Release();
                 IsLoading = false;
             }
         }
@@ -814,10 +945,29 @@ namespace Foodbook.Presentation.ViewModels
                         }
                         
                         StatusMessage = $"Loaded {Ingredients.Count} ingredients from FoodBook database";
+
+                        // Compute Smart Pantry status counters
+                        var now = DateTime.UtcNow;
+                        var expiring3Days = Ingredients.Count(i => i.ExpiryDate != null && i.ExpiryDate <= now.AddDays(3) && i.ExpiryDate >= now);
+                        var expiring7Days = Ingredients.Count(i => i.ExpiryDate != null && i.ExpiryDate <= now.AddDays(7) && i.ExpiryDate >= now);
+                        var expired = Ingredients.Count(i => i.ExpiryDate != null && i.ExpiryDate < now);
+                        var needRestock = Ingredients.Count(i => (i.MinQuantity ?? 0) > 0 && (i.Quantity ?? 0) <= (i.MinQuantity ?? 0));
+                        var overstock = Ingredients.Count(i => (i.MinQuantity ?? 0) > 0 && (i.Quantity ?? 0) >= (i.MinQuantity ?? 0) * 2);
+
+                        PantryExpiringSoon3Days = expiring3Days;
+                        PantryExpiringSoon7Days = expiring7Days;
+                        PantryExpired = expired;
+                        PantryNeedRestock = needRestock;
+                        PantryOverstock = overstock;
                     }
                     else
                     {
                         StatusMessage = "No ingredients found in database. Please check FoodBook.sql data.";
+                        PantryExpiringSoon3Days = 0;
+                        PantryExpiringSoon7Days = 0;
+                        PantryExpired = 0;
+                        PantryNeedRestock = 0;
+                        PantryOverstock = 0;
                     }
                 });
             }
@@ -894,6 +1044,7 @@ namespace Foodbook.Presentation.ViewModels
                     
                     StatusMessage = $"Found {Recipes.Count} recipes for '{RecipeSearchText}'";
                 });
+                UpdatePaging();
             }
             catch (Exception ex)
             {
@@ -1035,8 +1186,14 @@ namespace Foodbook.Presentation.ViewModels
                     $"Ingredients: {string.Join(", ", Ingredients.Take(3).Select(i => i.Name))}");
                 
                 // Use default ingredients if none available
+                // Prioritize ingredients by earliest expiry to reduce waste
                 var ingredientNames = Ingredients.Count > 0 
-                    ? Ingredients.Take(3).Select(i => i.Name).ToList()
+                    ? Ingredients
+                        .OrderBy(i => i.ExpiryDate ?? DateTime.MaxValue)
+                        .ThenByDescending(i => i.Quantity ?? 0)
+                        .Take(8)
+                        .Select(i => i.Name)
+                        .ToList()
                     : new List<string> { "chicken", "rice", "vegetables", "garlic", "onion" };
                 var generatedRecipe = await _aiService.GenerateRecipeFromIngredientsAsync(
                     ingredientNames, "AI Generated Dish", 4);
@@ -1430,75 +1587,36 @@ namespace Foodbook.Presentation.ViewModels
                 await _loggingService.LogFeatureUsageAsync("Smart Shopping List", "1", 
                     $"Processing {Recipes.Count} recipes for shopping list generation");
                 
-                // Generate shopping list from available recipes or create sample recipes
+                // Generate shopping list from available recipes
                 var selectedRecipes = Recipes.Count > 0 
-                    ? Recipes.Take(3).ToList() 
-                    : new List<Recipe> 
-                    {
-                        new Recipe { Id = 1, Title = "Sample Recipe 1", UserId = 1 },
-                        new Recipe { Id = 2, Title = "Sample Recipe 2", UserId = 1 },
-                        new Recipe { Id = 3, Title = "Sample Recipe 3", UserId = 1 }
-                    };
+                    ? Recipes.Take(5).ToList() 
+                    : new List<Recipe>();
+                
+                if (selectedRecipes.Count == 0)
+                {
+                    StatusMessage = "⚠️ No recipes available to generate shopping list";
+                    return;
+                }
                 
                 Console.WriteLine($"Selected {selectedRecipes.Count} recipes for shopping list");
                 
-                // Create a simple shopping list for testing
-                var shoppingList = new ShoppingListResult
+                // Generate smart shopping list using the service
+                Console.WriteLine("Generating smart shopping list from service...");
+                var shoppingList = await _shoppingListService.GenerateSmartShoppingListAsync(selectedRecipes, 1);
+                
+                // Update metadata
+                shoppingList.ListName = $"Shopping List for {selectedRecipes.Count} Recipes - {DateTime.Now:MM/dd/yyyy HH:mm}";
+                shoppingList.GeneratedAt = DateTime.Now;
+                
+                Console.WriteLine($"Generated shopping list with {shoppingList.TotalItems} items from {shoppingList.Categories.Count} categories");
+                
+                // Optimize the shopping list if it has less than 3 categories
+                var optimizedList = shoppingList;
+                if (shoppingList.Categories.Count < 3 || shoppingList.TotalItems < 5)
                 {
-                    ListName = "Test Shopping List",
-                    GeneratedAt = DateTime.Now,
-                    RecipeNames = selectedRecipes.Select(r => r.Title).ToList(),
-                    TotalItems = 5,
-                    EstimatedCost = 25.50m,
-                    EstimatedShoppingTime = TimeSpan.FromMinutes(30),
-                    Categories = new List<ShoppingCategory>
-                    {
-                        new ShoppingCategory
-                        {
-                            Name = "Vegetables",
-                            Icon = "🥬",
-                            StoreSection = "Produce",
-                            CategoryTotal = 12.50m,
-                            ShoppingOrder = "Start here for fresh produce",
-                            Items = new List<ShoppingItem>
-                            {
-                                new ShoppingItem { Name = "Tomatoes", Quantity = 2m, Unit = "lbs", EstimatedPrice = 4.50m, IsChecked = false },
-                                new ShoppingItem { Name = "Onions", Quantity = 1m, Unit = "bag", EstimatedPrice = 3.00m, IsChecked = false },
-                                new ShoppingItem { Name = "Lettuce", Quantity = 1m, Unit = "head", EstimatedPrice = 5.00m, IsChecked = false }
-                            }
-                        },
-                        new ShoppingCategory
-                        {
-                            Name = "Dairy",
-                            Icon = "🥛",
-                            StoreSection = "Dairy",
-                            CategoryTotal = 13.00m,
-                            ShoppingOrder = "Cold section - keep refrigerated",
-                            Items = new List<ShoppingItem>
-                            {
-                                new ShoppingItem { Name = "Milk", Quantity = 1m, Unit = "gallon", EstimatedPrice = 4.50m, IsChecked = false },
-                                new ShoppingItem { Name = "Cheese", Quantity = 8m, Unit = "oz", EstimatedPrice = 8.50m, IsChecked = false }
-                            }
-                        }
-                    },
-                    Tips = new List<string>
-                    {
-                        "Start with produce section for freshest items",
-                        "Check expiration dates on dairy products",
-                        "Bring reusable bags to reduce waste"
-                    },
-                    StoreSuggestions = new List<string>
-                    {
-                        "Visit produce section first",
-                        "Then dairy and meat sections",
-                        "End with dry goods and frozen items"
-                    }
-                };
-                
-                Console.WriteLine($"Created test shopping list with {shoppingList.TotalItems} items");
-                
-                // Optimize the shopping list
-                var optimizedList = await _shoppingListService.OptimizeShoppingListAsync(shoppingList);
+                    Console.WriteLine("Optimizing shopping list...");
+                    optimizedList = await _shoppingListService.OptimizeShoppingListAsync(shoppingList);
+                }
                 
                 // Log AI activity
                 stopwatch.Stop();
@@ -1650,13 +1768,9 @@ namespace Foodbook.Presentation.ViewModels
                 NotificationsEnabled = settings.NotificationsEnabled;
                 DefaultServings = settings.DefaultServings > 0 ? settings.DefaultServings : 4;
                 
-                // Update localization service before setting SelectedLanguage (to avoid triggering update twice)
-                if (_localizationService != null)
-                {
-                    _localizationService.ChangeLanguage(loadedLanguage);
-                }
-                
+                // Set SelectedLanguage and refresh localization so bound texts update
                 SelectedLanguage = loadedLanguage;
+                RefreshLocalization();
                 
                 // If the loaded values are different from defaults, update them
                 if (SelectedTheme != settings.Theme || SelectedLanguage != settings.Language || DefaultServings != settings.DefaultServings)
@@ -1706,6 +1820,9 @@ namespace Foodbook.Presentation.ViewModels
                 // Log settings change
                 await _loggingService.LogFeatureUsageAsync("Settings", "1", 
                     $"Settings updated: Theme={SelectedTheme}, Language={SelectedLanguage}, Notifications={NotificationsEnabled}, Servings={DefaultServings}");
+
+                // Apply localization changes after save so UI updates
+                RefreshLocalization();
             }
             catch (Exception ex)
             {
@@ -1718,11 +1835,51 @@ namespace Foodbook.Presentation.ViewModels
             }
         }
 
+        private void RefreshLocalization()
+        {
+            try
+            {
+                if (_localizationService != null)
+                {
+                    _localizationService.ChangeLanguage(SelectedLanguage);
+
+                    OnPropertyChanged(nameof(Loc_Dashboard));
+                    OnPropertyChanged(nameof(Loc_MyRecipes));
+                    OnPropertyChanged(nameof(Loc_Ingredients));
+                    OnPropertyChanged(nameof(Loc_ShoppingList));
+                    OnPropertyChanged(nameof(Loc_Analytics));
+                    OnPropertyChanged(nameof(Loc_Settings));
+                    OnPropertyChanged(nameof(Loc_ApplicationSettings));
+                    OnPropertyChanged(nameof(Loc_Theme));
+                    OnPropertyChanged(nameof(Loc_Language));
+                    OnPropertyChanged(nameof(Loc_DefaultServings));
+                    OnPropertyChanged(nameof(Loc_EnableNotifications));
+                    OnPropertyChanged(nameof(Loc_SaveSettings));
+                    OnPropertyChanged(nameof(Loc_UserProfile));
+                    OnPropertyChanged(nameof(Loc_Username));
+                    OnPropertyChanged(nameof(Loc_Email));
+                    OnPropertyChanged(nameof(Loc_TotalRecipes));
+                    OnPropertyChanged(nameof(Loc_MainDishes));
+                    OnPropertyChanged(nameof(Loc_Desserts));
+                    OnPropertyChanged(nameof(Loc_QuickMeals));
+                    OnPropertyChanged(nameof(Loc_AverageCookTime));
+                    OnPropertyChanged(nameof(Loc_MostUsedIngredient));
+                    OnPropertyChanged(nameof(Loc_AIRecipe));
+                    OnPropertyChanged(nameof(Loc_FavoriteRecipes));
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"RefreshLocalization error: {ex.Message}");
+            }
+        }
+
         private async Task LoadAnalyticsDataAsync()
         {
             try
             {
                 IsLoading = true;
+                await _dbAccessLock.WaitAsync();
                 StatusMessage = "Loading analytics data...";
 
                 // Load basic statistics from database
@@ -1734,6 +1891,8 @@ namespace Foodbook.Presentation.ViewModels
 
                 // Update basic stats with real data
                 MyTotalRecipes = recipes?.Count() ?? 0;
+                TotalIngredients = ingredients?.Count() ?? 0;
+                TotalLogsCount = logs?.Count() ?? 0;
                 
                 // Find most used ingredient from ingredients
                 if (ingredients?.Any() == true)
@@ -1765,6 +1924,40 @@ namespace Foodbook.Presentation.ViewModels
                 
                 var successfulOperations = aiLogs.Count(l => !l.Message.Contains("Error") && !l.Message.Contains("Failed"));
                 SuccessRate = aiLogs.Any() ? Math.Round((double)successfulOperations / aiLogs.Count * 100, 1) : 0;
+                AIEngagementPercent = SuccessRate; // use success rate as proxy for engagement
+                AIOperationsCount = aiLogs.Count;
+                AIErrorCount = aiLogs.Count(l => l.Message.Contains("Error") || l.Level.Equals("Error", StringComparison.OrdinalIgnoreCase));
+
+                // Pantry coverage: percent of ingredients currently available (>0 qty)
+                if (ingredients?.Any() == true)
+                {
+                    var available = ingredients.Count(i => (i.Quantity ?? 0) > 0);
+                    PantryCoveragePercent = Math.Round((double)available / Math.Max(ingredients.Count(), 1) * 100, 1);
+
+                    // Smart Pantry KPIs
+                    ExpiringSoonCount = ingredients.Count(i => i.ExpiryDate.HasValue && i.ExpiryDate.Value.Date >= DateTime.UtcNow.Date && i.ExpiryDate.Value <= DateTime.UtcNow.AddDays(3));
+                    ExpiredCount = ingredients.Count(i => i.ExpiryDate.HasValue && i.ExpiryDate.Value < DateTime.UtcNow);
+
+                    // Top ingredients by occurrences (name), take top 5
+                    var top = ingredients
+                        .GroupBy(i => i.Name)
+                        .Select(g => new KeyValuePair<string,int>(g.Key, g.Count()))
+                        .OrderByDescending(kv => kv.Value)
+                        .Take(5)
+                        .ToList();
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        TopIngredients.Clear();
+                        foreach (var kv in top) TopIngredients.Add(kv);
+                    });
+                }
+                else
+                {
+                    PantryCoveragePercent = 0;
+                    ExpiringSoonCount = 0;
+                    ExpiredCount = 0;
+                    TopIngredients.Clear();
+                }
 
                 // Create chart data with real database data
                 System.Diagnostics.Debug.WriteLine("Creating chart data with real data...");
@@ -1789,6 +1982,7 @@ namespace Foodbook.Presentation.ViewModels
             }
             finally
             {
+                if (_dbAccessLock.CurrentCount == 0) _dbAccessLock.Release();
                 IsLoading = false;
             }
         }
@@ -2216,7 +2410,16 @@ namespace Foodbook.Presentation.ViewModels
                 if (_authenticationService != null)
                 {
                     CurrentUser = await _authenticationService.GetCurrentUserAsync();
-                    StatusMessage = CurrentUser != null ? $"Welcome back, {CurrentUser.Username}!" : "Please log in to continue";
+                    if (CurrentUser != null)
+                    {
+                        Greeting = BuildGreeting(CurrentUser.Username);
+                        StatusMessage = $"Welcome back, {CurrentUser.Username}!";
+                    }
+                    else
+                    {
+                        Greeting = BuildGreeting("Guest");
+                        StatusMessage = "Please log in to continue";
+                    }
                 }
                 else
                 {
@@ -2228,6 +2431,7 @@ namespace Foodbook.Presentation.ViewModels
                         Email = "demo@foodbook.com",
                         CreatedAt = DateTime.Now
                     };
+                    Greeting = BuildGreeting(CurrentUser.Username);
                     StatusMessage = "Demo mode - Welcome, DemoUser!";
                 }
             }
@@ -2241,9 +2445,17 @@ namespace Foodbook.Presentation.ViewModels
                     Email = "guest@foodbook.com",
                     CreatedAt = DateTime.Now
                 };
+                Greeting = BuildGreeting(CurrentUser.Username);
                 StatusMessage = "Guest mode - Welcome, Guest!";
                 System.Diagnostics.Debug.WriteLine($"Error loading current user: {ex.Message}");
             }
+        }
+
+        private static string BuildGreeting(string? username)
+        {
+            var hour = DateTime.Now.Hour;
+            var salutation = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+            return string.IsNullOrWhiteSpace(username) ? salutation : $"{salutation}, {username}!";
         }
 
         // Additional command implementations
@@ -2450,6 +2662,37 @@ namespace Foodbook.Presentation.ViewModels
             catch (Exception ex)
             {
                 StatusMessage = $"Error refreshing dashboard: {ex.Message}";
+            }
+        }
+        
+        private void UpdatePaging()
+        {
+            try
+            {
+                var source = Recipes ?? new ObservableCollection<Recipe>();
+                TotalPages = (int)Math.Ceiling(source.Count / (double)Math.Max(1, PageSize));
+                if (TotalPages == 0) TotalPages = 1;
+                if (CurrentPage > TotalPages) CurrentPage = TotalPages;
+                var start = (CurrentPage - 1) * Math.Max(1, PageSize);
+                var pageItems = source.Skip(start).Take(Math.Max(1, PageSize)).ToList();
+                PagedRecipes.Clear();
+                foreach (var r in pageItems) PagedRecipes.Add(r);
+
+                // Refresh quick-jump options and selection
+                if (PageOptions.Count != TotalPages)
+                {
+                    PageOptions.Clear();
+                    for (int i = 1; i <= TotalPages; i++) PageOptions.Add(i);
+                }
+                if (SelectedPage != CurrentPage)
+                {
+                    _selectedPage = CurrentPage; // avoid recursion through setter
+                    OnPropertyChanged(nameof(SelectedPage));
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"UpdatePaging error: {ex.Message}");
             }
         }
         

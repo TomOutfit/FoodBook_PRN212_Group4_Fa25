@@ -110,13 +110,15 @@
                             <!-- Category -->
                             <StackPanel Grid.Row="0" Grid.Column="1" Margin="8,0,0,16">
                                 <TextBlock Text="Category" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                <ComboBox SelectedItem="{Binding Category}">
-                                    <ComboBoxItem Content="Main Dish" IsSelected="True"/>
-                                    <ComboBoxItem Content="Appetizer"/>
-                                    <ComboBoxItem Content="Dessert"/>
-                                    <ComboBoxItem Content="Soup"/>
-                                    <ComboBoxItem Content="Salad"/>
-                                    <ComboBoxItem Content="Breakfast"/>
+                                <ComboBox SelectedValue="{Binding Category, Mode=TwoWay}" 
+                                          SelectedValuePath="Tag"
+                                          Padding="12" BorderThickness="1" BorderBrush="#E5E7EB">
+                                    <ComboBoxItem Content="Main Dish" Tag="Main Dish"/>
+                                    <ComboBoxItem Content="Appetizer" Tag="Appetizer"/>
+                                    <ComboBoxItem Content="Dessert" Tag="Dessert"/>
+                                    <ComboBoxItem Content="Soup" Tag="Soup"/>
+                                    <ComboBoxItem Content="Salad" Tag="Salad"/>
+                                    <ComboBoxItem Content="Breakfast" Tag="Breakfast"/>
                                 </ComboBox>
                             </StackPanel>
                             
@@ -135,8 +137,10 @@
                             <!-- Difficulty -->
                             <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,8,16">
                                 <TextBlock Text="Difficulty *" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                <ComboBox SelectedValue="{Binding Difficulty}">
-                                    <ComboBoxItem Content="Easy" Tag="Easy" IsSelected="True"/>
+                                <ComboBox SelectedValue="{Binding Difficulty, Mode=TwoWay}"
+                                          SelectedValuePath="Tag"
+                                          Padding="12" BorderThickness="1" BorderBrush="#E5E7EB">
+                                    <ComboBoxItem Content="Easy" Tag="Easy"/>
                                     <ComboBoxItem Content="Medium" Tag="Medium"/>
                                     <ComboBoxItem Content="Hard" Tag="Hard"/>
                                 </ComboBox>
