@@ -27,7 +27,7 @@
         <Style x:Key="HeaderTextStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="24"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Foreground" Value="#1F2937"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
             <Setter Property="Margin" Value="0,0,0,20"/>
             <Setter Property="Effect">
                 <Setter.Value>
@@ -104,8 +104,9 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1*" MinWidth="400"/>
-            <ColumnDefinition Width="1*" MinWidth="400"/>
+            <!-- Left input column a bit narrower for better balance -->
+            <ColumnDefinition Width="0.42*" MinWidth="420"/>
+            <ColumnDefinition Width="0.58*" MinWidth="520"/>
         </Grid.ColumnDefinitions>
         
         <!-- Beautiful gradient background -->
@@ -125,14 +126,15 @@
         </Grid>
         
         <!-- A. Input Control (Cột Trái) -->
-        <Border Grid.Column="0" Style="{StaticResource CardStyle}">
+        <Border Grid.Column="0" Style="{StaticResource CardStyle}" Margin="16,16,8,16">
             <StackPanel>
-                <TextBlock Text="🥗 Nguồn Dữ liệu &amp; Nhập liệu" Style="{StaticResource HeaderTextStyle}"/>
+                <TextBlock Text="🥗 Nguồn Dữ liệu &amp; Nhập liệu" Style="{StaticResource HeaderTextStyle}" Margin="0,0,0,12"/>
                 
                 <!-- Dropdown chọn nguồn dữ liệu -->
                 <TextBlock Text="Chọn nguồn dữ liệu:" FontWeight="SemiBold" FontSize="16" Foreground="#374151" Margin="0,0,0,12"/>
                 <ComboBox x:Name="DataSourceComboBox" 
                          SelectedValue="{Binding SelectedDataSource}"
+                         SelectedValuePath="Tag"
                          Margin="0,0,0,20"
                          Height="48"
                          FontSize="16"
@@ -145,7 +147,17 @@
                 </ComboBox>
                 
                 <!-- Khu vực chọn công thức từ database -->
-                <StackPanel Visibility="{Binding SelectedDataSource, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=Database}">
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedDataSource}" Value="Database">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
                     <TextBlock Text="Chọn công thức:" FontWeight="SemiBold" FontSize="16" Foreground="#374151" Margin="0,0,0,12"/>
                     <ComboBox x:Name="RecipeComboBox" 
                              SelectedItem="{Binding SelectedRecipe}"
@@ -167,13 +179,23 @@
                 </StackPanel>
                 
                 <!-- Khu vực nhập công thức mới -->
-                <StackPanel Visibility="{Binding SelectedDataSource, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=AI}">
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedDataSource}" Value="AI">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
                     <TextBlock Text="Nhập công thức:" FontWeight="SemiBold" FontSize="16" Foreground="#374151" Margin="0,0,0,12"/>
                     <TextBox x:Name="CustomRecipeTextBox" 
                             Text="{Binding CustomRecipeText}"
                             TextWrapping="Wrap"
                             AcceptsReturn="True"
-                            Height="140"
+                            MinHeight="140"
                             FontSize="16"
                             Padding="16"
                             Margin="0,0,0,20"
@@ -200,6 +222,7 @@
                 <TextBlock Text="Mục tiêu sức khỏe:" FontWeight="SemiBold" FontSize="16" Foreground="#374151" Margin="0,0,0,12"/>
                 <ComboBox x:Name="HealthGoalComboBox" 
                          SelectedValue="{Binding UserGoal}"
+                         SelectedValuePath="Tag"
                          Margin="0,0,0,28"
                          Height="48"
                          FontSize="16"
@@ -230,10 +253,10 @@
         </Border>
         
         <!-- B. Result Panel (Cột Phải) -->
-        <Border Grid.Column="1" Style="{StaticResource CardStyle}">
+        <Border Grid.Column="1" Style="{StaticResource CardStyle}" Margin="8,16,16,16">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel>
-                    <TextBlock Text="📊 Kết quả Phân tích &amp; Đánh giá A.I" Style="{StaticResource HeaderTextStyle}"/>
+                    <TextBlock Text="📊 Kết quả Phân tích &amp; Đánh giá A.I" Style="{StaticResource HeaderTextStyle}" Margin="0,0,0,12"/>
                     
                     <!-- Loading indicator -->
                     <StackPanel Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}" 
@@ -252,7 +275,7 @@
                     <StackPanel Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Invert}">
                         
                         <!-- Thông tin dinh dưỡng cơ bản -->
-                        <Border Background="#F0FDF4" CornerRadius="12" Padding="20" Margin="0,0,0,20" BorderThickness="1" BorderBrush="#BBF7D0">
+                        <Border Background="#F0FDF4" CornerRadius="12" Padding="20" Margin="0,0,0,16" BorderThickness="1" BorderBrush="#BBF7D0">
                             <Border.Effect>
                                 <DropShadowEffect Color="#10B981" BlurRadius="8" ShadowDepth="2" Opacity="0.1"/>
                             </Border.Effect>
@@ -306,7 +329,7 @@
                         </Border>
                         
                         <!-- Đánh giá A.I -->
-                        <Border Background="#FFFBEB" CornerRadius="12" Padding="20" Margin="0,0,0,20" BorderThickness="1" BorderBrush="#FDE68A">
+                        <Border Background="#FFFBEB" CornerRadius="12" Padding="20" Margin="0,0,0,16" BorderThickness="1" BorderBrush="#FDE68A">
                             <Border.Effect>
                                 <DropShadowEffect Color="#F59E0B" BlurRadius="8" ShadowDepth="2" Opacity="0.1"/>
                             </Border.Effect>
@@ -321,7 +344,7 @@
                         </Border>
                         
                         <!-- Cảnh báo sức khỏe -->
-                        <Border Background="#FEF2F2" CornerRadius="12" Padding="20" Margin="0,0,0,20" BorderThickness="1" BorderBrush="#FECACA">
+                        <Border Background="#FEF2F2" CornerRadius="12" Padding="20" Margin="0,0,0,16" BorderThickness="1" BorderBrush="#FECACA">
                             <Border.Effect>
                                 <DropShadowEffect Color="#EF4444" BlurRadius="8" ShadowDepth="2" Opacity="0.1"/>
                             </Border.Effect>

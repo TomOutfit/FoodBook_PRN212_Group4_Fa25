@@ -5,13 +5,13 @@
         Height="500" Width="700"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Background="#F8F9FA">
+        Background="{DynamicResource SurfaceBrush}">
     
     <Window.Resources>
         <!-- Modern Button Style -->
         <Style x:Key="ModernButton" TargetType="Button">
-            <Setter Property="Background" Value="#4CAF50"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="20,12"/>
             <Setter Property="Margin" Value="8"/>
@@ -33,13 +33,13 @@
         
         <!-- Card Style -->
         <Style x:Key="CardStyle" TargetType="Border">
-            <Setter Property="Background" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Padding" Value="16"/>
             <Setter Property="Margin" Value="8"/>
             <Setter Property="Effect">
                 <Setter.Value>
-                    <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="2" Opacity="0.1" BlurRadius="8"/>
+                    <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="2" Opacity="0.4" BlurRadius="12"/>
                 </Setter.Value>
             </Setter>
         </Style>
@@ -48,15 +48,16 @@
         <Style x:Key="ModernTextBox" TargetType="TextBox">
             <Setter Property="Padding" Value="12"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="#E5E7EB"/>
-            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
-                        <Border Background="{TemplateBinding Background}" 
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderBrush}" 
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="8" 
                                 Padding="{TemplateBinding Padding}">
                             <ScrollViewer x:Name="PART_ContentHost"/>
@@ -70,16 +71,17 @@
         <Style x:Key="ModernComboBox" TargetType="ComboBox">
             <Setter Property="Padding" Value="12"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="#E5E7EB"/>
-            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="Height" Value="40"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ComboBox">
-                        <Border Background="{TemplateBinding Background}" 
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}" 
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="8" 
                                 Padding="{TemplateBinding Padding}">
                             <Grid>
@@ -89,7 +91,7 @@
                                             IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" 
                                             ClickMode="Press">
                                     <Path x:Name="Arrow" 
-                                          Fill="Gray" 
+                                          Fill="{DynamicResource TextSecondaryBrush}"
                                           HorizontalAlignment="Right" 
                                           Margin="0,0,4,0" 
                                           VerticalAlignment="Center" 
@@ -111,6 +113,7 @@
                                        Margin="3,3,23,3" 
                                        Focusable="True" 
                                        Background="Transparent" 
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        Visibility="Hidden"/>
                                 <Popup x:Name="Popup" 
                                      Placement="Bottom" 
@@ -123,9 +126,9 @@
                                         MinWidth="{TemplateBinding ActualWidth}" 
                                         MaxHeight="{TemplateBinding MaxDropDownHeight}">
                                         <Border x:Name="DropDownBorder" 
-                                              Background="White" 
+                                              Background="{DynamicResource CardBackgroundBrush}" 
                                               BorderThickness="1" 
-                                              BorderBrush="#E5E7EB" 
+                                              BorderBrush="{DynamicResource DividerBrush}" 
                                               CornerRadius="8">
                                             <ScrollViewer Margin="4,6,4,6" 
                                                         SnapsToDevicePixels="True">
@@ -155,6 +158,7 @@
                    Text="🥕 Ingredient Management" 
                    FontSize="24" 
                    FontWeight="Bold" 
+                   Foreground="{DynamicResource TextPrimaryBrush}"
                    Margin="0,0,0,20"/>
 
         <!-- Form Content -->
@@ -175,6 +179,8 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             
                             <!-- Name -->
@@ -186,22 +192,23 @@
                             <!-- Category -->
                             <StackPanel Grid.Row="0" Grid.Column="1" Margin="8,0,0,16">
                                 <TextBlock Text="Category" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                <ComboBox SelectedItem="{Binding Category}" 
+                                <ComboBox SelectedValue="{Binding Category, Mode=TwoWay}"
+                                          SelectedValuePath="Tag" 
                                          Padding="12" 
                                          BorderThickness="1" 
                                          BorderBrush="#E5E7EB" 
                                          Background="White" 
                                          FontSize="14" 
                                          Height="40">
-                                    <ComboBoxItem Content="Protein" IsSelected="True"/>
-                                    <ComboBoxItem Content="Vegetable"/>
-                                    <ComboBoxItem Content="Fruit"/>
-                                    <ComboBoxItem Content="Grain"/>
-                                    <ComboBoxItem Content="Dairy"/>
-                                    <ComboBoxItem Content="Fat"/>
-                                    <ComboBoxItem Content="Seasoning"/>
-                                    <ComboBoxItem Content="Nuts"/>
-                                    <ComboBoxItem Content="Legume"/>
+                                    <ComboBoxItem Content="Protein" Tag="Protein"/>
+                                    <ComboBoxItem Content="Vegetable" Tag="Vegetable"/>
+                                    <ComboBoxItem Content="Fruit" Tag="Fruit"/>
+                                    <ComboBoxItem Content="Grain" Tag="Grain"/>
+                                    <ComboBoxItem Content="Dairy" Tag="Dairy"/>
+                                    <ComboBoxItem Content="Fat" Tag="Fat"/>
+                                    <ComboBoxItem Content="Seasoning" Tag="Seasoning"/>
+                                    <ComboBoxItem Content="Nuts" Tag="Nuts"/>
+                                    <ComboBoxItem Content="Legume" Tag="Legume"/>
                                 </ComboBox>
                             </StackPanel>
                             
@@ -241,6 +248,41 @@
                                          Height="80" 
                                          TextWrapping="Wrap" 
                                          AcceptsReturn="True"/>
+                            </StackPanel>
+
+                            <!-- Expiry Date -->
+                            <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,8,16">
+                                <TextBlock Text="Expiry Date *" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <DatePicker SelectedDate="{Binding ExpiryDate}"/>
+                            </StackPanel>
+
+                            <!-- Purchased At -->
+                            <StackPanel Grid.Row="3" Grid.Column="1" Margin="8,0,0,16">
+                                <TextBlock Text="Purchased At" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <DatePicker SelectedDate="{Binding PurchasedAt}"/>
+                            </StackPanel>
+
+                            <!-- Location -->
+                            <StackPanel Grid.Row="4" Grid.Column="0" Margin="0,0,8,16">
+                                <TextBlock Text="Location" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <ComboBox SelectedValue="{Binding Location, Mode=TwoWay}"
+                                          SelectedValuePath="Tag"
+                                          Padding="12"
+                                          BorderThickness="1"
+                                          BorderBrush="#E5E7EB"
+                                          Background="White"
+                                          FontSize="14"
+                                          Height="40">
+                                    <ComboBoxItem Content="Fridge" Tag="Fridge"/>
+                                    <ComboBoxItem Content="Pantry" Tag="Pantry"/>
+                                    <ComboBoxItem Content="Freezer" Tag="Freezer"/>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <!-- Min Quantity -->
+                            <StackPanel Grid.Row="4" Grid.Column="1" Margin="8,0,0,16">
+                                <TextBlock Text="Minimum Quantity (Restock Threshold)" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding MinQuantity}" Style="{StaticResource ModernTextBox}"/>
                             </StackPanel>
                         </Grid>
                     </StackPanel>
