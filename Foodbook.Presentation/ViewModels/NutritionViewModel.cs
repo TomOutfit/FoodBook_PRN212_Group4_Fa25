@@ -78,6 +78,18 @@ namespace Foodbook.Presentation.ViewModels
             System.Diagnostics.Debug.WriteLine("=== NUTRITION VIEWMODEL CONSTRUCTOR COMPLETED ===");
         }
 
+        // Design-time / default constructor
+        public NutritionViewModel()
+        {
+            _nutritionService = null!;
+            _aiService = null!;
+            _recipeService = null!;
+            AnalyzeNutritionCommand = new RelayCommand(async () => await Task.CompletedTask, () => true);
+            ClearAnalysisCommand = new RelayCommand(async () => await Task.CompletedTask);
+            LoadRecipesCommand = new RelayCommand(async () => await Task.CompletedTask);
+            GenerateAIAssessmentCommand = new RelayCommand(async () => await Task.CompletedTask, () => true);
+        }
+
         #region Properties
 
         public bool IsLoading

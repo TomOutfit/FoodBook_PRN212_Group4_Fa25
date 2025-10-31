@@ -1,6 +1,7 @@
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using Foodbook.Business.Interfaces;
+using Foodbook.Presentation.Commands;
 using Foodbook.Presentation.Services;
 
 namespace Foodbook.Presentation.ViewModels
