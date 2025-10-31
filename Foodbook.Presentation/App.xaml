@@ -1,0 +1,31 @@
+﻿<Application x:Class="Foodbook.Presentation.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Foodbook.Presentation"
+             xmlns:converters="clr-namespace:Foodbook.Presentation.Converters">
+    <Application.Resources>
+        <!-- Converters -->
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <converters:TabButtonStyleConverter x:Key="TabButtonStyleConverter"/>
+        <converters:TabVisibilityConverter x:Key="TabVisibilityConverter"/>
+        <converters:SidebarWidthConverter x:Key="SidebarWidthConverter"/>
+        <converters:SidebarVisibilityConverter x:Key="SidebarVisibilityConverter"/>
+        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        
+        <!-- Dark Theme Palette (balanced for readability) -->
+        <!-- Slightly lighter backgrounds to avoid overly dark UI, while keeping contrast -->
+        <SolidColorBrush x:Key="AppBackgroundBrush" Color="#151B26"/> <!-- slate ~850 -->
+        <SolidColorBrush x:Key="SurfaceBrush" Color="#19212E"/> <!-- top bar / surfaces -->
+        <SolidColorBrush x:Key="CardBackgroundBrush" Color="#223041"/> <!-- cards -->
+        <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#17202B"/>
+        <SolidColorBrush x:Key="DividerBrush" Color="#3B4A5E"/>
+
+        <!-- Brighter text on dark background so it doesn't sink into the backdrop -->
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="#E2E8F0"/>
+
+        <SolidColorBrush x:Key="AccentBrush" Color="#4CAF50"/>
+        <SolidColorBrush x:Key="AccentLowBrush" Color="#1B4934"/>
+        <SolidColorBrush x:Key="AccentHighBrush" Color="#81C784"/>
+    </Application.Resources>
+</Application>
