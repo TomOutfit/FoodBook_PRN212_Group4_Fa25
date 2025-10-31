@@ -17,6 +17,7 @@ namespace Foodbook.Presentation;
 public partial class MainWindow : Window
 {
     private IServiceScope? _serviceScope;
+    private bool _isSidebarOpen = true;
 
     public MainWindow()
     {
@@ -128,6 +129,21 @@ public partial class MainWindow : Window
         }
     }
 
+    private void HamburgerButton_Click(object sender, RoutedEventArgs e)
+    {
+        _isSidebarOpen = !_isSidebarOpen;
+        if (_isSidebarOpen)
+        {
+            SidebarColumn.Width = new GridLength(240);
+            Sidebar.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            SidebarColumn.Width = new GridLength(0);
+            Sidebar.Visibility = Visibility.Collapsed;
+        }
+    }
+
     private void CloseButton_MouseLeave(object sender, MouseEventArgs e)
     {
         if (sender is Button button)
@@ -194,7 +210,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ApplyTheme(string? theme)
+    public void ApplyTheme(string? theme)
     {
         try
         {
@@ -206,7 +222,12 @@ public partial class MainWindow : Window
                 Application.Current.Resources[key] = newBrush;
             }
 
-            if (theme == "Dark")
+            // Map legacy values: Dark -> Night, Light -> Day
+            var t = (theme ?? "").Trim();
+            var isNight = string.Equals(t, "Night", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(t, "Dark", StringComparison.OrdinalIgnoreCase);
+
+            if (isNight)
             {
                 // Deep, contrasty palette for dark mode
                 SetBrush("AppBackgroundBrush", "#0F172A");
@@ -254,19 +275,29 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ApplyLanguage(string? language)
+    public void ApplyLanguage(string? language)
     {
-        if (language == "Vietnamese")
+        var code = (language ?? "").Trim();
+        var isVi = string.Equals(code, "VI", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(code, "Vietnamese", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(code, "vi-VN", StringComparison.OrdinalIgnoreCase);
+
+        // Set UI culture
+        System.Threading.Thread.CurrentThread.CurrentUICulture = new System.Globalization.CultureInfo(isVi ? "vi-VN" : "en-US");
+
+        // Notify localization service to switch dictionaries
+        try
         {
-            // Apply Vietnamese localization
-            // You can implement localization logic here
-            System.Threading.Thread.CurrentThread.CurrentUICulture = new System.Globalization.CultureInfo("vi-VN");
+            var loc = ServiceContainer.GetService<ILocalizationService>();
+            loc?.ChangeLanguage(isVi ? "Vietnamese" : "English");
+            // Force-refresh localized bindings across the shell
+            if (DataContext is MainViewModel shellVm)
+            {
+                shellVm.RefreshLocalization();
+                shellVm.SettingsVM?.RefreshLocalization();
+            }
         }
-        else
-        {
-            // Apply English localization (default)
-            System.Threading.Thread.CurrentThread.CurrentUICulture = new System.Globalization.CultureInfo("en-US");
-        }
+        catch { }
     }
 
     private static string GetLocalized(string key, string fallback)

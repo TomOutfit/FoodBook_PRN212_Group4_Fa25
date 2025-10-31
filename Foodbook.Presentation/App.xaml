@@ -4,6 +4,12 @@
              xmlns:local="clr-namespace:Foodbook.Presentation"
              xmlns:converters="clr-namespace:Foodbook.Presentation.Converters">
     <Application.Resources>
+        <!-- Resource Dictionaries -->
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Foodbook.Presentation;component/Styles/Controls.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <!-- Converters -->
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <converters:TabButtonStyleConverter x:Key="TabButtonStyleConverter"/>
@@ -11,6 +17,11 @@
         <converters:SidebarWidthConverter x:Key="SidebarWidthConverter"/>
         <converters:SidebarVisibilityConverter x:Key="SidebarVisibilityConverter"/>
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <converters:CountToHeightConverter x:Key="CountToHeightConverter"/>
+        <converters:CountToWidthConverter x:Key="CountToWidthConverter"/>
+        <converters:MonthlyDataToPointsConverter x:Key="MonthlyDataToPointsConverter"/>
+        <converters:ImageUrlConverter x:Key="ImageUrlConverter"/>
+        <converters:StringCleanConverter x:Key="StringCleanConverter"/>
         
         <!-- Dark Theme Palette (balanced for readability) -->
         <!-- Slightly lighter backgrounds to avoid overly dark UI, while keeping contrast -->
@@ -27,5 +38,6 @@
         <SolidColorBrush x:Key="AccentBrush" Color="#4CAF50"/>
         <SolidColorBrush x:Key="AccentLowBrush" Color="#1B4934"/>
         <SolidColorBrush x:Key="AccentHighBrush" Color="#81C784"/>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>
