@@ -173,6 +173,26 @@ namespace Foodbook.Presentation.ViewModels
             } 
         }
 
+        // Smart Inventory metrics
+        private int _nearExpiryCount;
+        public int NearExpiryCount
+        {
+            get => _nearExpiryCount;
+            private set => SetProperty(ref _nearExpiryCount, value);
+        }
+
+        private int _shoppingAlertsCount;
+        public int ShoppingAlertsCount
+        {
+            get => _shoppingAlertsCount;
+            private set => SetProperty(ref _shoppingAlertsCount, value);
+        }
+
+        // Commands for Smart Inventory actions
+        public ICommand AnalyzePantryCommand { get; private set; } = null!;
+        public ICommand MarkUsedCommand { get; private set; } = null!;
+        public ICommand MarkFinishedCommand { get; private set; } = null!;
+
         public MainViewModel(
             IRecipeService recipeService,
             IIngredientService ingredientService,
@@ -241,6 +261,9 @@ namespace Foodbook.Presentation.ViewModels
             // Initialize ingredient commands
             AddIngredientCommand = new RelayCommand(async () => await AddNewIngredientAsync());
             ViewIngredientAnalyticsCommand = new RelayCommand(async () => await SelectTab("Analytics"));
+            AnalyzePantryCommand = new RelayCommand(async () => await AnalyzePantryAsync());
+            MarkUsedCommand = new RelayCommand<Ingredient>(async (ingredient) => await MarkUsedAsync(ingredient, 0));
+            MarkFinishedCommand = new RelayCommand<Ingredient>(async (ingredient) => await MarkFinishedAsync(ingredient));
             
             // Initialize ingredient tab navigation commands
             NavigateToAllIngredientsCommand = new RelayCommand(async () => await NavigateToIngredientCategory("All"));
@@ -314,6 +337,9 @@ namespace Foodbook.Presentation.ViewModels
             // Initialize ingredient commands
             AddIngredientCommand = new RelayCommand(async () => await AddNewIngredientAsync());
             ViewIngredientAnalyticsCommand = new RelayCommand(async () => await SelectTab("Analytics"));
+            AnalyzePantryCommand = new RelayCommand(async () => await AnalyzePantryAsync());
+            MarkUsedCommand = new RelayCommand<Ingredient>(async (ingredient) => await MarkUsedAsync(ingredient, 0));
+            MarkFinishedCommand = new RelayCommand<Ingredient>(async (ingredient) => await MarkFinishedAsync(ingredient));
             
             // Initialize ingredient tab navigation commands
             NavigateToAllIngredientsCommand = new RelayCommand(async () => await NavigateToIngredientCategory("All"));
@@ -969,6 +995,8 @@ namespace Foodbook.Presentation.ViewModels
                         PantryNeedRestock = 0;
                         PantryOverstock = 0;
                     }
+                    // Update Smart Inventory metrics
+                    UpdateInventoryMetrics();
                 });
             }
             catch (Exception ex)
@@ -985,6 +1013,77 @@ namespace Foodbook.Presentation.ViewModels
             {
                 IsLoading = false;
             }
+        }
+
+        private void UpdateInventoryMetrics()
+        {
+            try
+            {
+                var now = DateTime.UtcNow;
+                var ingredientsSnapshot = Ingredients.ToList();
+                NearExpiryCount = ingredientsSnapshot
+                    .Count(i => i.ExpiryDate.HasValue && (i.ExpiryDate.Value - now).TotalDays <= 7 && (i.ExpiryDate.Value - now).TotalDays >= -0.01);
+                ShoppingAlertsCount = ingredientsSnapshot
+                    .Count(i => i.MinQuantity.HasValue && (i.Quantity ?? 0) <= i.MinQuantity.Value);
+                TotalIngredients = ingredientsSnapshot.Count;
+            }
+            catch { /* best-effort metrics */ }
+        }
+
+        private Task AnalyzePantryAsync()
+        {
+            try
+            {
+                // Build a compact pantry string for AI Chef
+                var parts = Ingredients
+                    .Select(i =>
+                    {
+                        var qty = i.Quantity.HasValue ? i.Quantity.Value.ToString("0.##") : string.Empty;
+                        var unit = string.IsNullOrWhiteSpace(i.Unit) ? string.Empty : i.Unit;
+                        var amount = string.IsNullOrWhiteSpace(qty + unit) ? string.Empty : $" {qty}{(string.IsNullOrWhiteSpace(unit) ? string.Empty : unit)}";
+                        return $"{i.Name}{amount}";
+                    })
+                    .Where(s => !string.IsNullOrWhiteSpace(s));
+
+                var pantryText = string.Join("; ", parts);
+
+                // Navigate to AI tab and prefill prompt
+                SelectedTab = "AI";
+                CustomRecipeText = $"Here is my pantry: {pantryText}. Please suggest recipes prioritizing items near expiration.";
+            }
+            catch { }
+            return Task.CompletedTask;
+        }
+
+        private async Task MarkUsedAsync(Ingredient? ingredient, decimal usedAmount)
+        {
+            if (ingredient == null) return;
+            try
+            {
+                var newQty = Math.Max(0m, (ingredient.Quantity ?? 0m) - (usedAmount <= 0 ? 1m : usedAmount));
+                ingredient.Quantity = newQty;
+                if (_ingredientService != null)
+                {
+                    await _ingredientService.UpdateIngredientAsync(ingredient);
+                }
+                await LoadIngredientsAsync();
+            }
+            catch { }
+        }
+
+        private async Task MarkFinishedAsync(Ingredient? ingredient)
+        {
+            if (ingredient == null) return;
+            try
+            {
+                ingredient.Quantity = 0m;
+                if (_ingredientService != null)
+                {
+                    await _ingredientService.UpdateIngredientAsync(ingredient);
+                }
+                await LoadIngredientsAsync();
+            }
+            catch { }
         }
 
 
