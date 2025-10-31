@@ -5,6 +5,8 @@ using Foodbook.Business.Interfaces;
 using Foodbook.Data.Entities;
 using System.Threading.Tasks;
 using System;
+using Foodbook.Presentation.Commands;
+using Foodbook.Business;
 
 namespace Foodbook.Presentation.ViewModels
 {
@@ -13,6 +15,7 @@ namespace Foodbook.Presentation.ViewModels
         // 1. SERVICES (Cần cho việc khởi tạo các ViewModel con & Localization)
         private readonly ILocalizationService? _localizationService;
         private readonly IUserService _userService;
+        private readonly IAuthenticationService? _authService;
         // ... (Giữ tất cả các Service readonly fields cần thiết)
         
         // 2. VIEWMODEL CON (Được inject/khởi tạo)
@@ -25,11 +28,14 @@ namespace Foodbook.Presentation.ViewModels
 
         // 3. CORE SHELL PROPERTIES & COMMANDS
         private string _selectedTab = "Dashboard";
+        private bool _isNavigatingTabs = false;
+        private DateTime _lastNavigationAt = DateTime.MinValue;
         public string SelectedTab
         {
             get => _selectedTab;
             set
             {
+                if (value == _selectedTab) return; // avoid redundant navigations
                 if (SetProperty(ref _selectedTab, value))
                 {
                     _ = SelectTab(value);
@@ -63,6 +69,17 @@ namespace Foodbook.Presentation.ViewModels
         public ICommand SelectTabCommand { get; }
         public ICommand ToggleSidebarCommand { get; }
 
+        // Delegate settings to SettingsVM for window code-behind
+        public string SelectedTheme => SettingsVM.SelectedTheme;
+        public string SelectedLanguage => SettingsVM.SelectedLanguage;
+        public ICommand LoadSettingsCommand => SettingsVM.LoadSettingsCommand;
+
+        // Forward commonly used commands for XAML conveniences
+        public ICommand PrevPageCommand => RecipeListVM.PrevPageCommand;
+        public ICommand NextPageCommand => RecipeListVM.NextPageCommand;
+        public ICommand ViewRecipeCommand => RecipeListVM.ViewRecipeCommand;
+        public ICommand EditRecipeCommand => RecipeListVM.EditRecipeCommand;
+
         public MainViewModel(
             IRecipeService recipeService, 
             IIngredientService ingredientService,
@@ -77,27 +94,36 @@ namespace Foodbook.Presentation.ViewModels
         {
             _localizationService = localizationService;
             _userService = userService;
-            // ... (Initialize other services)
+            _authService = authenticationService;
 
             // 4. KHỞI TẠO CÁC VIEWMODEL CON VỚI SERVICES CHUYÊN BIỆT
-            RecipeListVM = new RecipeListViewModel(recipeService, loggingService);
+            RecipeListVM = new RecipeListViewModel(recipeService, loggingService, (IUnsplashImageService)ServiceContainer.GetService<IUnsplashImageService>());
             InventoryVM = new InventoryViewModel(ingredientService, loggingService);
             AnalyticsVM = new AnalyticsViewModel(recipeService, ingredientService, loggingService);
-            SettingsVM = new SettingsViewModel(settingsService, localizationService);
+            SettingsVM = new SettingsViewModel(settingsService, localizationService, recipeService, aiService, loggingService);
             AIVM = new AIViewModel(aiService, shoppingListService, loggingService, userService, InventoryVM);
             NutritionVM = new NutritionViewModel(nutritionService, aiService, recipeService);
             
             // 5. THIẾT LẬP CÁC COMMAND CHÍNH
-            SelectTabCommand = new RelayCommand<string>(async (tabName) => await SelectTab(tabName));
+            // Chỉ cập nhật SelectedTab; setter sẽ gọi SelectTab để nạp dữ liệu và cập nhật UI
+            SelectTabCommand = new RelayCommand<string>((tabName) =>
+            {
+                if (!string.IsNullOrWhiteSpace(tabName))
+                {
+                    SelectedTab = tabName;
+                }
+            });
             ToggleSidebarCommand = new RelayCommand(async () => await ToggleSidebarAsync());
             
             // Bắt đầu tải dữ liệu chung
             _ = LoadCurrentUserAsync();
+
         }
 
         // Khởi tạo không tham số cho Designtime (nếu cần)
         public MainViewModel() 
         {
+            _userService = null!;
             // Thiết lập giá trị mặc định cho Design View
             RecipeListVM = new RecipeListViewModel();
             InventoryVM = new InventoryViewModel();
@@ -106,7 +132,14 @@ namespace Foodbook.Presentation.ViewModels
             AIVM = new AIViewModel();
             NutritionVM = new NutritionViewModel();
 
-            SelectTabCommand = new RelayCommand<string>(async (tabName) => await SelectTab(tabName));
+            // Chỉ cập nhật SelectedTab; setter sẽ gọi SelectTab
+            SelectTabCommand = new RelayCommand<string>((tabName) =>
+            {
+                if (!string.IsNullOrWhiteSpace(tabName))
+                {
+                    SelectedTab = tabName;
+                }
+            });
             ToggleSidebarCommand = new RelayCommand(async () => await ToggleSidebarAsync());
             CurrentUser = new User { Id = 1, Username = "DesignUser", Email = "design@foodbook.com" };
         }
@@ -114,6 +147,12 @@ namespace Foodbook.Presentation.ViewModels
         // 6. LOGIC NAVIGATION
         private async Task SelectTab(string tabName)
         {
+            // Debounce rapid repeat navigations and reentrancy guard
+            var now = DateTime.UtcNow;
+            if (_isNavigatingTabs) return;
+            if ((now - _lastNavigationAt).TotalMilliseconds < 100) return;
+            _isNavigatingTabs = true;
+            _lastNavigationAt = now;
             System.Diagnostics.Debug.WriteLine($"Shell navigating to: {tabName}");
             
             // Kích hoạt logic tải/refresh dữ liệu trên các ViewModel con
@@ -137,15 +176,44 @@ namespace Foodbook.Presentation.ViewModels
                 case "AI":
                     await AIVM.LoadIngredientsForAIAsync(); // Tải nguyên liệu để dùng cho AI
                     break;
+                case "Nutrition":
+                    if (NutritionVM.LoadRecipesCommand.CanExecute(null))
+                    {
+                        NutritionVM.LoadRecipesCommand.Execute(null);
+                    }
+                    break;
             }
+            _isNavigatingTabs = false;
         }
         
         private async Task LoadCurrentUserAsync()
         {
-            // Logic tải User (chuyển từ file gốc)
-            // ... (giữ lại logic BuildGreeting và set CurrentUser)
-            await Task.Delay(1); // placeholder
-            CurrentUser = new User { Id = 1, Username = "DemoUser", Email = "demo@foodbook.com" };
+            try
+            {
+                if (_authService != null)
+                {
+                    var user = await _authService.GetCurrentUserAsync();
+                    if (user != null)
+                    {
+                        CurrentUser = user;
+                        return;
+                    }
+                }
+
+                // Fallback (design/demo): keep existing demo if nothing in session
+                if (CurrentUser == null)
+                {
+                    CurrentUser = new User { Id = 1, Username = "DemoUser", Email = "demo@foodbook.com" };
+                }
+            }
+            catch
+            {
+                // Silent fallback to demo user to avoid UI break
+                if (CurrentUser == null)
+                {
+                    CurrentUser = new User { Id = 1, Username = "DemoUser", Email = "demo@foodbook.com" };
+                }
+            }
         }
         
         private async Task ToggleSidebarAsync()
@@ -156,5 +224,14 @@ namespace Foodbook.Presentation.ViewModels
 
         // Tích hợp các hàm tiện ích còn lại (vd: BuildGreeting, RefreshLocalization)
         // ... (CÁC PHẦN CÒN LẠI NHƯ BuildGreeting, RefreshLocalization SẼ ĐƯỢC GIỮ NGUYÊN HOẶC CHUYỂN)
+        public void RefreshLocalization()
+        {
+            OnPropertyChanged(nameof(Loc_Dashboard));
+            OnPropertyChanged(nameof(Loc_MyRecipes));
+            OnPropertyChanged(nameof(Loc_Ingredients));
+            OnPropertyChanged(nameof(Loc_Analytics));
+            OnPropertyChanged(nameof(Loc_Settings));
+            OnPropertyChanged(nameof(Loc_AI));
+        }
     }
 }

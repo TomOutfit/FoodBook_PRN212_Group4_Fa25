@@ -30,13 +30,14 @@
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Padding" Value="10,6"/>
-        <Setter Property="Margin" Value="6,3"/>
-        <Setter Property="Height" Value="36"/>
+        <Setter Property="Padding" Value="12,8"/>
+        <Setter Property="Margin" Value="4,4"/>
+        <Setter Property="Height" Value="40"/>
         <Setter Property="FontWeight" Value="Medium"/>
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="HorizontalAlignment" Value="Stretch"/>
         <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -45,7 +46,7 @@
                             Background="{TemplateBinding Background}"
                             CornerRadius="12"
                             SnapsToDevicePixels="True">
-                        <ContentPresenter Margin="6,0,6,0"
+                        <ContentPresenter Margin="8,0,8,0"
                                           HorizontalAlignment="Left"
                                           VerticalAlignment="Center"/>
                     </Border>
@@ -129,5 +130,3 @@
         </Setter>
     </Style>
 </ResourceDictionary>
-
-

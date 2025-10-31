@@ -4,6 +4,7 @@ using Microsoft.Win32;
 using Foodbook.Business.Interfaces;
 using Foodbook.Data.Entities;
 using Foodbook.Presentation.Services;
+using Foodbook.Presentation.Commands;
 
 namespace Foodbook.Presentation.ViewModels
 {
