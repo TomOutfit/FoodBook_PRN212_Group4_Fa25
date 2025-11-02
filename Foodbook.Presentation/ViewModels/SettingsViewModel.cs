@@ -165,18 +165,14 @@ namespace Foodbook.Presentation.ViewModels
             try
             {
                 await Task.Yield();
-                if (_loggingService == null)
-                {
-                    MessageBox.Show("No logging service available.", "Logs", MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
-                }
+                // Luôn mở LogViewerWindow, để nó tự xử lý nếu loggingService null
                 var win = new LogViewerWindow(_loggingService);
                 win.Owner = Application.Current?.MainWindow;
                 win.Show();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to load logs: {ex.Message}", "Logs", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Failed to open log viewer: {ex.Message}", "Logs", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         private async Task RefreshProfileAsync() { await Task.CompletedTask; }

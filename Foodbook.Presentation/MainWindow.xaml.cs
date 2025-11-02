@@ -68,15 +68,18 @@ public partial class MainWindow : Window
         base.OnClosed(e);
     }
 
-    private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
         // Load settings when window loads
         if (DataContext is MainViewModel vm && vm.LoadSettingsCommand.CanExecute(null))
         {
             vm.LoadSettingsCommand.Execute(null);
             
+            // Refresh CurrentUser to ensure it's up-to-date after login
+            await vm.LoadCurrentUserAsync();
+            
             // Apply loaded settings immediately
-            Task.Run(async () =>
+            _ = Task.Run(async () =>
             {
                 await Task.Delay(100); // Small delay to ensure settings are loaded
                 Dispatcher.Invoke(() =>

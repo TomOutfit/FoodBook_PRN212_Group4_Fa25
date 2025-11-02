@@ -55,12 +55,6 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Brand / Title -->
-                    <StackPanel Orientation="Horizontal" Margin="4,0,0,12">
-                        <TextBlock Text="🍳" FontSize="16" Margin="0,0,8,0"/>
-                        <TextBlock Text="FoodBook" FontWeight="Bold" Foreground="#2B2F33" Visibility="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource SidebarVisibilityConverter}}"/>
-                    </StackPanel>
-
                     <!-- Navigation -->
                     <StackPanel Grid.Row="1">
                         <Button Command="{Binding SelectTabCommand}" CommandParameter="Dashboard" Margin="0,4" HorizontalAlignment="Stretch">
@@ -173,7 +167,10 @@
                     </StackPanel>
 
                     <!-- User Card / Logout -->
-                    <Border Grid.Row="2" Background="#FFFFFF" CornerRadius="8" Padding="12" BorderBrush="#E6E8EA" BorderThickness="1" Margin="0,12,0,0">
+                    <Border Grid.Row="2" Background="#FFFFFF" CornerRadius="12" Padding="16" BorderBrush="#E6E8EA" BorderThickness="0" Margin="0,12,0,0">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="2" Opacity="0.06" BlurRadius="12"/>
+                        </Border.Effect>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -181,22 +178,62 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
-                            <!-- Avatar (initial) -->
-                            <Border Width="36" Height="36" CornerRadius="18" Background="#E2E8F0" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding DataContext.CurrentUser.Username, RelativeSource={RelativeSource AncestorType={x:Type Window}}, StringFormat={}{0:0}}" 
-                                           Foreground="#0F172A" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <!-- Avatar with gradient background -->
+                            <Border Width="44" Height="44" CornerRadius="22" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#4CAF50" Offset="0"/>
+                                        <GradientStop Color="#43A047" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#4CAF50" Direction="270" ShadowDepth="0" Opacity="0.3" BlurRadius="8"/>
+                                </Border.Effect>
+                                <TextBlock Text="{Binding DataContext.CurrentUser.Username, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource FirstLetterConverter}}" 
+                                           Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" FontSize="16"/>
                             </Border>
 
                             <!-- User info -->
-                            <StackPanel Grid.Column="1" Margin="10,0,10,0" VerticalAlignment="Center"
+                            <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center"
                                         Visibility="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource SidebarVisibilityConverter}}">
-                                <TextBlock Text="{Binding DataContext.CurrentUser.Username, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" FontWeight="SemiBold" Foreground="#0F172A"/>
-                                <TextBlock Text="{Binding DataContext.CurrentUser.Email, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Foreground="#475569" FontSize="12"/>
+                                <TextBlock Text="{Binding DataContext.CurrentUser.Username, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" 
+                                           FontWeight="SemiBold" Foreground="#1F2937" FontSize="14"/>
+                                <TextBlock Text="{Binding DataContext.CurrentUser.Email, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" 
+                                           Foreground="#6B7280" FontSize="11" Margin="0,2,0,0"/>
                             </StackPanel>
 
-                            <!-- Logout button -->
-                            <Button Grid.Column="2" Content="⎋" Width="28" Height="28" Background="#F1F5F9" BorderBrush="#E2E8F0" BorderThickness="1"
-                                    ToolTip="Logout" Click="Logout_Click"/>
+                            <!-- Logout button with hover effect -->
+                            <Button Grid.Column="2" Width="32" Height="32" BorderThickness="0" 
+                                    ToolTip="Logout" Click="Logout_Click" Cursor="Hand"
+                                    Background="Transparent" Padding="0">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}" 
+                                                            CornerRadius="8" 
+                                                            Padding="8"
+                                                            BorderThickness="0">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="#FEE2E2"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed" Value="True">
+                                                            <Setter Property="Background" Value="#FECACA"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="🚪" FontSize="16" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
                         </Grid>
                     </Border>
                 </Grid>
