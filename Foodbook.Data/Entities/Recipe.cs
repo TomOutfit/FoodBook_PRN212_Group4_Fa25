@@ -36,6 +36,8 @@ namespace Foodbook.Data.Entities
         [Required]
         public int UserId { get; set; }
 
+        public bool IsAIGenerated { get; set; } = false;
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

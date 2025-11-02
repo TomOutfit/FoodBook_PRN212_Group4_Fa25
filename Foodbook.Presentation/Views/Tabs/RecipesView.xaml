@@ -61,14 +61,6 @@
                     </Grid>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-                    <Button Background="#4CAF50" Foreground="White" FontSize="14" FontWeight="SemiBold" Padding="24,16" BorderThickness="0" Margin="0,0,12,0" Command="{Binding AnalyzePantryCommand}">
-                        <Button.Content>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🤖" FontSize="16" Margin="0,0,8,0"/>
-                                <TextBlock Text="Analyze Pantry (AI Chef)"/>
-                            </StackPanel>
-                        </Button.Content>
-                    </Button>
                     <Button Background="#4CAF50" Foreground="White" FontSize="14" FontWeight="SemiBold" Padding="24,16" BorderThickness="0" Margin="0,0,12,0" Command="{Binding AddRecipeCommand}">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal">
@@ -186,57 +178,108 @@
             <ItemsControl Grid.Row="0" ItemsSource="{Binding PagedRecipes}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <WrapPanel Margin="0,0,0,24" ItemWidth="360" ItemHeight="Auto"/>
+                        <WrapPanel Margin="0,0,0,16" ItemWidth="360" ItemHeight="Auto"/>
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border Background="White" CornerRadius="16" Padding="12" Margin="8" Cursor="Hand" MinWidth="340" MaxWidth="360">
+                        <Border Background="#FFFFFF" BorderBrush="#FF8A00" BorderThickness="3" CornerRadius="16" Padding="0" Margin="4" MinWidth="340" MaxWidth="360">
                             <Border.Effect>
-                                <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="4" Opacity="0.08" BlurRadius="14"/>
+                                <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="4" Opacity="0.08" BlurRadius="12"/>
                             </Border.Effect>
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="140"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" CornerRadius="12" Background="#F8FAFC" Width="120" Height="120">
-                                    <Grid>
-                                        <Image Source="{Binding ImageUrl, Converter={StaticResource ImageUrlConverter}}" Stretch="UniformToFill"/>
-                                        <TextBlock Text="🍽️" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#9CA3AF" Visibility="{Binding ImageUrl, Converter={StaticResource NullToVisibilityConverter}}"/>
-                                    </Grid>
+                                
+                                <!-- Image Outside Card (Left Side) -->
+                                <Grid Grid.Column="0" Margin="0">
+                                    <Border CornerRadius="16,0,0,16" ClipToBounds="True" Background="#F8F9FA">
+                                        <Grid>
+                                            <Image Width="140" 
+                                                   Height="160" 
+                                                   Stretch="UniformToFill"
+                                                   VerticalAlignment="Stretch"
+                                                   HorizontalAlignment="Stretch">
+                                                <Image.Source>
+                                                    <Binding Path="ImageUrl" Converter="{StaticResource ImageUrlConverter}">
+                                                        <Binding.FallbackValue>
+                                                            <BitmapImage UriSource="pack://application:,,,/Images/FoodBook_Logo.png"/>
+                                                        </Binding.FallbackValue>
+                                                    </Binding>
+                                                </Image.Source>
+                                            </Image>
+                                            <!-- Placeholder icon if no image -->
+                                            <TextBlock Text="🍽️" 
+                                                       FontSize="48" 
+                                                       Foreground="#9CA3AF" 
+                                                       HorizontalAlignment="Center" 
+                                                       VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding ImageUrl, Converter={StaticResource NullToVisibilityConverter}}" Value="Visible">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding ImageUrl, Converter={StaticResource NullToVisibilityConverter}}" Value="Collapsed">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Content Card (Right Side) -->
+                                <Border Grid.Column="1" Background="#FFFFFF" CornerRadius="0,16,16,0" Padding="12">
+                                    <StackPanel>
+                                        <TextBlock Text="★★★★☆" Foreground="#FFB300" FontSize="12" Margin="0,0,0,4"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                            <TextBlock Text="{Binding Title}" 
+                                                       FontSize="17" 
+                                                       FontWeight="Bold" 
+                                                       Foreground="#1F2937" 
+                                                       TextWrapping="Wrap"
+                                                       MaxWidth="180"
+                                                       LineHeight="20"/>
+                                            <TextBlock Text="🤖" 
+                                                       FontSize="14" 
+                                                       Margin="4,0,0,0" 
+                                                       ToolTip="AI Generated Recipe" 
+                                                       Visibility="{Binding IsAIGenerated, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                        </StackPanel>
+                                        <WrapPanel Margin="0,0,0,8">
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,8,4">
+                                                <TextBlock Text="⏱️" Margin="0,0,4,0" FontSize="11"/>
+                                                <TextBlock Text="{Binding CookTime, StringFormat={}{0}mins}" Foreground="#6B7280" FontSize="12"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,8,4">
+                                                <TextBlock Text="👥" Margin="0,0,4,0" FontSize="11"/>
+                                                <TextBlock Text="{Binding Servings, StringFormat={}{0} people}" Foreground="#6B7280" FontSize="12"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,8,4">
+                                                <TextBlock Text="🧩" Margin="0,0,4,0" FontSize="11"/>
+                                                <TextBlock Text="{Binding Difficulty, Converter={StaticResource StringCleanConverter}}" Foreground="#6B7280" FontSize="12"/>
+                                            </StackPanel>
+                                        </WrapPanel>
+                                        <Button Background="Transparent" 
+                                                BorderBrush="#FF8A00" 
+                                                Foreground="#FF8A00" 
+                                                FontWeight="SemiBold" 
+                                                Padding="12,8" 
+                                                BorderThickness="2" 
+                                                Margin="0,0,0,0" 
+                                                FontSize="12"
+                                                Command="{Binding DataContext.ViewRecipeCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                CommandParameter="{Binding}">
+                                            <TextBlock Text="VIEW RECIPE"/>
+                                        </Button>
+                                    </StackPanel>
                                 </Border>
-                                <StackPanel Grid.Column="1" Margin="12,0,0,0">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" Foreground="#111827" TextWrapping="Wrap"/>
-                                        <Border Background="#4CAF50" CornerRadius="10" Padding="6,2" Margin="8,0,0,0" Visibility="{Binding Category, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Invert}">
-                                            <TextBlock Text="{Binding Category}" FontSize="11" Foreground="White"/>
-                                        </Border>
-                                        <Border Background="#FF9800" CornerRadius="10" Padding="6,2" Margin="6,0,0,0">
-                                            <TextBlock Text="{Binding Difficulty, Converter={StaticResource StringCleanConverter}}" FontSize="11" Foreground="White"/>
-                                        </Border>
-                                    </StackPanel>
-                                    <TextBlock Text="{Binding Description}" FontSize="12" Foreground="#6B7280" TextWrapping="Wrap" MaxHeight="36" Margin="0,4,0,6"/>
-                                    <StackPanel Orientation="Horizontal">
-                                        <StackPanel Orientation="Horizontal" Margin="0,0,8,0">
-                                            <TextBlock Text="⏱️" Margin="0,0,4,0"/>
-                                            <TextBlock Text="{Binding CookTime, StringFormat={}{0}m}" Foreground="#374151"/>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="8,0,0,0">
-                                            <TextBlock Text="⭐" Margin="0,0,4,0"/>
-                                            <TextBlock Text="{Binding Ratings, Converter={StaticResource CountToWidthConverter}}" Visibility="Collapsed"/>
-                                            <TextBlock Text="{Binding Ratings.Count, StringFormat={}{0} reviews}" Foreground="#374151"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                        <Button Background="#4CAF50" Foreground="White" FontSize="12" Padding="10,6" BorderThickness="0" Command="{Binding DataContext.ViewRecipeCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" Margin="0,0,6,0">
-                                            <TextBlock Text="View"/>
-                                        </Button>
-                                        <Button Background="#6B7280" Foreground="White" FontSize="12" Padding="10,6" BorderThickness="0" Command="{Binding DataContext.EditRecipeCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
-                                            <TextBlock Text="Edit"/>
-                                        </Button>
-                                    </StackPanel>
-                                </StackPanel>
                             </Grid>
                         </Border>
                     </DataTemplate>

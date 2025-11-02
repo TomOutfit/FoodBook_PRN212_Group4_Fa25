@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Foodbook.Business.Interfaces;
+using System.Threading;
 
 namespace Foodbook.Business.Services
 {
@@ -10,6 +11,7 @@ namespace Foodbook.Business.Services
     {
         private readonly string _settingsFilePath;
         private AppSettings? _cachedSettings;
+        private readonly SemaphoreSlim _ioLock = new SemaphoreSlim(1, 1);
 
         public SettingsService()
         {
@@ -26,20 +28,26 @@ namespace Foodbook.Business.Services
 
             try
             {
+                await _ioLock.WaitAsync().ConfigureAwait(false);
                 if (File.Exists(_settingsFilePath))
                 {
-                    var json = await File.ReadAllTextAsync(_settingsFilePath);
-                    _cachedSettings = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+                    using var fs = new FileStream(_settingsFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    _cachedSettings = await JsonSerializer.DeserializeAsync<AppSettings>(fs).ConfigureAwait(false) ?? new AppSettings();
                 }
                 else
                 {
                     _cachedSettings = new AppSettings();
-                    await SaveSettingsAsync(_cachedSettings);
+                    // Save initial settings to create the file
+                    await InternalSaveAsync(_cachedSettings).ConfigureAwait(false);
                 }
             }
             catch (Exception)
             {
                 _cachedSettings = new AppSettings();
+            }
+            finally
+            {
+                if (_ioLock.CurrentCount == 0) _ioLock.Release();
             }
 
             return _cachedSettings;
@@ -49,17 +57,39 @@ namespace Foodbook.Business.Services
         {
             try
             {
+                await _ioLock.WaitAsync().ConfigureAwait(false);
                 settings.LastUpdated = DateTime.UtcNow;
-                var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions 
-                { 
-                    WriteIndented = true 
-                });
-                await File.WriteAllTextAsync(_settingsFilePath, json);
+                await InternalSaveAsync(settings).ConfigureAwait(false);
                 _cachedSettings = settings;
             }
             catch (Exception ex)
             {
                 throw new InvalidOperationException($"Failed to save settings: {ex.Message}", ex);
+            }
+            finally
+            {
+                if (_ioLock.CurrentCount == 0) _ioLock.Release();
+            }
+        }
+
+        private async Task InternalSaveAsync(AppSettings settings)
+        {
+            var tempPath = _settingsFilePath + ".tmp";
+            // Write to temp file first
+            await using (var fs = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                await JsonSerializer.SerializeAsync(fs, settings, new JsonSerializerOptions { WriteIndented = true }).ConfigureAwait(false);
+                await fs.FlushAsync().ConfigureAwait(false);
+            }
+            // Replace atomically if available; fallback to overwrite move
+            try
+            {
+                File.Move(tempPath, _settingsFilePath, true);
+            }
+            catch
+            {
+                if (File.Exists(_settingsFilePath)) File.Delete(_settingsFilePath);
+                File.Move(tempPath, _settingsFilePath);
             }
         }
 

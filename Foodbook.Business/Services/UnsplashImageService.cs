@@ -13,6 +13,7 @@ namespace Foodbook.Business.Services
     {
         private readonly HttpClient _httpClient;
         private readonly string _accessKey;
+        private readonly bool _useFoodishFallback;
         private readonly string _baseUrl = "https://api.unsplash.com";
         private readonly string _cacheFolder;
 
@@ -23,15 +24,17 @@ namespace Foodbook.Business.Services
             // Unsplash API - Sử dụng demo key hoặc access key nếu có
             try
             {
-                _accessKey = configuration?["UnsplashAPI:AccessKey"] ?? "demo_key";
-                if (!string.IsNullOrEmpty(_accessKey) && _accessKey != "demo_key")
+                _accessKey = configuration?["UnsplashAPI:AccessKey"] ?? "";
+                _useFoodishFallback = bool.TryParse(configuration?["UnsplashAPI:UseFoodishFallback"], out var useFoodish) && useFoodish;
+                if (!string.IsNullOrEmpty(_accessKey) && !_useFoodishFallback)
                 {
                     _httpClient.DefaultRequestHeaders.Add("Authorization", $"Client-ID {_accessKey}");
                 }
             }
             catch
             {
-                _accessKey = "demo_key";
+                _accessKey = string.Empty;
+                _useFoodishFallback = true;
             }
 
             // Tạo thư mục cache
@@ -60,15 +63,17 @@ namespace Foodbook.Business.Services
                 // Làm sạch tên món ăn
                 var searchQuery = CleanSearchQuery(dishName);
                 
-                // Thử lấy ảnh từ Unsplash
-                var imageUrl = await SearchUnsplashAsync(searchQuery, width, height);
-                
-                if (!string.IsNullOrEmpty(imageUrl))
+                // Nếu cấu hình yêu cầu fallback hoặc không có access key → dùng Foodish ngay
+                if (_useFoodishFallback || string.IsNullOrWhiteSpace(_accessKey))
                 {
-                    return imageUrl;
+                    return await GetFoodishImageAsync(searchQuery, width, height);
                 }
 
-                // Fallback: Sử dụng placeholder service
+                // Thử lấy ảnh từ Unsplash trước
+                var imageUrl = await SearchUnsplashAsync(searchQuery, width, height);
+                if (!string.IsNullOrEmpty(imageUrl)) return imageUrl;
+
+                // Fallback: Sử dụng Foodish
                 return await GetFoodishImageAsync(searchQuery, width, height);
             }
             catch (Exception ex)
@@ -79,16 +84,16 @@ namespace Foodbook.Business.Services
             }
         }
 
-        public async Task<string?> GetRandomFoodImageAsync(string category = "food")
+        public Task<string?> GetRandomFoodImageAsync(string category = "food")
         {
             try
             {
                 // Sử dụng Foodish API - hoàn toàn miễn phí và không cần API key
-                return $"https://foodish-api.com/images/{category}/{category}{Random.Shared.Next(1, 1000)}.jpg";
+                return Task.FromResult<string?>($"https://foodish-api.com/images/{category}/{category}{Random.Shared.Next(1, 1000)}.jpg");
             }
             catch
             {
-                return null;
+                return Task.FromResult<string?>(null);
             }
         }
 

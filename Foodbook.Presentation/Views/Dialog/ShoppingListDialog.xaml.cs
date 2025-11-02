@@ -7,6 +7,7 @@ using System.Windows.Documents;
 using Foodbook.Business.Interfaces;
 using System.Threading.Tasks;
 using System.IO;
+using Foodbook.Presentation.ViewModels;
 
 namespace Foodbook.Presentation.Views
 {
@@ -14,32 +15,54 @@ namespace Foodbook.Presentation.Views
     {
         private ShoppingListResult? _currentShoppingList;
         private readonly IShoppingListService? _shoppingListService;
+        private ShoppingListDialogViewModel? _viewModel;
 
         public ShoppingListDialog()
         {
             InitializeComponent();
         }
 
-        public ShoppingListDialog(IShoppingListService shoppingListService) : this()
+        public ShoppingListDialog(IShoppingListService shoppingListService, IIngredientService? ingredientService = null, int userId = 1) : this()
         {
             _shoppingListService = shoppingListService;
+            _viewModel = new ShoppingListDialogViewModel(shoppingListService, ingredientService, userId);
+            _viewModel.CloseRequested += () => { this.DialogResult = true; this.Close(); };
+            _viewModel.GenerateRequested += () => { /* Refresh UI if needed */ };
+            DataContext = _viewModel;
+            
+            // Handle generate errors
+            Loaded += Window_Loaded;
         }
 
         public void SetShoppingList(ShoppingListResult shoppingList)
         {
             _currentShoppingList = shoppingList;
             
-            // Set summary information
-            TotalItemsText.Text = shoppingList.TotalItems.ToString();
-            EstimatedCostText.Text = $"${shoppingList.EstimatedCost:F2}";
-            ShoppingTimeText.Text = $"{shoppingList.EstimatedShoppingTime.TotalMinutes:F0} min";
+            // Use ViewModel if available
+            if (_viewModel != null)
+            {
+                _viewModel.SetShoppingList(shoppingList);
+            }
+            else
+            {
+                // Fallback to direct UI update
+                if (TotalItemsText != null)
+                    TotalItemsText.Text = shoppingList.TotalItems.ToString();
+                if (EstimatedCostText != null)
+                    EstimatedCostText.Text = $"${shoppingList.EstimatedCost:F2}";
+                if (ShoppingTimeText != null)
+                    ShoppingTimeText.Text = $"{shoppingList.EstimatedShoppingTime.TotalMinutes:F0} min";
 
-            // Set categories with enhanced information
-            CategoriesList.ItemsSource = shoppingList.Categories;
-            
-            // Set tips and suggestions
-            TipsList.ItemsSource = shoppingList.Tips;
-            SuggestionsList.ItemsSource = shoppingList.StoreSuggestions;
+                // Set categories with enhanced information
+                if (CategoriesList != null)
+                    CategoriesList.ItemsSource = shoppingList.Categories;
+                
+                // Set tips and suggestions
+                if (TipsList != null)
+                    TipsList.ItemsSource = shoppingList.Tips;
+                if (SuggestionsList != null)
+                    SuggestionsList.ItemsSource = shoppingList.StoreSuggestions;
+            }
 
             // Update window title with list name
             if (!string.IsNullOrEmpty(shoppingList.ListName))
@@ -48,56 +71,92 @@ namespace Foodbook.Presentation.Views
             }
 
             // Show potential savings if available
-            if (shoppingList.PotentialSavings > 0)
+            if (shoppingList.PotentialSavings > 0 && TotalItemsText != null)
             {
-                EstimatedCostText.Text += $" (Save: ${shoppingList.PotentialSavings:F2})";
-                EstimatedCostText.Foreground = System.Windows.Media.Brushes.Green;
+                if (_viewModel == null && EstimatedCostText != null)
+                {
+                    EstimatedCostText.Text += $" (Save: ${shoppingList.PotentialSavings:F2})";
+                    EstimatedCostText.Foreground = System.Windows.Media.Brushes.Green;
+                }
             }
         }
 
-        private async void ExportButton_Click(object sender, RoutedEventArgs e)
+        private ShoppingListResult? GetCurrentShoppingList()
+        {
+            // Try to get from ViewModel first
+            if (_viewModel?.ShoppingList != null)
+                return _viewModel.ShoppingList;
+            
+            // Fallback to _currentShoppingList
+            return _currentShoppingList;
+        }
+
+        private void MinimizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.WindowState = WindowState.Minimized;
+        }
+
+        private void MaximizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.WindowState = this.WindowState == WindowState.Maximized 
+                ? WindowState.Normal 
+                : WindowState.Maximized;
+        }
+
+        private void ExportButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Show export options panel
+            if (_viewModel != null)
+            {
+                _viewModel.ShowExportOptions = true;
+            }
+        }
+
+        private async void ConfirmExport_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                if (_currentShoppingList == null)
+                var shoppingList = GetCurrentShoppingList();
+                if (shoppingList == null)
                 {
                     MessageBox.Show("No shopping list to export.", "Export Error", 
                                   MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                // Show export options
-                var exportDialog = new ExportOptionsDialog();
-                if (exportDialog.ShowDialog() == true)
+                if (_viewModel == null || _shoppingListService == null) return;
+
+                var exportType = _viewModel.SelectedExportType;
+                var fileName = _viewModel.ExportFileName;
+
+                ExportType exportTypeEnum = ExportType.TextFile;
+                if (exportType == "Notes Integration")
+                    exportTypeEnum = ExportType.Notes;
+                else if (exportType == "PDF Document")
+                    exportTypeEnum = ExportType.PDF;
+
+                switch (exportTypeEnum)
                 {
-                    var exportType = exportDialog.SelectedExportType;
-                    var fileName = exportDialog.FileName;
+                    case ExportType.Notes:
+                        var notesFileName = await _shoppingListService.ExportShoppingListToNotesAsync(shoppingList, fileName);
+                        MessageBox.Show($"Shopping list exported to Notes as: {notesFileName}", 
+                                      "Export Successful", MessageBoxButton.OK, MessageBoxImage.Information);
+                        break;
 
-                    switch (exportType)
-                    {
-                        case ExportType.Notes:
-                            if (_shoppingListService != null)
-                            {
-                                var notesFileName = await _shoppingListService.ExportShoppingListToNotesAsync(_currentShoppingList, fileName);
-                                MessageBox.Show($"Shopping list exported to Notes as: {notesFileName}", 
-                                              "Export Successful", MessageBoxButton.OK, MessageBoxImage.Information);
-                            }
-                            else
-                            {
-                                MessageBox.Show("Notes export service not available.", "Export Error", 
-                                              MessageBoxButton.OK, MessageBoxImage.Error);
-                            }
-                            break;
+                    case ExportType.TextFile:
+                        await ExportToTextFile(fileName, shoppingList);
+                        break;
 
-                        case ExportType.TextFile:
-                            await ExportToTextFile(fileName);
-                            break;
+                    case ExportType.PDF:
+                        MessageBox.Show("PDF export functionality would be implemented here.", 
+                                      "PDF Export", MessageBoxButton.OK, MessageBoxImage.Information);
+                        break;
+                }
 
-                        case ExportType.PDF:
-                            MessageBox.Show("PDF export functionality would be implemented here.", 
-                                          "PDF Export", MessageBoxButton.OK, MessageBoxImage.Information);
-                            break;
-                    }
+                // Hide export options panel
+                if (_viewModel != null)
+                {
+                    _viewModel.ShowExportOptions = false;
                 }
             }
             catch (Exception ex)
@@ -107,22 +166,79 @@ namespace Foodbook.Presentation.Views
             }
         }
 
-        private async Task ExportToTextFile(string fileName)
+        private void CancelExport_Click(object sender, RoutedEventArgs e)
+        {
+            if (_viewModel != null)
+            {
+                _viewModel.ShowExportOptions = false;
+            }
+        }
+
+        private void ConfirmIngredientSelection_Click(object sender, RoutedEventArgs e)
+        {
+            if (_viewModel == null || IngredientsListBox == null) return;
+
+            var selected = IngredientsListBox.SelectedItems.Cast<string>().ToList();
+            if (!selected.Any())
+            {
+                MessageBox.Show("Vui lòng chọn ít nhất một nguyên liệu.", 
+                    "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            _viewModel.SelectedIngredients = new System.Collections.ObjectModel.ObservableCollection<string>(selected);
+            _viewModel.ShowIngredientSelection = false;
+            
+            // Trigger generate
+            _viewModel.GenerateCommand.Execute(null);
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Ensure DataContext is set
+            if (DataContext == null && _viewModel != null)
+            {
+                DataContext = _viewModel;
+            }
+        }
+
+        private async Task ExportToTextFile(string fileName, ShoppingListResult shoppingList)
         {
             try
             {
-                var content = GenerateTextContent(_currentShoppingList!);
-                var filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"{fileName}.txt");
+                var content = GenerateTextContent(shoppingList);
+                
+                // Kiểm tra và tạo thư mục trên ổ D
+                string driveD = "D:\\";
+                string exportFolder = Path.Combine(driveD, "ShoppingLists");
+                
+                // Kiểm tra xem ổ D có tồn tại không
+                if (!Directory.Exists(driveD))
+                {
+                    MessageBox.Show("Ổ D không tồn tại. Đang lưu vào Desktop thay thế.", 
+                                  "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    exportFolder = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                }
+                else
+                {
+                    // Tạo thư mục nếu chưa có
+                    if (!Directory.Exists(exportFolder))
+                    {
+                        Directory.CreateDirectory(exportFolder);
+                    }
+                }
+                
+                var filePath = Path.Combine(exportFolder, $"{fileName}.txt");
                 
                 await File.WriteAllTextAsync(filePath, content);
                 
-                MessageBox.Show($"Shopping list exported to: {filePath}", 
-                              "Export Successful", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"✅ Shopping list đã được xuất thành công!\n\nĐường dẫn: {filePath}", 
+                              "Xuất File Thành Công", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error saving text file: {ex.Message}", 
-                              "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"❌ Lỗi khi lưu file: {ex.Message}", 
+                              "Lỗi Xuất File", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -208,16 +324,24 @@ namespace Foodbook.Presentation.Views
             if (sender is CheckBox checkBox && checkBox.DataContext is ShoppingItem item)
             {
                 item.IsChecked = checkBox.IsChecked == true;
+                
+                // Update ViewModel if available
+                if (_viewModel != null)
+                {
+                    _viewModel.ToggleItemChecked(item);
+                }
+                
                 UpdateProgress();
             }
         }
 
         private void UpdateProgress()
         {
-            if (_currentShoppingList == null) return;
+            var shoppingList = GetCurrentShoppingList();
+            if (shoppingList == null) return;
 
-            var checkedItems = _currentShoppingList.Items.Count(item => item.IsChecked);
-            var totalItems = _currentShoppingList.TotalItems;
+            var checkedItems = shoppingList.Items.Count(item => item.IsChecked);
+            var totalItems = shoppingList.TotalItems;
             var progressPercentage = totalItems > 0 ? (double)checkedItems / totalItems * 100 : 0;
 
             // Update progress display (you could add a progress bar to the UI)
@@ -226,47 +350,57 @@ namespace Foodbook.Presentation.Views
 
         private void SearchButton_Click(object sender, RoutedEventArgs e)
         {
-            try
+            // Search is now handled by ViewModel through binding
+            // This method can be kept for backward compatibility if needed
+            if (_viewModel != null)
             {
-                var searchText = SearchTextBox.Text?.Trim();
+                _viewModel.FilterItems();
+            }
+            else
+            {
+                // Fallback to direct filtering if ViewModel is not available
+                try
+                {
+                    var searchText = SearchTextBox.Text?.Trim();
+                var shoppingList = GetCurrentShoppingList();
                 if (string.IsNullOrEmpty(searchText))
                 {
-                    // Show all items if search is empty
-                    CategoriesList.ItemsSource = _currentShoppingList?.Categories;
+                    if (CategoriesList != null)
+                        CategoriesList.ItemsSource = shoppingList?.Categories;
                     return;
                 }
 
-                if (_currentShoppingList == null) return;
+                if (shoppingList == null) return;
 
-                // Filter categories and items based on search text
-                var filteredCategories = _currentShoppingList.Categories
-                    .Where(category => 
-                        category.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-                        category.Items.Any(item => 
-                            item.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-                            item.Notes?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true))
-                    .Select(category => new
-                    {
-                        category.Name,
-                        category.Icon,
-                        category.StoreSection,
-                        category.CategoryTotal,
-                        category.ItemCount,
-                        category.ShoppingOrder,
-                        Items = category.Items.Where(item => 
-                            item.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-                            item.Notes?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true)
-                            .ToList()
-                    })
-                    .Where(category => category.Items.Any())
-                    .ToList();
+                    var filteredCategories = shoppingList.Categories
+                        .Where(category => 
+                            category.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                            category.Items.Any(item => 
+                                item.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                                item.Notes?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true))
+                        .Select(category => new
+                        {
+                            category.Name,
+                            category.Icon,
+                            category.StoreSection,
+                            category.CategoryTotal,
+                            category.ItemCount,
+                            category.ShoppingOrder,
+                            Items = category.Items.Where(item => 
+                                item.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                                item.Notes?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true)
+                                .ToList()
+                        })
+                        .Where(category => category.Items.Any())
+                        .ToList();
 
-                CategoriesList.ItemsSource = filteredCategories;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error searching: {ex.Message}", "Search Error", 
-                              MessageBoxButton.OK, MessageBoxImage.Error);
+                    CategoriesList.ItemsSource = filteredCategories;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error searching: {ex.Message}", "Search Error", 
+                                  MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 
@@ -274,19 +408,22 @@ namespace Foodbook.Presentation.Views
         {
             try
             {
-                if (_currentShoppingList == null)
+                var shoppingList = GetCurrentShoppingList();
+                if (shoppingList == null)
                 {
-                    MessageBox.Show("No shopping list to print.", "Print Error", 
+                    MessageBox.Show("No shopping list to print. Please generate a shopping list first.", "Print Error", 
                                   MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
+
+                System.Diagnostics.Debug.WriteLine($"Print button clicked. Shopping list has {shoppingList.TotalItems} items.");
 
                 // Create a print dialog
                 var printDialog = new System.Windows.Controls.PrintDialog();
                 if (printDialog.ShowDialog() == true)
                 {
                     // Generate print content
-                    var printContent = GeneratePrintContent(_currentShoppingList);
+                    var printContent = GeneratePrintContent(shoppingList);
                     
                     // Create a FlowDocument for printing
                     var flowDoc = new System.Windows.Documents.FlowDocument();
@@ -375,100 +512,6 @@ namespace Foodbook.Presentation.Views
             content.AppendLine("Generated by FoodBook Smart Shopping List 🍽️");
             
             return content.ToString();
-        }
-    }
-
-    // Export options dialog
-    public partial class ExportOptionsDialog : Window
-    {
-        public ExportType SelectedExportType { get; private set; } = ExportType.TextFile;
-        public string FileName { get; private set; } = "ShoppingList";
-
-        public ExportOptionsDialog()
-        {
-            InitializeComponent();
-        }
-
-        private void InitializeComponent()
-        {
-            this.Title = "Export Shopping List";
-            this.Width = 400;
-            this.Height = 300;
-            this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-
-            var grid = new Grid();
-            grid.Margin = new Thickness(20);
-
-            // File name input
-            var fileNameLabel = new Label { Content = "File Name:", Margin = new Thickness(0, 0, 0, 5) };
-            var fileNameTextBox = new TextBox 
-            { 
-                Text = FileName, 
-                Margin = new Thickness(0, 0, 0, 15),
-                Name = "FileNameTextBox"
-            };
-
-            // Export type selection
-            var typeLabel = new Label { Content = "Export Type:", Margin = new Thickness(0, 0, 0, 5) };
-            var typeComboBox = new ComboBox 
-            { 
-                Margin = new Thickness(0, 0, 0, 20),
-                Name = "TypeComboBox"
-            };
-            typeComboBox.Items.Add("Text File (.txt)");
-            typeComboBox.Items.Add("Notes Integration");
-            typeComboBox.Items.Add("PDF Document");
-            typeComboBox.SelectedIndex = 0;
-
-            // Buttons
-            var buttonPanel = new StackPanel 
-            { 
-                Orientation = Orientation.Horizontal, 
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Margin = new Thickness(0, 20, 0, 0)
-            };
-
-            var exportButton = new Button 
-            { 
-                Content = "Export", 
-                Width = 80, 
-                Height = 30, 
-                Margin = new Thickness(0, 0, 10, 0),
-                Name = "ExportButton"
-            };
-            var cancelButton = new Button 
-            { 
-                Content = "Cancel", 
-                Width = 80, 
-                Height = 30,
-                Name = "CancelButton"
-            };
-
-            buttonPanel.Children.Add(exportButton);
-            buttonPanel.Children.Add(cancelButton);
-
-            grid.Children.Add(fileNameLabel);
-            grid.Children.Add(fileNameTextBox);
-            grid.Children.Add(typeLabel);
-            grid.Children.Add(typeComboBox);
-            grid.Children.Add(buttonPanel);
-
-            this.Content = grid;
-
-            // Event handlers
-            exportButton.Click += (s, e) =>
-            {
-                FileName = fileNameTextBox.Text;
-                SelectedExportType = (ExportType)typeComboBox.SelectedIndex;
-                this.DialogResult = true;
-                this.Close();
-            };
-
-            cancelButton.Click += (s, e) =>
-            {
-                this.DialogResult = false;
-                this.Close();
-            };
         }
     }
 

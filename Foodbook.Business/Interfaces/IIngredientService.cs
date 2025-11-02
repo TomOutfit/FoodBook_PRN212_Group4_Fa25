@@ -11,5 +11,8 @@ namespace Foodbook.Business.Interfaces
         Task<IEnumerable<Ingredient>> SearchIngredientsAsync(string name);
         Task<IEnumerable<Ingredient>> GetSubstituteIngredientsAsync(string ingredientName);
         Task<Ingredient?> GetIngredientByNameAsync(string name, int userId);
+        
+        // AI Chef: Update pantry after using ingredients
+        Task<bool> DeductIngredientsFromPantryAsync(int userId, Dictionary<string, decimal> ingredientUsage);
     }
 }
