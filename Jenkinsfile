@@ -1,276 +1,188 @@
 pipeline {
     agent any
     
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '30'))
+        timestamps()
+        ansiColor('xterm')
+        timeout(time: 30, unit: 'MINUTES')
+    }
+    
     environment {
         DOTNET_VERSION = '9.0'
-        BUILD_CONFIGURATION = 'Release'
-        NUGET_PACKAGES = '~/.nuget/packages'
+        SOLUTION_PATH = 'CookBook.sln'
+        TEST_PROJECT_PATH = 'Foodbook.Tests/Foodbook.Tests.csproj'
+        TEST_RESULTS_DIR = 'TestResults'
+        COVERAGE_DIR = 'CoverageReports'
+        BUILD_CONFIG = 'Release'
     }
     
     tools {
-        // Cấu hình .NET SDK nếu có trong Jenkins
-        dotnet 'dotnet-9.0'
+        dotnetSDK 'dotnet-sdk-9.0'
     }
     
     stages {
         stage('Checkout') {
             steps {
-                echo '🔍 Checking out source code...'
-                checkout scm
-                
                 script {
-                    // Hiển thị thông tin repository
+                    echo '📥 Đang checkout source code...'
+                    checkout scm
+                }
+            }
+        }
+        
+        stage('Clean') {
+            steps {
+                script {
+                    echo '🧹 Đang dọn dẹp workspace...'
                     sh '''
-                        echo "📋 Repository Information:"
-                        echo "  Repository: $(git config --get remote.origin.url)"
-                        echo "  Branch: $(git branch --show-current)"
-                        echo "  Commit: $(git rev-parse HEAD)"
-                        echo "  Author: $(git log -1 --pretty=format:'%an <%ae>')"
-                        echo "  Message: $(git log -1 --pretty=format:'%s')"
+                        dotnet clean "${SOLUTION_PATH}" --configuration "${BUILD_CONFIG}" --verbosity minimal
+                        rm -rf "${TEST_RESULTS_DIR}" || true
+                        rm -rf "${COVERAGE_DIR}" || true
+                        mkdir -p "${TEST_RESULTS_DIR}"
+                        mkdir -p "${COVERAGE_DIR}"
                     '''
                 }
             }
         }
         
-        stage('Discover Projects') {
+        stage('Restore') {
             steps {
-                echo '🔍 Discovering .NET projects...'
                 script {
-                    // Tìm tất cả solution files
-                    def solutions = sh(
-                        script: 'find . -name "*.sln" -type f | head -5',
-                        returnStdout: true
-                    ).trim()
-                    
-                    // Tìm tất cả project files
-                    def projects = sh(
-                        script: 'find . -name "*.csproj" -type f | head -10',
-                        returnStdout: true
-                    ).trim()
-                    
-                    // Tìm test projects
-                    def testProjects = sh(
-                        script: 'find . -name "*Test*.csproj" -o -name "*Tests.csproj" -type f',
-                        returnStdout: true
-                    ).trim()
-                    
-                    // Lưu vào environment variables
-                    env.HAS_SOLUTIONS = solutions ? 'true' : 'false'
-                    env.HAS_PROJECTS = projects ? 'true' : 'false'
-                    env.HAS_TESTS = testProjects ? 'true' : 'false'
-                    
-                    if (solutions) {
-                        env.SOLUTIONS = solutions
-                        echo "Found solution files: ${solutions}"
-                    }
-                    
-                    if (projects) {
-                        env.PROJECTS = projects
-                        echo "Found project files: ${projects}"
-                    }
-                    
-                    if (testProjects) {
-                        env.TEST_PROJECTS = testProjects
-                        echo "Found test projects: ${testProjects}"
-                    }
-                }
-            }
-        }
-        
-        stage('Setup .NET') {
-            steps {
-                echo '⚙️ Setting up .NET environment...'
-                script {
-                    // Kiểm tra .NET version
-                    sh '''
-                        echo "🔧 .NET Environment Setup:"
-                        echo "  .NET Version: ${DOTNET_VERSION}"
-                        echo "  Build Configuration: ${BUILD_CONFIGURATION}"
-                        
-                        # Kiểm tra .NET có sẵn không
-                        if command -v dotnet >/dev/null 2>&1; then
-                            echo "  ✅ .NET CLI found: $(dotnet --version)"
-                        else
-                            echo "  ❌ .NET CLI not found - installing..."
-                            # Cài đặt .NET nếu cần
-                            curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --version ${DOTNET_VERSION}
-                            export PATH="$HOME/.dotnet:$PATH"
-                        fi
-                    '''
-                }
-            }
-        }
-        
-        stage('Restore Dependencies') {
-            steps {
-                echo '📦 Restoring NuGet packages...'
-                script {
-                    def restoreSuccess = true
-                    
-                    if (env.HAS_SOLUTIONS == 'true') {
-                        echo 'Restoring from solution files...'
-                        def solutionsList = env.SOLUTIONS.split('\n')
-                        for (solution in solutionsList) {
-                            try {
-                                sh "dotnet restore '${solution}' --verbosity quiet"
-                                echo "✅ Successfully restored ${solution}"
-                            } catch (Exception e) {
-                                echo "⚠️ Failed to restore ${solution} (continuing...)"
-                                restoreSuccess = false
-                            }
-                        }
-                    } else if (env.HAS_PROJECTS == 'true') {
-                        echo 'Restoring from project files...'
-                        def projectsList = env.PROJECTS.split('\n')
-                        for (project in projectsList) {
-                            try {
-                                sh "dotnet restore '${project}' --verbosity quiet"
-                                echo "✅ Successfully restored ${project}"
-                            } catch (Exception e) {
-                                echo "⚠️ Failed to restore ${project} (continuing...)"
-                                restoreSuccess = false
-                            }
-                        }
-                    } else {
-                        echo 'ℹ️ No .NET projects found to restore - skipping restore step'
-                        restoreSuccess = true  // Không coi là lỗi khi không có project
-                    }
-                    
-                    env.RESTORE_SUCCESS = restoreSuccess.toString()
+                    echo '📦 Đang restore NuGet packages...'
+                    sh 'dotnet restore "${SOLUTION_PATH}" --verbosity minimal'
                 }
             }
         }
         
         stage('Build') {
             steps {
-                echo '🔨 Building .NET projects...'
                 script {
-                    def buildSuccess = true
-                    
-                    if (env.HAS_SOLUTIONS == 'true') {
-                        echo 'Building solution files...'
-                        def solutionsList = env.SOLUTIONS.split('\n')
-                        for (solution in solutionsList) {
-                            try {
-                                sh "dotnet build '${solution}' --configuration ${BUILD_CONFIGURATION} --no-restore --verbosity quiet"
-                                echo "✅ Successfully built ${solution}"
-                            } catch (Exception e) {
-                                echo "⚠️ Failed to build ${solution} (continuing...)"
-                                buildSuccess = false
-                            }
-                        }
-                    } else if (env.HAS_PROJECTS == 'true') {
-                        echo 'Building project files...'
-                        def projectsList = env.PROJECTS.split('\n')
-                        for (project in projectsList) {
-                            try {
-                                sh "dotnet build '${project}' --configuration ${BUILD_CONFIGURATION} --no-restore --verbosity quiet"
-                                echo "✅ Successfully built ${project}"
-                            } catch (Exception e) {
-                                echo "⚠️ Failed to build ${project} (continuing...)"
-                                buildSuccess = false
-                            }
-                        }
-                    } else {
-                        echo 'ℹ️ No .NET projects found to build - skipping build step'
-                        buildSuccess = true  // Không coi là lỗi khi không có project
-                    }
-                    
-                    env.BUILD_SUCCESS = buildSuccess.toString()
+                    echo '🔨 Đang build solution...'
+                    sh 'dotnet build "${SOLUTION_PATH}" --configuration "${BUILD_CONFIG}" --no-restore --verbosity minimal'
                 }
             }
         }
         
-        stage('Test') {
+        stage('Unit Tests') {
             steps {
-                echo '🧪 Running tests...'
                 script {
-                    def testSuccess = true
+                    echo '🧪 Đang chạy Unit Tests...'
+                    sh '''
+                        dotnet test "${TEST_PROJECT_PATH}" \\
+                            --configuration "${BUILD_CONFIG}" \\
+                            --no-build \\
+                            --verbosity normal \\
+                            --logger "trx;LogFileName=TestResults.trx" \\
+                            --logger "junit;LogFilePath=${TEST_RESULTS_DIR}/junit.xml" \\
+                            --results-directory "${TEST_RESULTS_DIR}" \\
+                            --collect:"XPlat Code Coverage" \\
+                            --settings:/RunSettings/DataCollectionRunSettings/DataCollectors/DataCollector/Configuration/Format[0]=cobertura \\
+                            --settings:/RunSettings/DataCollectionRunSettings/DataCollectors/DataCollector/Configuration/Format[1]=json \\
+                            --settings:/RunSettings/DataCollectionRunSettings/DataCollectors/DataCollector/Configuration/Format[2]=opencover \\
+                            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.CoverageFilePath="${COVERAGE_DIR}/coverage.cobertura.xml"
+                    '''
+                }
+            }
+            post {
+                always {
+                    // Publish JUnit test results
+                    junit allowEmptyResults: true,
+                          testResultsPattern: "${TEST_RESULTS_DIR}/junit.xml",
+                          testResultsFormat: 'JUnit',
+                          keepLongStdio: true,
+                          healthScaleFactor: 1.0
                     
-                    if (env.HAS_TESTS == 'true') {
-                        echo 'Running test projects...'
-                        def testProjectsList = env.TEST_PROJECTS.split('\n')
-                        for (testProject in testProjectsList) {
-                            try {
-                                sh "dotnet test '${testProject}' --configuration ${BUILD_CONFIGURATION} --no-build --verbosity quiet --logger 'console;verbosity=minimal'"
-                                echo "✅ Tests passed for ${testProject}"
-                            } catch (Exception e) {
-                                echo "⚠️ Tests failed for ${testProject} (continuing...)"
-                                testSuccess = false
-                            }
-                        }
-                    } else {
-                        echo 'ℹ️ No test projects found - skipping test step'
-                        testSuccess = true  // Không coi là lỗi khi không có test
-                    }
-                    
-                    env.TEST_SUCCESS = testSuccess.toString()
+                    // Publish TRX test results
+                    publishTestResults(
+                        testResultsPattern: "${TEST_RESULTS_DIR}/**/*.trx",
+                        testResultsFormat: 'MS TRX',
+                        allowEmptyResults: true,
+                        keepLongStdio: true,
+                        healthScaleFactor: 1.0
+                    )
                 }
             }
         }
         
-        stage('Publish') {
+        stage('Code Coverage') {
             steps {
-                echo '📦 Publishing applications...'
                 script {
-                    def publishSuccess = true
-                    
-                    // Tạo thư mục publish
-                    sh 'mkdir -p ./publish'
-                    
-                    if (env.HAS_SOLUTIONS == 'true') {
-                        echo 'Publishing from solution files...'
-                        def solutionsList = env.SOLUTIONS.split('\n')
-                        for (solution in solutionsList) {
-                            try {
-                                def solutionName = sh(
-                                    script: "basename '${solution}' .sln",
-                                    returnStdout: true
-                                ).trim()
-                                sh "dotnet publish '${solution}' --configuration ${BUILD_CONFIGURATION} --output ./publish/${solutionName} --no-build --verbosity quiet"
-                                echo "✅ Successfully published ${solution}"
-                            } catch (Exception e) {
-                                echo "⚠️ Failed to publish ${solution} (continuing...)"
-                                publishSuccess = false
-                            }
-                        }
-                    } else if (env.HAS_PROJECTS == 'true') {
-                        echo 'Publishing from project files...'
-                        def projectsList = env.PROJECTS.split('\n')
-                        for (project in projectsList) {
-                            try {
-                                def projectName = sh(
-                                    script: "basename '${project}' .csproj",
-                                    returnStdout: true
-                                ).trim()
-                                sh "dotnet publish '${project}' --configuration ${BUILD_CONFIGURATION} --output ./publish/${projectName} --no-build --verbosity quiet"
-                                echo "✅ Successfully published ${project}"
-                            } catch (Exception e) {
-                                echo "⚠️ Failed to publish ${project} (continuing...)"
-                                publishSuccess = false
-                            }
-                        }
-                    } else {
-                        echo 'ℹ️ No .NET projects found to publish - skipping publish step'
-                        publishSuccess = true  // Không coi là lỗi khi không có project
-                    }
-                    
-                    env.PUBLISH_SUCCESS = publishSuccess.toString()
+                    echo '📊 Đang xử lý Code Coverage...'
+                    sh '''
+                        # Tìm coverage file
+                        COVERAGE_FILE=$(find "${TEST_RESULTS_DIR}" -name "coverage.cobertura.xml" | head -1)
+                        
+                        if [ -f "$COVERAGE_FILE" ]; then
+                            echo "✅ Tìm thấy coverage file: $COVERAGE_FILE"
+                            cp "$COVERAGE_FILE" "${COVERAGE_DIR}/coverage.cobertura.xml"
+                        else
+                            echo "⚠️ Không tìm thấy coverage file"
+                        fi
+                    '''
+                }
+            }
+            post {
+                always {
+                    // Publish code coverage reports
+                    publishCoverageReport(
+                        adapters: [
+                            coberturaAdapter("${COVERAGE_DIR}/coverage.cobertura.xml")
+                        ],
+                        sourceFileResolver: sourceFiles('STORE_LAST_BUILD'),
+                        calculateDiffForChangeRequests: true,
+                        conditionalCoverage: true,
+                        failUnhealthy: false,
+                        failUnstable: false,
+                        healthy: 80,
+                        unhealthy: 50,
+                        autoUpdateHealth: true,
+                        autoUpdateStability: true,
+                        coberturaReportFile: "${COVERAGE_DIR}/coverage.cobertura.xml"
+                    )
                 }
             }
         }
         
-        stage('Archive Artifacts') {
+        stage('Test Report Summary') {
             steps {
-                echo '📁 Archiving build artifacts...'
                 script {
-                    // Archive artifacts nếu có
-                    if (fileExists('./publish')) {
-                        archiveArtifacts artifacts: 'publish/**/*', fingerprint: true, allowEmptyArchive: true
-                        echo '✅ Build artifacts archived'
-                    } else {
-                        echo 'ℹ️ No artifacts to archive'
-                    }
+                    echo '📋 Đang tạo Test Report Summary...'
+                    sh '''
+                        # Tạo test summary
+                        cat > "${TEST_RESULTS_DIR}/test-summary.txt" << 'EOF'
+╔══════════════════════════════════════════════════════════════╗
+║         📊 BÁO CÁO KẾT QUẢ TEST CASE - COOKBOOK             ║
+╚══════════════════════════════════════════════════════════════╝
+
+Ngày chạy: $(date '+%d/%m/%Y %H:%M:%S')
+Build Number: ${BUILD_NUMBER}
+Branch: ${GIT_BRANCH}
+Commit: ${GIT_COMMIT}
+
+───────────────────────────────────────────────────────────────
+
+📈 TỔNG QUAN KẾT QUẢ:
+
+Xem chi tiết trong Test Results và Coverage Report bên dưới.
+
+───────────────────────────────────────────────────────────────
+
+📁 CÁC FILE BÁO CÁO:
+- Test Results (TRX): TestResults/*.trx
+- Test Results (JUnit): TestResults/junit.xml
+- Code Coverage: CoverageReports/coverage.cobertura.xml
+
+───────────────────────────────────────────────────────────────
+
+🔗 XEM CHI TIẾT:
+- Test Results: Xem tab "Test Result" bên trái
+- Code Coverage: Xem tab "Coverage Report" bên trái
+- Console Output: Xem "Console Output" để xem log chi tiết
+
+EOF
+                        cat "${TEST_RESULTS_DIR}/test-summary.txt"
+                    '''
                 }
             }
         }
@@ -278,28 +190,36 @@ pipeline {
     
     post {
         always {
-            echo '📋 Pipeline Results Summary:'
-            echo "  Restore: ${env.RESTORE_SUCCESS ?: 'N/A'}"
-            echo "  Build: ${env.BUILD_SUCCESS ?: 'N/A'}"
-            echo "  Test: ${env.TEST_SUCCESS ?: 'N/A'}"
-            echo "  Publish: ${env.PUBLISH_SUCCESS ?: 'N/A'}"
-            echo ''
-            echo '🚀 FoodBook CI/CD Pipeline completed!'
-            echo '🔗 Repository: https://github.com/TomOutfit/FoodBook_PRN212_Group4_Fa25'
+            script {
+                echo '📦 Đang archive test artifacts...'
+                archiveArtifacts artifacts: "${TEST_RESULTS_DIR}/**/*", 
+                                allowEmptyArchive: true,
+                                fingerprint: true
+                archiveArtifacts artifacts: "${COVERAGE_DIR}/**/*",
+                                allowEmptyArchive: true,
+                                fingerprint: true
+            }
         }
         
         success {
-            echo '✅ Pipeline completed successfully!'
-            // Có thể thêm notification ở đây
+            script {
+                echo '✅ ✅ ✅ BUILD THÀNH CÔNG! ✅ ✅ ✅'
+                echo 'Tất cả tests đã pass. Kiểm tra Test Results và Coverage Report để xem chi tiết.'
+            }
         }
         
         failure {
-            echo '❌ Pipeline failed!'
-            // Có thể thêm notification ở đây
+            script {
+                echo '❌ ❌ ❌ BUILD THẤT BẠI! ❌ ❌ ❌'
+                echo 'Có một số tests fail hoặc build bị lỗi. Vui lòng kiểm tra log để xem chi tiết.'
+            }
         }
         
         unstable {
-            echo '⚠️ Pipeline completed with warnings!'
+            script {
+                echo '⚠️ ⚠️ ⚠️ BUILD KHÔNG ỔN ĐỊNH! ⚠️ ⚠️ ⚠️'
+                echo 'Build thành công nhưng có một số warnings hoặc tests bị skip.'
+            }
         }
     }
 }
