@@ -27,6 +27,7 @@ namespace Foodbook.Business.Interfaces
         public string DefaultDifficulty { get; set; } = "Easy";
         public bool ShowNutritionInfo { get; set; } = true;
         public bool EnableAIFeatures { get; set; } = true;
+        public int? CurrentUserId { get; set; }
         public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
     }
 }

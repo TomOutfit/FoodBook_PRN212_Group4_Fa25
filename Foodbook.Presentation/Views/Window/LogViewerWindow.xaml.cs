@@ -12,9 +12,9 @@ namespace Foodbook.Presentation.Views
 {
     public partial class LogViewerWindow : Window
     {
-        private readonly ILoggingService _loggingService;
+        private readonly ILoggingService? _loggingService;
 
-        public LogViewerWindow(ILoggingService loggingService)
+        public LogViewerWindow(ILoggingService? loggingService)
         {
             InitializeComponent();
             _loggingService = loggingService;
@@ -28,6 +28,9 @@ namespace Foodbook.Presentation.Views
         
         private void ShowLoadingMessage()
         {
+            if (LogsPanel == null)
+                return;
+                
             LogsPanel.Children.Clear();
             var loadingText = new TextBlock
             {
@@ -64,9 +67,14 @@ namespace Foodbook.Presentation.Views
         {
             try
             {
+                // Kiểm tra LogsPanel đã được khởi tạo chưa
+                if (LogsPanel == null)
+                    return;
+
                 if (_loggingService == null)
                 {
-                    MessageBox.Show("Logging service is not available.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    // Hiển thị thông báo trong UI thay vì MessageBox
+                    DisplayNoServiceMessage();
                     return;
                 }
 
@@ -79,8 +87,49 @@ namespace Foodbook.Presentation.Views
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading logs: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                // Hiển thị lỗi trong UI thay vì MessageBox (chỉ nếu LogsPanel đã sẵn sàng)
+                if (LogsPanel != null)
+                {
+                    DisplayErrorMessage($"Error loading logs: {ex.Message}");
+                }
             }
+        }
+
+        private void DisplayNoServiceMessage()
+        {
+            if (LogsPanel == null)
+                return;
+                
+            LogsPanel.Children.Clear();
+            var noServiceText = new TextBlock
+            {
+                Text = "⚠️ Logging service is not available.\nPlease check your configuration.",
+                FontSize = 16,
+                Foreground = new SolidColorBrush(Color.FromRgb(245, 158, 11)),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                TextAlignment = TextAlignment.Center,
+                Margin = new Thickness(0, 50, 0, 0)
+            };
+            LogsPanel.Children.Add(noServiceText);
+        }
+
+        private void DisplayErrorMessage(string message)
+        {
+            if (LogsPanel == null)
+                return;
+                
+            LogsPanel.Children.Clear();
+            var errorText = new TextBlock
+            {
+                Text = $"❌ {message}",
+                FontSize = 16,
+                Foreground = new SolidColorBrush(Color.FromRgb(239, 68, 68)),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                TextAlignment = TextAlignment.Center,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 50, 0, 0)
+            };
+            LogsPanel.Children.Add(errorText);
         }
 
         private IEnumerable<LogEntryEntity> ApplyFilters(IEnumerable<LogEntryEntity> logs)
@@ -120,6 +169,9 @@ namespace Foodbook.Presentation.Views
 
         private void DisplayLogs(IEnumerable<LogEntryEntity> logs)
         {
+            if (LogsPanel == null)
+                return;
+
             LogsPanel.Children.Clear();
 
             if (!logs.Any())

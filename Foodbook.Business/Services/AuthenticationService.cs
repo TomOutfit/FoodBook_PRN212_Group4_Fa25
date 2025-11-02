@@ -12,10 +12,12 @@ namespace Foodbook.Business.Services
     {
         private readonly FoodbookDbContext _context;
         private User? _currentUser;
+        private readonly ISettingsService? _settingsService;
 
-        public AuthenticationService(FoodbookDbContext context)
+        public AuthenticationService(FoodbookDbContext context, ISettingsService? settingsService = null)
         {
             _context = context;
+            _settingsService = settingsService;
         }
 
         public async Task<User?> LoginAsync(LoginModel loginModel)
@@ -36,6 +38,15 @@ namespace Foodbook.Business.Services
                     return null;
 
                 _currentUser = user;
+                
+                // Lưu user ID vào settings để có thể lấy lại sau
+                if (_settingsService != null)
+                {
+                    var settings = await _settingsService.GetSettingsAsync();
+                    settings.CurrentUserId = user.Id;
+                    await _settingsService.SaveSettingsAsync(settings);
+                }
+                
                 return user;
             }
             catch (Exception)
@@ -70,6 +81,15 @@ namespace Foodbook.Business.Services
                 await _context.SaveChangesAsync();
 
                 _currentUser = user;
+                
+                // Lưu user ID vào settings để có thể lấy lại sau
+                if (_settingsService != null)
+                {
+                    var settings = await _settingsService.GetSettingsAsync();
+                    settings.CurrentUserId = user.Id;
+                    await _settingsService.SaveSettingsAsync(settings);
+                }
+                
                 return user;
             }
             catch (Exception)
@@ -102,15 +122,57 @@ namespace Foodbook.Business.Services
             }
         }
 
-        public Task<bool> LogoutAsync()
+        public async Task<bool> LogoutAsync()
         {
             _currentUser = null;
-            return Task.FromResult(true);
+            
+            // Xóa user ID khỏi settings
+            if (_settingsService != null)
+            {
+                try
+                {
+                    var settings = await _settingsService.GetSettingsAsync();
+                    settings.CurrentUserId = null;
+                    await _settingsService.SaveSettingsAsync(settings);
+                }
+                catch
+                {
+                    // Nếu có lỗi khi xóa settings, vẫn trả về true
+                }
+            }
+            
+            return true;
         }
 
-        public Task<User?> GetCurrentUserAsync()
+        public async Task<User?> GetCurrentUserAsync()
         {
-            return Task.FromResult(_currentUser);
+            // Nếu đã có user trong memory, trả về
+            if (_currentUser != null)
+                return _currentUser;
+            
+            // Nếu không có, thử lấy từ settings và database
+            if (_settingsService != null)
+            {
+                try
+                {
+                    var settings = await _settingsService.GetSettingsAsync();
+                    if (settings.CurrentUserId.HasValue)
+                    {
+                        var user = await _context.Users.FindAsync(settings.CurrentUserId.Value);
+                        if (user != null)
+                        {
+                            _currentUser = user;
+                            return user;
+                        }
+                    }
+                }
+                catch
+                {
+                    // Nếu có lỗi, trả về null
+                }
+            }
+            
+            return null;
         }
 
         public async Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword)

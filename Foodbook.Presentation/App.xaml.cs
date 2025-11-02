@@ -1,8 +1,10 @@
 using System.Configuration;
 using System.Data;
+using System.Data.Common;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
 using Foodbook.Business;
 using Foodbook.Business.Interfaces;
 using Foodbook.Presentation.ViewModels;
@@ -65,6 +67,9 @@ public partial class App : Application
             {
                 // Ensure database schema is created/updated
                 context.Database.EnsureCreated();
+                
+                // Apply migrations for new columns (if database already exists)
+                ApplyMigrations(context);
             }
             catch (Exception dbEx)
             {
@@ -136,6 +141,70 @@ public partial class App : Application
         catch (Exception ex)
         {
             MessageBox.Show($"Database initialization error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+    
+    /// <summary>
+    /// Apply database migrations for schema updates (e.g., adding new columns)
+    /// </summary>
+    private static void ApplyMigrations(Foodbook.Data.FoodbookDbContext context)
+    {
+        try
+        {
+            var connection = context.Database.GetDbConnection();
+            connection.Open();
+            
+            try
+            {
+                // Check if IsAIGenerated column exists in Recipes table
+                using var command = connection.CreateCommand();
+                command.CommandText = @"
+                    IF NOT EXISTS (
+                        SELECT * FROM sys.columns 
+                        WHERE object_id = OBJECT_ID(N'[dbo].[Recipes]') 
+                        AND name = 'IsAIGenerated'
+                    )
+                    BEGIN
+                        ALTER TABLE [dbo].[Recipes]
+                        ADD [IsAIGenerated] [bit] NOT NULL DEFAULT(0);
+                        PRINT 'Added IsAIGenerated column to Recipes table';
+                    END";
+                
+                command.ExecuteNonQuery();
+                
+                // Update existing recipes to have IsAIGenerated = 0
+                command.CommandText = @"
+                    UPDATE [dbo].[Recipes]
+                    SET [IsAIGenerated] = 0
+                    WHERE [IsAIGenerated] IS NULL";
+                
+                command.ExecuteNonQuery();
+                
+                System.Diagnostics.Debug.WriteLine("✅ Database migrations applied successfully");
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
+        catch (DbException dbEx)
+        {
+            // Handle database-specific errors
+            var errorMessage = dbEx.Message;
+            if (errorMessage.Contains("already exists") || errorMessage.Contains("Cannot insert duplicate key"))
+            {
+                System.Diagnostics.Debug.WriteLine("IsAIGenerated column already exists. Skipping migration.");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"⚠️ Migration warning: {dbEx.Message}");
+                // Don't throw - let the app continue even if migration fails
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"⚠️ Migration error: {ex.Message}");
+            // Don't throw - let the app continue even if migration fails
         }
     }
 }

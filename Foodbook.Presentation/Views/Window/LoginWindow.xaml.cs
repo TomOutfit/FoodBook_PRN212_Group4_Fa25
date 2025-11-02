@@ -102,20 +102,49 @@ namespace Foodbook.Presentation.Views
         {
             try
             {
-                var registerWindow = new RegisterWindow(_authService);
-                registerWindow.Owner = this;
+                // Hide login window
+                this.Hide();
                 
-                if (registerWindow.ShowDialog() == true)
+                var registerWindow = new RegisterWindow(_authService);
+                
+                // Handle registration successful
+                registerWindow.Closed += (s, args) =>
                 {
-                    // Registration successful, close login window
-                    LoginSuccessful?.Invoke(this, EventArgs.Empty);
-                    Close();
-                }
+                    // If registration was successful, trigger login success
+                    if (registerWindow.DialogResult == true)
+                    {
+                        // Open MainWindow if it exists
+                        if (Application.Current?.MainWindow != null)
+                        {
+                            var mainWindow = Application.Current.MainWindow;
+                            mainWindow.WindowState = WindowState.Normal;
+                            mainWindow.Topmost = true;
+                            mainWindow.Show();
+                            mainWindow.Activate();
+                            mainWindow.Topmost = false;
+                            mainWindow.Focus();
+                        }
+                        
+                        LoginSuccessful?.Invoke(this, EventArgs.Empty);
+                        this.Close(); // Close login window permanently
+                    }
+                    else
+                    {
+                        // Show login window again if user cancelled or closed
+                        this.Show();
+                        this.Activate();
+                    }
+                };
+                
+                // Show register window
+                registerWindow.Show();
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error opening registration window: {ex.Message}", "Error", 
                     MessageBoxButton.OK, MessageBoxImage.Error);
+                // Show login window again on error
+                this.Show();
             }
         }
 
@@ -161,21 +190,37 @@ namespace Foodbook.Presentation.Views
         {
             try
             {
-                // Set admin credentials
-                _loginModel.Email = "admin@foodbook.com";
-                _loginModel.Password = "admin123";
-                
-                // Update UI
-                EmailTextBox.Text = _loginModel.Email;
-                PasswordBox.Password = _loginModel.Password;
-
                 // Show loading state
                 var button = sender as Button;
                 if (button != null)
                 {
                     var originalContent = button.Content;
-                    button.Content = "Logging in...";
+                    button.Content = "Loading admin...";
                     button.IsEnabled = false;
+                }
+
+                // Get admin user from database
+                var adminUser = await _authService.GetAdminUserAsync();
+
+                if (adminUser == null)
+                {
+                    MessageBox.Show("No admin user found in the database. Please ensure the database is properly initialized.", 
+                        "Admin Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Set admin credentials from database
+                _loginModel.Email = adminUser.Email;
+                _loginModel.Password = adminUser.Password; // Use stored plain text password for quick login
+                
+                // Update UI
+                EmailTextBox.Text = _loginModel.Email;
+                PasswordBox.Password = _loginModel.Password;
+
+                // Update button text
+                if (button != null)
+                {
+                    button.Content = "Logging in...";
                 }
 
                 // Attempt login
@@ -192,7 +237,7 @@ namespace Foodbook.Presentation.Views
                 }
                 else
                 {
-                    MessageBox.Show("Admin login failed. Please check database connection.", "Login Failed", 
+                    MessageBox.Show("Admin login failed. Please check database connection or credentials.", "Login Failed", 
                         MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }

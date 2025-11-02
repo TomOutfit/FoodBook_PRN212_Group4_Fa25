@@ -19,7 +19,8 @@ namespace Foodbook.Presentation.Views
             InitializeComponent();
             
             _imageService = new ImageService();
-            IsEditMode = recipe != null;
+            // Create: edit mode; View existing: start in view mode
+            IsEditMode = recipe == null;
             Recipe = recipe ?? new Recipe
             {
                 Title = "",
@@ -32,10 +33,8 @@ namespace Foodbook.Presentation.Views
             };
 
             DataContext = Recipe;
-            
-            // Set focus to title textbox
-            TitleTextBox.Focus();
-            TitleTextBox.SelectAll();
+
+            UpdateUiForMode();
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -127,6 +126,32 @@ namespace Foodbook.Presentation.Views
                 ImagePreviewBorder.Visibility = Visibility.Collapsed;
                 MessageBox.Show($"Error loading image: {ex.Message}", "Error", 
                     MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void EditToggleButton_Click(object sender, RoutedEventArgs e)
+        {
+            IsEditMode = !IsEditMode;
+            UpdateUiForMode();
+        }
+
+        private void UpdateUiForMode()
+        {
+            // Toggle enabled state of edit form and visibility of Save
+            TitleTextBox.IsEnabled = IsEditMode;
+            InstructionsTextBox.IsEnabled = IsEditMode;
+            ImageUrlTextBox.IsEnabled = IsEditMode;
+            SaveButton.IsEnabled = IsEditMode;
+
+            if (EditToggleButton != null)
+            {
+                EditToggleButton.Content = IsEditMode ? "👁️ View" : "✏️ Edit";
+            }
+
+            if (IsEditMode)
+            {
+                TitleTextBox.Focus();
+                TitleTextBox.SelectAll();
             }
         }
     }

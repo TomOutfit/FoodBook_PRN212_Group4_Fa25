@@ -119,20 +119,54 @@ namespace Foodbook.Presentation.Views
         {
             try
             {
-                var loginWindow = new LoginWindow(_authService);
-                loginWindow.Owner = this;
+                // Hide register window
+                this.Hide();
                 
-                if (loginWindow.ShowDialog() == true)
+                var loginWindow = new LoginWindow(_authService);
+                bool loginSuccessful = false;
+                
+                // Handle login successful
+                loginWindow.LoginSuccessful += (s, e) =>
                 {
-                    // Login successful, close registration window
-                    DialogResult = true;
-                    Close();
-                }
+                    // If login was successful, open MainWindow and close register window
+                    loginSuccessful = true;
+                    
+                    // Open MainWindow if it exists
+                    if (Application.Current?.MainWindow != null)
+                    {
+                        var mainWindow = Application.Current.MainWindow;
+                        mainWindow.WindowState = WindowState.Normal;
+                        mainWindow.Topmost = true;
+                        mainWindow.Show();
+                        mainWindow.Activate();
+                        mainWindow.Topmost = false;
+                        mainWindow.Focus();
+                    }
+                    
+                    this.DialogResult = true;
+                    this.Close();
+                };
+                
+                // Handle login window closed
+                loginWindow.Closed += (s, args) =>
+                {
+                    // Show register window again if user closed login window without success
+                    if (!loginSuccessful)
+                    {
+                        this.Show();
+                        this.Activate();
+                    }
+                };
+                
+                // Show login window
+                loginWindow.Show();
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error opening login window: {ex.Message}", "Error", 
                     MessageBoxButton.OK, MessageBoxImage.Error);
+                // Show register window again on error
+                this.Show();
             }
         }
 

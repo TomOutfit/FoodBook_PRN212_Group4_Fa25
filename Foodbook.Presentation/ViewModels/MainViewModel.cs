@@ -101,7 +101,7 @@ namespace Foodbook.Presentation.ViewModels
             InventoryVM = new InventoryViewModel(ingredientService, loggingService);
             AnalyticsVM = new AnalyticsViewModel(recipeService, ingredientService, loggingService);
             SettingsVM = new SettingsViewModel(settingsService, localizationService, recipeService, aiService, loggingService);
-            AIVM = new AIViewModel(aiService, shoppingListService, loggingService, userService, InventoryVM);
+            AIVM = new AIViewModel(aiService, shoppingListService, loggingService, userService, InventoryVM, ingredientService, recipeService);
             NutritionVM = new NutritionViewModel(nutritionService, aiService, recipeService);
             
             // 5. THIẾT LẬP CÁC COMMAND CHÍNH
@@ -186,7 +186,7 @@ namespace Foodbook.Presentation.ViewModels
             _isNavigatingTabs = false;
         }
         
-        private async Task LoadCurrentUserAsync()
+        public async Task LoadCurrentUserAsync()
         {
             try
             {
@@ -200,19 +200,13 @@ namespace Foodbook.Presentation.ViewModels
                     }
                 }
 
-                // Fallback (design/demo): keep existing demo if nothing in session
-                if (CurrentUser == null)
-                {
-                    CurrentUser = new User { Id = 1, Username = "DemoUser", Email = "demo@foodbook.com" };
-                }
+                // Không có user đăng nhập, set về null
+                CurrentUser = null;
             }
             catch
             {
-                // Silent fallback to demo user to avoid UI break
-                if (CurrentUser == null)
-                {
-                    CurrentUser = new User { Id = 1, Username = "DemoUser", Email = "demo@foodbook.com" };
-                }
+                // Nếu có lỗi, set về null thay vì fallback về demo user
+                CurrentUser = null;
             }
         }
         
