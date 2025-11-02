@@ -11,6 +11,8 @@ on:
 env:
   DOTNET_VERSION: '9.0'
   BUILD_CONFIGURATION: 'Release'
+  TEST_RESULTS_DIR: 'TestResults'
+  COVERAGE_DIR: 'CoverageReports'
 
 jobs:
   build-and-test:
@@ -32,6 +34,12 @@ jobs:
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
         restore-keys: |
           ${{ runner.os }}-nuget-
+    
+    - name: Setup Test Results Directories
+      run: |
+        echo "📁 Setting up test results directories..."
+        mkdir -p ${{ env.TEST_RESULTS_DIR }}
+        mkdir -p ${{ env.COVERAGE_DIR }}
           
     - name: Discover .NET Projects
       id: discover-projects
@@ -158,19 +166,53 @@ jobs:
         # Always succeed this step to prevent pipeline failure
         echo "BUILD_SUCCESS=$BUILD_SUCCESS" >> $GITHUB_ENV
         
-    - name: Run tests
+    - name: Run tests with detailed reporting
+      id: run-tests
       # FIX: Ensure this step never fails, regardless of dotnet test results
       continue-on-error: true
       run: |
-        echo "🧪 Running tests..."
+        echo "🧪 Running tests with detailed reporting..."
         TEST_SUCCESS=true
+        TOTAL_TESTS=0
+        PASSED_TESTS=0
+        FAILED_TESTS=0
+        SKIPPED_TESTS=0
         
         if [ "${{ steps.discover-projects.outputs.has-tests }}" == "true" ]; then
           echo "Running test projects..."
           for test_project in ${{ steps.discover-projects.outputs.test-projects }}; do
             echo "Testing: $test_project"
-            if dotnet test "$test_project" --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity quiet --logger "console;verbosity=minimal"; then
+            
+            # Run tests with multiple output formats
+            if dotnet test "$test_project" \
+              --configuration ${{ env.BUILD_CONFIGURATION }} \
+              --no-build \
+              --verbosity normal \
+              --logger "trx;LogFileName=$(basename "$test_project" .csproj).trx" \
+              --logger "junit;LogFilePath=${{ env.TEST_RESULTS_DIR }}/junit-$(basename "$test_project" .csproj).xml" \
+              --logger "console;verbosity=detailed" \
+              --results-directory "${{ env.TEST_RESULTS_DIR }}" \
+              --collect:"XPlat Code Coverage" \
+              --settings:/RunSettings/DataCollectionRunSettings/DataCollectors/DataCollector/Configuration/Format[0]=cobertura \
+              --settings:/RunSettings/DataCollectionRunSettings/DataCollectors/DataCollector/Configuration/Format[1]=json; then
+              
               echo "✅ Tests passed for $test_project"
+              
+              # Parse test results from TRX file
+              TRX_FILE="${{ env.TEST_RESULTS_DIR }}/$(basename "$test_project" .csproj).trx"
+              if [ -f "$TRX_FILE" ]; then
+                # Extract test counts from TRX (basic parsing)
+                TOTAL=$(grep -oP '(?<=total=")[^"]*' "$TRX_FILE" | head -1 || echo "0")
+                EXECUTED=$(grep -oP '(?<=executed=")[^"]*' "$TRX_FILE" | head -1 || echo "0")
+                PASSED=$(grep -oP '(?<=passed=")[^"]*' "$TRX_FILE" | head -1 || echo "0")
+                FAILED=$(grep -oP '(?<=failed=")[^"]*' "$TRX_FILE" | head -1 || echo "0")
+                
+                if [ -n "$TOTAL" ] && [ "$TOTAL" != "0" ]; then
+                  TOTAL_TESTS=$((TOTAL_TESTS + TOTAL))
+                  PASSED_TESTS=$((PASSED_TESTS + PASSED))
+                  FAILED_TESTS=$((FAILED_TESTS + FAILED))
+                fi
+              fi
             else
               echo "⚠️ Tests failed for $test_project (continuing...)"
               TEST_SUCCESS=false
@@ -180,8 +222,141 @@ jobs:
           echo "ℹ️ No test projects found"
         fi
         
+        # Calculate skipped tests
+        SKIPPED_TESTS=$((TOTAL_TESTS - PASSED_TESTS - FAILED_TESTS))
+        
+        # Store test results
+        echo "TOTAL_TESTS=$TOTAL_TESTS" >> $GITHUB_OUTPUT
+        echo "PASSED_TESTS=$PASSED_TESTS" >> $GITHUB_OUTPUT
+        echo "FAILED_TESTS=$FAILED_TESTS" >> $GITHUB_OUTPUT
+        echo "SKIPPED_TESTS=$SKIPPED_TESTS" >> $GITHUB_OUTPUT
+        echo "TEST_SUCCESS=$TEST_SUCCESS" >> $GITHUB_OUTPUT
+        
         # Always succeed this step to prevent pipeline failure
         echo "TEST_SUCCESS=$TEST_SUCCESS" >> $GITHUB_ENV
+        
+    - name: Process Code Coverage
+      if: steps.run-tests.outputs.TEST_SUCCESS == 'true' || steps.run-tests.outputs.TEST_SUCCESS == 'false'
+      run: |
+        echo "📊 Processing code coverage reports..."
+        
+        # Find and copy coverage files
+        find "${{ env.TEST_RESULTS_DIR }}" -name "coverage.cobertura.xml" -exec cp {} "${{ env.COVERAGE_DIR }}/coverage.cobertura.xml" \; || true
+        find "${{ env.TEST_RESULTS_DIR }}" -name "coverage.json" -exec cp {} "${{ env.COVERAGE_DIR }}/coverage.json" \; || true
+        
+        # List coverage files
+        if [ -f "${{ env.COVERAGE_DIR }}/coverage.cobertura.xml" ]; then
+          echo "✅ Found Cobertura coverage report"
+        else
+          echo "ℹ️ No coverage report found"
+        fi
+        
+    - name: Generate Test Report Summary
+      if: always()
+      shell: bash
+      run: |
+        echo "📋 Generating Test Report Summary..."
+        REPORT_FILE="${{ env.TEST_RESULTS_DIR }}/test-summary.md"
+        {
+          echo "# 📊 BÁO CÁO KẾT QUẢ TEST CASE - FOODBOOK CI/CD"
+          echo ""
+          echo "## 🎯 Tổng quan kết quả"
+          echo "- **Ngày chạy**: $(date '+%d/%m/%Y %H:%M:%S')"
+          echo "- **Build Number**: ${{ github.run_number }}"
+          echo "- **Branch**: ${{ github.ref_name }}"
+          echo "- **Commit**: ${{ github.sha }}"
+          echo "- **Workflow**: ${{ github.workflow }}"
+          echo ""
+          echo "───────────────────────────────────────────────────────────────"
+          echo ""
+          echo "## 📈 Thống kê Test Cases"
+          echo ""
+          echo "| Chỉ số | Giá trị | Trạng thái |"
+          echo "|--------|---------|------------|"
+          echo "| **Tổng số Test Cases** | ${{ steps.run-tests.outputs.TOTAL_TESTS }} | - |"
+          echo "| **Thành công** | ${{ steps.run-tests.outputs.PASSED_TESTS }} | ✅ |"
+          echo "| **Thất bại** | ${{ steps.run-tests.outputs.FAILED_TESTS }} | ❌ |"
+          echo "| **Bỏ qua** | ${{ steps.run-tests.outputs.SKIPPED_TESTS }} | ⏭️ |"
+          echo ""
+          echo "### Tỷ lệ thành công"
+        } > "$REPORT_FILE"
+        
+        if [ "${{ steps.run-tests.outputs.TOTAL_TESTS }}" != "0" ] && [ -n "${{ steps.run-tests.outputs.TOTAL_TESTS }}" ]; then
+          PASS_RATE=$(( ${{ steps.run-tests.outputs.PASSED_TESTS }} * 100 / ${{ steps.run-tests.outputs.TOTAL_TESTS }} ))
+          echo "- **Pass Rate**: ${PASS_RATE}%" >> "$REPORT_FILE"
+        else
+          echo "- **Pass Rate**: N/A (No tests found)" >> "$REPORT_FILE"
+        fi
+        
+        {
+          echo ""
+          echo "## 📁 Files báo cáo"
+          echo ""
+          echo "### Test Results"
+          echo "- **TRX Format**: \`TestResults/*.trx\`"
+          echo "- **JUnit Format**: \`TestResults/junit-*.xml\`"
+          echo ""
+          echo "### Code Coverage"
+          echo "- **Cobertura XML**: \`CoverageReports/coverage.cobertura.xml\`"
+          echo "- **JSON Format**: \`CoverageReports/coverage.json\`"
+          echo ""
+          echo "## 🔗 Xem chi tiết"
+          echo ""
+          echo "- **Test Results Tab**: Xem tab \"Tests\" trong GitHub Actions để xem chi tiết từng test case"
+          echo "- **Artifacts**: Tải về artifacts để xem đầy đủ test reports và coverage reports"
+          echo "- **Console Output**: Xem \"Run tests with detailed reporting\" step để xem log chi tiết"
+          echo ""
+          echo "───────────────────────────────────────────────────────────────"
+          echo ""
+          echo "## 🛠️ Công nghệ sử dụng"
+          echo ""
+          echo "- **Testing Framework**: xUnit.net 2.9.2"
+          echo "- **Assertion Library**: FluentAssertions 7.0.0"
+          echo "- **Mocking Framework**: Moq 4.20.72"
+          echo "- **Database Testing**: Entity Framework In-Memory 9.0.9"
+          echo "- **Target Framework**: .NET 9.0"
+          echo "- **Code Coverage**: XPlat Code Coverage"
+          echo ""
+          echo "───────────────────────────────────────────────────────────────"
+          echo ""
+          echo "*Báo cáo được tạo tự động bởi GitHub Actions CI/CD Pipeline*"
+        } >> "$REPORT_FILE"
+        
+        cat "$REPORT_FILE"
+        
+    - name: Publish Test Results (JUnit)
+      if: always()
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      with:
+        files: |
+          ${{ env.TEST_RESULTS_DIR }}/junit-*.xml
+        check_name: 'Test Results (JUnit)'
+        comment_mode: create-new
+        report_individual_runs: true
+        deduplicate_classes_by_file_name: true
+        
+    - name: Publish Test Results (TRX)
+      if: always()
+      uses: dorny/test-reporter@v1
+      with:
+        name: 'Test Results (TRX)'
+        path: '${{ env.TEST_RESULTS_DIR }}/*.trx'
+        reporter: 'dotnet-trx'
+        list_suites: all
+        list_tests: all
+        max_annotations: 50
+        fail_on_error: false
+        
+    - name: Upload Test Results Artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ github.run_number }}
+        path: |
+          ${{ env.TEST_RESULTS_DIR }}
+          ${{ env.COVERAGE_DIR }}
+        retention-days: 30
+        if-no-files-found: ignore
         
     - name: Publish application
       # FIX: Ensure this step never fails, regardless of dotnet publish results
@@ -227,18 +402,43 @@ jobs:
         name: foodbook-build-${{ github.run_number }}
         path: ./publish
         retention-days: 30
+        if-no-files-found: ignore
         
     - name: Build summary
+      if: always()
+      shell: bash
       run: |
-        echo "✅ FoodBook CI/CD Pipeline completed successfully!"
+        echo "╔══════════════════════════════════════════════════════════════╗"
+        echo "║     ✅ FoodBook CI/CD Pipeline Completed                     ║"
+        echo "╚══════════════════════════════════════════════════════════════╝"
+        echo ""
         echo "📦 Build artifacts uploaded"
         echo "🔗 Repository: https://github.com/TomOutfit/FoodBook_PRN212_Group4_Fa25"
         echo "📊 Build #${{ github.run_number }}"
         echo ""
         echo "📋 Pipeline Results (Actual Outcome):"
-        echo "  Restore: ${{ env.RESTORE_SUCCESS }}"
-        echo "  Build: ${{ env.BUILD_SUCCESS }}"
-        echo "  Test: ${{ env.TEST_SUCCESS }}"
-        echo "  Publish: ${{ env.PUBLISH_SUCCESS }}"
+        
+        # Use default values if env vars are not set
+        RESTORE_RESULT="${RESTORE_SUCCESS:-N/A}"
+        BUILD_RESULT="${BUILD_SUCCESS:-N/A}"
+        TEST_RESULT="${TEST_SUCCESS:-N/A}"
+        PUBLISH_RESULT="${PUBLISH_SUCCESS:-N/A}"
+        
+        echo "  ✅ Restore: ${RESTORE_RESULT}"
+        echo "  ✅ Build: ${BUILD_RESULT}"
+        echo "  ✅ Test: ${TEST_RESULT}"
+        echo "  ✅ Publish: ${PUBLISH_RESULT}"
+        echo ""
+        echo "🧪 Test Results Summary:"
+        echo "  📊 Total Tests: ${{ steps.run-tests.outputs.TOTAL_TESTS || '0' }}"
+        echo "  ✅ Passed: ${{ steps.run-tests.outputs.PASSED_TESTS || '0' }}"
+        echo "  ❌ Failed: ${{ steps.run-tests.outputs.FAILED_TESTS || '0' }}"
+        echo "  ⏭️  Skipped: ${{ steps.run-tests.outputs.SKIPPED_TESTS || '0' }}"
+        echo ""
+        echo "📁 Artifacts Available:"
+        echo "  - test-results-${{ github.run_number }} (Test Reports & Coverage)"
+        echo "  - foodbook-build-${{ github.run_number }} (Build Output)"
         echo ""
         echo "🚀 Pipeline designed to always pass - ready for any project structure!"
+        echo ""
+        echo "📖 Xem chi tiết test cases trong Test Results tab và artifacts!"
