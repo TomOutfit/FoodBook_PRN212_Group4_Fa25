@@ -408,8 +408,8 @@ namespace Foodbook.Presentation.ViewModels
                 .FirstOrDefault()?.Key ?? string.Empty;
             MyMostCommonDifficulty = diff;
 
-            // No explicit AI marker available in entity -> keep 0 to avoid guessing
-            MyAIGeneratedRecipes = 0;
+            // Count AI-generated recipes
+            MyAIGeneratedRecipes = list.Count(r => r.IsAIGenerated);
         }
     }
 }
