@@ -10,6 +10,7 @@ namespace Foodbook.Business.Interfaces
         Task<ShoppingListResult> OptimizeShoppingListAsync(ShoppingListResult shoppingList);
         Task<string> ExportShoppingListToNotesAsync(ShoppingListResult shoppingList, string listName);
         Task<ShoppingListResult> GenerateShoppingListFromMealPlanAsync(IEnumerable<MealPlanItem> mealPlanItems, int userId);
+        Task<ShoppingListResult> GenerateRandomShoppingListFromDatabaseAsync(int userId, int itemCount = 5);
     }
 
     public class ShoppingListResult

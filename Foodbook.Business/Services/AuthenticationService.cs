@@ -161,5 +161,18 @@ namespace Foodbook.Business.Services
             var hashedPassword = HashPassword(password);
             return hashedPassword == hash;
         }
+
+        public async Task<User?> GetAdminUserAsync()
+        {
+            try
+            {
+                return await _context.Users
+                    .FirstOrDefaultAsync(u => u.IsAdmin == true);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
     }
 }

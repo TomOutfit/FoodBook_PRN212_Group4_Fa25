@@ -90,5 +90,37 @@ namespace Foodbook.Business.Services
             return await _context.Ingredients
                 .FirstOrDefaultAsync(i => i.Name.ToLower() == name.ToLower() && i.UserId == userId);
         }
+
+        public async Task<bool> DeductIngredientsFromPantryAsync(int userId, Dictionary<string, decimal> ingredientUsage)
+        {
+            try
+            {
+                foreach (var usage in ingredientUsage)
+                {
+                    var ingredient = await GetIngredientByNameAsync(usage.Key, userId);
+                    if (ingredient != null && ingredient.Quantity.HasValue)
+                    {
+                        var newQuantity = ingredient.Quantity.Value - usage.Value;
+                        // Don't allow negative quantities
+                        ingredient.Quantity = Math.Max(0, newQuantity);
+                        
+                        // If quantity is zero or very small, set to 0
+                        if (ingredient.Quantity < 0.01m)
+                        {
+                            ingredient.Quantity = 0;
+                        }
+                        
+                        await UpdateIngredientAsync(ingredient);
+                    }
+                }
+                
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deducting ingredients from pantry: {ex.Message}");
+                return false;
+            }
+        }
     }
 }
