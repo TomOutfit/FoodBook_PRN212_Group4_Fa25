@@ -324,8 +324,33 @@ jobs:
         
         cat "$REPORT_FILE"
         
-    - name: Publish Test Results (JUnit)
+    - name: Check for Test Results
       if: always()
+      id: check-test-results
+      shell: bash
+      run: |
+        JUNIT_FILES=$(find "${{ env.TEST_RESULTS_DIR }}" -name "junit-*.xml" 2>/dev/null | wc -l)
+        TRX_FILES=$(find "${{ env.TEST_RESULTS_DIR }}" -name "*.trx" 2>/dev/null | wc -l)
+        
+        if [ "$JUNIT_FILES" -gt 0 ]; then
+          echo "has-junit=true" >> $GITHUB_OUTPUT
+          echo "✅ Found $JUNIT_FILES JUnit test result file(s)"
+        else
+          echo "has-junit=false" >> $GITHUB_OUTPUT
+          echo "ℹ️ No JUnit test results found (0 test cases)"
+        fi
+        
+        if [ "$TRX_FILES" -gt 0 ]; then
+          echo "has-trx=true" >> $GITHUB_OUTPUT
+          echo "✅ Found $TRX_FILES TRX test result file(s)"
+        else
+          echo "has-trx=false" >> $GITHUB_OUTPUT
+          echo "ℹ️ No TRX test results found (0 test cases)"
+        fi
+        
+    - name: Publish Test Results (JUnit)
+      if: always() && steps.check-test-results.outputs.has-junit == 'true'
+      continue-on-error: true
       uses: EnricoMi/publish-unit-test-result-action@v2
       with:
         files: |
@@ -336,7 +361,8 @@ jobs:
         deduplicate_classes_by_file_name: true
         
     - name: Publish Test Results (TRX)
-      if: always()
+      if: always() && steps.check-test-results.outputs.has-trx == 'true'
+      continue-on-error: true
       uses: dorny/test-reporter@v1
       with:
         name: 'Test Results (TRX)'
@@ -346,6 +372,15 @@ jobs:
         list_tests: all
         max_annotations: 50
         fail_on_error: false
+        
+    - name: Test Results Summary (No Tests)
+      if: always() && steps.check-test-results.outputs.has-junit == 'false' && steps.check-test-results.outputs.has-trx == 'false'
+      shell: bash
+      run: |
+        echo "ℹ️ No test cases found in this run"
+        echo "📊 Test Results: 0 tests (0 passed, 0 failed, 0 skipped)"
+        echo "✅ This is expected if you haven't written unit tests yet"
+        echo "📝 Start writing unit tests and they will appear here automatically!"
         
     - name: Upload Test Results Artifacts
       if: always()
