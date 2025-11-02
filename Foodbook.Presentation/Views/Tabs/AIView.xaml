@@ -34,7 +34,10 @@
             <Border Grid.Column="0" Background="White" CornerRadius="12" Padding="20" Margin="0,0,8,0">
                 <StackPanel>
                     <TextBlock Text="🛒 Smart Shopping List" FontSize="18" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,8"/>
-                    <TextBlock Text="AI analyzes your recipes and creates an optimized shopping list with quantities and store layout suggestions." FontSize="14" Foreground="#6B7280" TextWrapping="Wrap" Margin="0,0,0,16" Height="60"/>
+                    <TextBlock Text="AI analyzes your recipes and creates an optimized shopping list with quantities and store layout suggestions." FontSize="14" Foreground="#6B7280" TextWrapping="Wrap" Margin="0,0,0,12" Height="60"/>
+                    
+                    <!-- Generation Mode Selection -->
+
                     <Button Content="📋 Generate Shopping List" Background="#F59E0B" Foreground="White" FontSize="14" FontWeight="SemiBold" Padding="16,12" BorderThickness="0" HorizontalAlignment="Stretch" Command="{Binding GenerateShoppingListCommand}"/>
                 </StackPanel>
             </Border>

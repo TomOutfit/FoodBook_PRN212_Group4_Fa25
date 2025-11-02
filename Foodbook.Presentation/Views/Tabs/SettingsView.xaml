@@ -17,15 +17,15 @@
                     <StackPanel Margin="0,0,0,12">
                         <TextBlock Text="{Binding Loc_Theme}" FontSize="14" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,6"/>
                         <ComboBox SelectedValue="{Binding SelectedTheme, Mode=TwoWay}" SelectedValuePath="Tag" Height="34" FontSize="14">
-                            <ComboBoxItem Content="🌞 Light Theme" Tag="Light"/>
-                            <ComboBoxItem Content="🌙 Dark Theme" Tag="Dark"/>
+                            <ComboBoxItem Content="🌞 Day Theme" Tag="Day"/>
+                            <ComboBoxItem Content="🌙 Night Theme" Tag="Night"/>
                         </ComboBox>
                     </StackPanel>
                     <StackPanel Margin="0,0,0,12">
                         <TextBlock Text="{Binding Loc_Language}" FontSize="14" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,6"/>
                         <ComboBox SelectedValue="{Binding SelectedLanguage, Mode=TwoWay}" SelectedValuePath="Tag" Height="34" FontSize="14">
-                            <ComboBoxItem Content="🇺🇸 English" Tag="English"/>
-                            <ComboBoxItem Content="🇻🇳 Vietnamese" Tag="Vietnamese"/>
+                            <ComboBoxItem Content="🇺🇸 EN" Tag="EN"/>
+                            <ComboBoxItem Content="🇻🇳 VI" Tag="VI"/>
                         </ComboBox>
                     </StackPanel>
                     <StackPanel Margin="0,0,0,12">
@@ -35,7 +35,7 @@
                     <StackPanel Margin="0,0,0,16">
                         <CheckBox IsChecked="{Binding NotificationsEnabled, Mode=TwoWay}" Content="{Binding Loc_EnableNotifications}" FontSize="14" Foreground="#374151" VerticalAlignment="Center"/>
                     </StackPanel>
-                    <Button Content="{Binding Loc_SaveSettings}" Background="#4CAF50" Foreground="White" FontSize="14" FontWeight="SemiBold" Padding="16,12" BorderThickness="0" HorizontalAlignment="Stretch" Command="{Binding SaveSettingsCommand}"/>
+                    <Button Content="Save" Background="#4CAF50" Foreground="White" FontSize="14" FontWeight="SemiBold" Padding="16,12" BorderThickness="0" HorizontalAlignment="Stretch" Click="SaveSettings_Click"/>
                 </StackPanel>
             </Border>
             <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="20" Margin="8,0,0,0">
