@@ -40,6 +40,26 @@ namespace Foodbook.Presentation.ViewModels
         public string Loc_UserProfile => _localizationService?.GetString("UserProfile") ?? "User Profile";
         public string Loc_Username => _localizationService?.GetString("Username") ?? "Username";
         public string Loc_Email => _localizationService?.GetString("Email") ?? "Email";
+        public string Loc_SettingsTitle => _localizationService?.GetString("Settings") ?? "Settings";
+        public string Loc_DayTheme => _localizationService?.GetString("Day Theme") ?? "Day Theme";
+        public string Loc_NightTheme => _localizationService?.GetString("Night Theme") ?? "Night Theme";
+        public string Loc_Save => _localizationService?.GetString("Save") ?? "Save";
+        public string Loc_Role => _localizationService?.GetString("Role") ?? "Role";
+        public string Loc_Administrator => _localizationService?.GetString("Administrator") ?? "Administrator";
+        public string Loc_AutoSaveRecipes => _localizationService?.GetString("Auto-save recipes") ?? "Auto-save recipes";
+        public string Loc_RefreshProfile => _localizationService?.GetString("Refresh Profile") ?? "Refresh Profile";
+        public string Loc_AdvancedSettings => _localizationService?.GetString("Advanced Settings") ?? "Advanced Settings";
+        public string Loc_Database => _localizationService?.GetString("Database") ?? "Database";
+        public string Loc_ConnectionStatus => _localizationService?.GetString("Connection Status") ?? "Connection Status";
+        public string Loc_Connected => _localizationService?.GetString("Connected") ?? "Connected";
+        public string Loc_TestConnection => _localizationService?.GetString("Test Connection") ?? "Test Connection";
+        public string Loc_AIServices => _localizationService?.GetString("AI Services") ?? "AI Services";
+        public string Loc_AIJudgeStatus => _localizationService?.GetString("AI Judge Status") ?? "AI Judge Status";
+        public string Loc_Active => _localizationService?.GetString("Active") ?? "Active";
+        public string Loc_ConfigureAI => _localizationService?.GetString("Configure AI") ?? "Configure AI";
+        public string Loc_SystemInfo => _localizationService?.GetString("System Info") ?? "System Info";
+        public string Loc_Version => _localizationService?.GetString("Version") ?? "Version";
+        public string Loc_ViewLogs => _localizationService?.GetString("View Logs") ?? "View Logs";
         
         public SettingsViewModel(ISettingsService settingsService, ILocalizationService localizationService)
         {
@@ -113,6 +133,26 @@ namespace Foodbook.Presentation.ViewModels
             OnPropertyChanged(nameof(Loc_UserProfile));
             OnPropertyChanged(nameof(Loc_Username));
             OnPropertyChanged(nameof(Loc_Email));
+            OnPropertyChanged(nameof(Loc_SettingsTitle));
+            OnPropertyChanged(nameof(Loc_DayTheme));
+            OnPropertyChanged(nameof(Loc_NightTheme));
+            OnPropertyChanged(nameof(Loc_Save));
+            OnPropertyChanged(nameof(Loc_Role));
+            OnPropertyChanged(nameof(Loc_Administrator));
+            OnPropertyChanged(nameof(Loc_AutoSaveRecipes));
+            OnPropertyChanged(nameof(Loc_RefreshProfile));
+            OnPropertyChanged(nameof(Loc_AdvancedSettings));
+            OnPropertyChanged(nameof(Loc_Database));
+            OnPropertyChanged(nameof(Loc_ConnectionStatus));
+            OnPropertyChanged(nameof(Loc_Connected));
+            OnPropertyChanged(nameof(Loc_TestConnection));
+            OnPropertyChanged(nameof(Loc_AIServices));
+            OnPropertyChanged(nameof(Loc_AIJudgeStatus));
+            OnPropertyChanged(nameof(Loc_Active));
+            OnPropertyChanged(nameof(Loc_ConfigureAI));
+            OnPropertyChanged(nameof(Loc_SystemInfo));
+            OnPropertyChanged(nameof(Loc_Version));
+            OnPropertyChanged(nameof(Loc_ViewLogs));
         }
 
         public async Task LoadSettingsAsync()
