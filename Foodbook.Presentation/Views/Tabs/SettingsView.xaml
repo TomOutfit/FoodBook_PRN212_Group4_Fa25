@@ -5,7 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
     <StackPanel>
-        <TextBlock Text="⚙️ Settings" FontSize="24" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,20"/>
+        <TextBlock Text="{Binding Loc_SettingsTitle}" FontSize="24" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,20"/>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -17,8 +17,8 @@
                     <StackPanel Margin="0,0,0,12">
                         <TextBlock Text="{Binding Loc_Theme}" FontSize="14" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,6"/>
                         <ComboBox SelectedValue="{Binding SelectedTheme, Mode=TwoWay}" SelectedValuePath="Tag" Height="34" FontSize="14">
-                            <ComboBoxItem Content="🌞 Day Theme" Tag="Day"/>
-                            <ComboBoxItem Content="🌙 Night Theme" Tag="Night"/>
+                            <ComboBoxItem Content="{Binding Loc_DayTheme}" Tag="Day"/>
+                            <ComboBoxItem Content="{Binding Loc_NightTheme}" Tag="Night"/>
                         </ComboBox>
                     </StackPanel>
                     <StackPanel Margin="0,0,0,12">
@@ -35,7 +35,7 @@
                     <StackPanel Margin="0,0,0,16">
                         <CheckBox IsChecked="{Binding NotificationsEnabled, Mode=TwoWay}" Content="{Binding Loc_EnableNotifications}" FontSize="14" Foreground="#374151" VerticalAlignment="Center"/>
                     </StackPanel>
-                    <Button Content="Save" Background="#4CAF50" Foreground="White" FontSize="14" FontWeight="SemiBold" Padding="16,12" BorderThickness="0" HorizontalAlignment="Stretch" Click="SaveSettings_Click"/>
+                    <Button Content="{Binding Loc_Save}" Background="#4CAF50" Foreground="White" FontSize="14" FontWeight="SemiBold" Padding="16,12" BorderThickness="0" HorizontalAlignment="Stretch" Click="SaveSettings_Click"/>
                 </StackPanel>
             </Border>
             <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="20" Margin="8,0,0,0">
@@ -50,19 +50,19 @@
                         <TextBox Text="admin@foodbook.com" Height="34" FontSize="14" Padding="10,6" IsReadOnly="True"/>
                     </StackPanel>
                     <StackPanel Margin="0,0,0,12">
-                        <TextBlock Text="Role" FontSize="14" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,6"/>
-                        <TextBox Text="Administrator" Height="34" FontSize="14" Padding="10,6" IsReadOnly="True"/>
+                        <TextBlock Text="{Binding Loc_Role}" FontSize="14" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,6"/>
+                        <TextBox Text="{Binding Loc_Administrator, Mode=OneWay}" Height="34" FontSize="14" Padding="10,6" IsReadOnly="True"/>
                     </StackPanel>
                     <StackPanel Margin="0,0,0,16">
-                        <CheckBox IsChecked="{Binding AutoSaveEnabled}" Content="💾 Auto-save recipes" FontSize="14" Foreground="#374151" VerticalAlignment="Center"/>
+                        <CheckBox IsChecked="{Binding AutoSaveEnabled}" Content="{Binding Loc_AutoSaveRecipes}" FontSize="14" Foreground="#374151" VerticalAlignment="Center"/>
                     </StackPanel>
-                    <Button Content="🔄 Refresh Profile" Background="#8B5CF6" Foreground="White" FontSize="14" FontWeight="SemiBold" Padding="16,12" BorderThickness="0" HorizontalAlignment="Stretch" Command="{Binding RefreshProfileCommand}"/>
+                    <Button Content="{Binding Loc_RefreshProfile}" Background="#8B5CF6" Foreground="White" FontSize="14" FontWeight="SemiBold" Padding="16,12" BorderThickness="0" HorizontalAlignment="Stretch" Command="{Binding RefreshProfileCommand}"/>
                 </StackPanel>
             </Border>
         </Grid>
         <Border Background="White" CornerRadius="12" Padding="20" Margin="0,16,0,0">
             <StackPanel>
-                <TextBlock Text="⚡ Advanced Settings" FontSize="18" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,16"/>
+                <TextBlock Text="{Binding Loc_AdvancedSettings}" FontSize="18" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,16"/>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -71,26 +71,26 @@
                     </Grid.ColumnDefinitions>
                     <Border Grid.Column="0" Background="#F8FAFC" CornerRadius="8" Padding="16" Margin="0,0,8,0">
                         <StackPanel>
-                            <TextBlock Text="🗄️ Database" FontSize="16" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,8"/>
-                            <TextBlock Text="Connection Status" FontSize="12" Foreground="#6B7280" Margin="0,0,0,4"/>
-                            <TextBlock Text="✅ Connected" FontSize="14" FontWeight="SemiBold" Foreground="#10B981" Margin="0,0,0,8"/>
-                            <Button Content="🔧 Test Connection" Background="#6B7280" Foreground="White" FontSize="12" FontWeight="SemiBold" Padding="12,8" BorderThickness="0" HorizontalAlignment="Stretch" Command="{Binding TestDatabaseConnectionCommand}"/>
+                            <TextBlock Text="{Binding Loc_Database}" FontSize="16" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,8"/>
+                            <TextBlock Text="{Binding Loc_ConnectionStatus}" FontSize="12" Foreground="#6B7280" Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding Loc_Connected}" FontSize="14" FontWeight="SemiBold" Foreground="#10B981" Margin="0,0,0,8"/>
+                            <Button Content="{Binding Loc_TestConnection}" Background="#6B7280" Foreground="White" FontSize="12" FontWeight="SemiBold" Padding="12,8" BorderThickness="0" HorizontalAlignment="Stretch" Command="{Binding TestDatabaseConnectionCommand}"/>
                         </StackPanel>
                     </Border>
                     <Border Grid.Column="1" Background="#F8FAFC" CornerRadius="8" Padding="16" Margin="4,0">
                         <StackPanel>
-                            <TextBlock Text="🤖 AI Services" FontSize="16" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,8"/>
-                            <TextBlock Text="AI Judge Status" FontSize="12" Foreground="#6B7280" Margin="0,0,0,4"/>
-                            <TextBlock Text="✅ Active" FontSize="14" FontWeight="SemiBold" Foreground="#10B981" Margin="0,0,0,8"/>
-                            <Button Content="⚙️ Configure AI" Background="#8B5CF6" Foreground="White" FontSize="12" FontWeight="SemiBold" Padding="12,8" BorderThickness="0" HorizontalAlignment="Stretch" Command="{Binding ConfigureAICommand}"/>
+                            <TextBlock Text="{Binding Loc_AIServices}" FontSize="16" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,8"/>
+                            <TextBlock Text="{Binding Loc_AIJudgeStatus}" FontSize="12" Foreground="#6B7280" Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding Loc_Active}" FontSize="14" FontWeight="SemiBold" Foreground="#10B981" Margin="0,0,0,8"/>
+                            <Button Content="{Binding Loc_ConfigureAI}" Background="#8B5CF6" Foreground="White" FontSize="12" FontWeight="SemiBold" Padding="12,8" BorderThickness="0" HorizontalAlignment="Stretch" Command="{Binding ConfigureAICommand}"/>
                         </StackPanel>
                     </Border>
                     <Border Grid.Column="2" Background="#F8FAFC" CornerRadius="8" Padding="16" Margin="8,0,0,0">
                         <StackPanel>
-                            <TextBlock Text="📊 System Info" FontSize="16" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,8"/>
-                            <TextBlock Text="Version" FontSize="12" Foreground="#6B7280" Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding Loc_SystemInfo}" FontSize="16" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,8"/>
+                            <TextBlock Text="{Binding Loc_Version}" FontSize="12" Foreground="#6B7280" Margin="0,0,0,4"/>
                             <TextBlock Text="v1.0.0" FontSize="14" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,8"/>
-                            <Button Content="📋 View Logs" Background="#F59E0B" Foreground="White" FontSize="12" FontWeight="SemiBold" Padding="12,8" BorderThickness="0" HorizontalAlignment="Stretch" Command="{Binding ViewLogsCommand}"/>
+                            <Button Content="{Binding Loc_ViewLogs}" Background="#F59E0B" Foreground="White" FontSize="12" FontWeight="SemiBold" Padding="12,8" BorderThickness="0" HorizontalAlignment="Stretch" Command="{Binding ViewLogsCommand}"/>
                         </StackPanel>
                     </Border>
                 </Grid>
