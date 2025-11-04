@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using Foodbook.Business.Interfaces;
+using Foodbook.Business;
 using Foodbook.Data.Entities;
 using Foodbook.Presentation.Commands;
 using Foodbook.Presentation.Views;
@@ -380,17 +381,23 @@ namespace Foodbook.Presentation.ViewModels
 			finally { IsBusy = false; }
 		}
 
-		private async Task OpenNutritionAnalysisAsync()
+        private async Task OpenNutritionAnalysisAsync()
 		{
 			try
 			{
 				IsBusy = true;
-				// Navigate to the in-app Nutrition view instead of dialog
-				if (Application.Current?.MainWindow?.DataContext is MainViewModel shell)
-				{
-					shell.SelectedTab = "Nutrition";
-				}
-				await Task.CompletedTask;
+                // Open standalone NutritionWindow with NutritionViewModel
+                var nutritionService = ServiceContainer.GetService<INutritionService>();
+                var aiService = ServiceContainer.GetService<IAIService>();
+                var recipeService = ServiceContainer.GetService<IRecipeService>();
+
+                var vm = new NutritionViewModel(nutritionService, aiService, recipeService);
+                var window = new NutritionWindow
+                {
+                    Owner = Application.Current?.MainWindow,
+                    DataContext = vm
+                };
+                window.Show();
 			}
 			catch (Exception ex)
 			{
