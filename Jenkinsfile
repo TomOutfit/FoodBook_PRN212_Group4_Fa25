@@ -2,20 +2,26 @@ pipeline {
     agent any
 
     environment {
-        SOLUTION_PATH = "FoodBook_PRN212_Group4_Fa25.sln"
+        SOLUTION_PATH = "CookBook.sln"
         BUILD_CONFIG = "Release"
         TEST_PROJECT = "FoodBook.Tests/FoodBook.Tests.csproj"
         TEST_RESULTS_DIR = "TestResults"
     }
 
     stages {
-        stage('🧹 Clean') {
+        stage('Clean') {
             steps {
+                echo '🧹 Dọn dẹp workspace...'
                 bat """
                     dotnet clean "%SOLUTION_PATH%" --configuration "%BUILD_CONFIG%"
+                    rmdir /s /q "%TEST_RESULTS_DIR%" 2>nul
+                    rmdir /s /q "%COVERAGE_DIR%" 2>nul
+                    mkdir "%TEST_RESULTS_DIR%"
+                    mkdir "%COVERAGE_DIR%"
                 """
             }
         }
+
 
         stage('📦 Restore') {
             steps {
@@ -58,3 +64,4 @@ pipeline {
         }
     }
 }
+
