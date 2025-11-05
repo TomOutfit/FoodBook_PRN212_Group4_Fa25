@@ -1,0 +1,195 @@
+<UserControl x:Class="Foodbook.Presentation.Views.ShoppingListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Foodbook.Presentation.Views"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="800">
+    
+    <UserControl.Resources>
+        <Style x:Key="CardStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E9ECEF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="15"/>
+            <Setter Property="Margin" Value="0,0,0,15"/>
+        </Style>
+        
+        <Style x:Key="HeaderStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#2C3E50"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+        
+        <Style x:Key="ButtonStyle" TargetType="Button">
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="Margin" Value="0,0,10,0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+    </UserControl.Resources>
+    
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="🛒 Smart Shopping List" Style="{StaticResource HeaderStyle}"/>
+            <TextBlock Text="AI-powered shopping list generation from your favorite recipes" 
+                       FontSize="12" 
+                       Foreground="#7F8C8D"/>
+        </StackPanel>
+        
+        <!-- Main Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                
+                <!-- Recipe Selection -->
+                <Border Style="{StaticResource CardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="📋 Select Recipes for Shopping List" FontWeight="SemiBold" FontSize="14" Foreground="#2C3E50" Margin="0,0,0,10"/>
+                        
+                        <!-- Available Recipes -->
+                        <TextBlock Text="Available Recipes:" FontSize="12" Foreground="#7F8C8D" Margin="0,0,0,5"/>
+                        <ListBox ItemsSource="{Binding AvailableRecipes}" 
+                                 Height="150" 
+                                 Margin="0,0,0,10"
+                                 SelectionMode="Multiple">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <CheckBox IsChecked="{Binding IsSelected}" Margin="0,0,10,0"/>
+                                        <TextBlock Text="{Binding Title}" FontSize="12"/>
+                                        <TextBlock Text="{Binding Servings, StringFormat='{}{0} servings'}" 
+                                                   FontSize="10" 
+                                                   Foreground="#7F8C8D" 
+                                                   Margin="5,0,0,0"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        
+                        <!-- Selected Recipes Summary -->
+                        <Border Background="#F8F9FA" 
+                                BorderBrush="#E9ECEF" 
+                                BorderThickness="1" 
+                                CornerRadius="6" 
+                                Padding="10" 
+                                Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Selected Recipes:" FontSize="12" Foreground="#7F8C8D" Margin="0,0,0,5"/>
+                                <TextBlock Text="{Binding SelectedRecipes.Count, StringFormat='{}{0} recipes selected'}" 
+                                           FontSize="11" 
+                                           FontWeight="SemiBold" 
+                                           Foreground="#2C3E50"/>
+                            </StackPanel>
+                        </Border>
+                        
+                        <!-- Action Buttons -->
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button Content="🛒 Generate Shopping List" 
+                                    Background="#27AE60" 
+                                    Style="{StaticResource ButtonStyle}"
+                                    Command="{Binding GenerateShoppingListCommand}"/>
+                            <Button Content="🗑️ Clear Selection" 
+                                    Background="#E74C3C" 
+                                    Style="{StaticResource ButtonStyle}"
+                                    Command="{Binding ClearSelectionCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Status -->
+                <Border Background="#F8F9FA" 
+                        BorderBrush="#E9ECEF" 
+                        BorderThickness="1" 
+                        CornerRadius="6" 
+                        Padding="10" 
+                        Margin="0,0,0,15">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Status:" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                        <TextBlock Text="{Binding GenerationStatus}" 
+                                   FontSize="12" 
+                                   Foreground="#2C3E50"/>
+                        <ProgressBar IsIndeterminate="True" 
+                                     Width="100" 
+                                     Height="4" 
+                                     Margin="10,0,0,0"
+                                     Visibility="{Binding IsGenerating, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Shopping List Preview -->
+                <Border Style="{StaticResource CardStyle}" 
+                        Visibility="{Binding CurrentShoppingList, Converter={StaticResource NullToVisibilityConverter}}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <TextBlock Text="🛒 Shopping List Ready" FontWeight="SemiBold" FontSize="14" Foreground="#2C3E50"/>
+                            <TextBlock Text="{Binding CurrentShoppingList.TotalItems, StringFormat='{}{0} items'}" 
+                                       FontSize="12" 
+                                       Foreground="#7F8C8D" 
+                                       Margin="10,0,0,0"/>
+                        </StackPanel>
+                        
+                        <!-- Quick Summary -->
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <Border Grid.Column="0" Background="#E8F5E8" CornerRadius="6" Padding="10" Margin="0,0,5,0">
+                                <StackPanel>
+                                    <TextBlock Text="💰 Estimated Cost" FontSize="10" Foreground="#7F8C8D"/>
+                                    <TextBlock Text="{Binding CurrentShoppingList.EstimatedCost, StringFormat='{}{0:F2}'}" 
+                                               FontSize="16" 
+                                               FontWeight="Bold" 
+                                               Foreground="#27AE60"/>
+                                </StackPanel>
+                            </Border>
+                            
+                            <Border Grid.Column="1" Background="#FFF3E0" CornerRadius="6" Padding="10" Margin="5,0,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="⏱️ Shopping Time" FontSize="10" Foreground="#7F8C8D"/>
+                                    <TextBlock Text="{Binding CurrentShoppingList.EstimatedShoppingTime.TotalMinutes, StringFormat='{}{0:F0} min'}" 
+                                               FontSize="16" 
+                                               FontWeight="Bold" 
+                                               Foreground="#F39C12"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                        
+                        <!-- Action Buttons -->
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button Content="📄 View Detailed List" 
+                                    Background="#3498DB" 
+                                    Style="{StaticResource ButtonStyle}"
+                                    Command="{Binding ViewDetailedListCommand}"/>
+                            <Button Content="🔧 Optimize List" 
+                                    Background="#F39C12" 
+                                    Style="{StaticResource ButtonStyle}"
+                                    Command="{Binding OptimizeListCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+                
+            </StackPanel>
+        </ScrollViewer>
+        
+        <!-- Footer -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <TextBlock Text="Generated by FoodBook Smart Shopping List 🍽️" 
+                       FontSize="10" 
+                       Foreground="#7F8C8D" 
+                       VerticalAlignment="Center"/>
+        </StackPanel>
+    </Grid>
+</UserControl>
