@@ -15,8 +15,11 @@ namespace Foodbook.Business.Services
         private readonly string _geminiApiUrl;
         private readonly IUnsplashImageService? _imageService;
         
+        private readonly IConfiguration _configuration;
+
         public AIService(IConfiguration configuration, IUnsplashImageService? imageService = null)
         {
+            _configuration = configuration;
             _httpClient = new HttpClient();
             _geminiApiKey = configuration["GeminiAPI:ApiKey"] ?? string.Empty;
             var model = configuration["GeminiAPI:Model"] ?? "gemini-2.0-flash-exp";
@@ -366,12 +369,14 @@ PERSONA: 😊 You are an encouraging master chef mentor who wants to help the co
 
         private string CreateRecipeGenerationPrompt(IEnumerable<string> ingredientNames, string dishName, int servings)
         {
-            var ingredients = string.Join(", ", ingredientNames);
+			var ingredients = string.Join(", ", ingredientNames);
+			var ingredientsBulletList = string.Join("\n- ", ingredientNames);
             var prompt = $@"
 You are a Master Chef and culinary expert with extensive knowledge of cooking techniques, flavor combinations, and recipe development.
 
 Create a complete recipe based on the following requirements:
-- Available ingredients: {ingredients}
+- Available ingredients (pantry inventory):
+- {ingredientsBulletList}
 - Dish name: {dishName}
 - Servings: {servings}
 
@@ -1441,18 +1446,16 @@ Provide your recipe in the following JSON format:
             return suggestions[random.Next(suggestions.Length)];
         }
 
-        public async Task<string> AnalyzeNutritionAsync(string recipeDescription)
+        public async Task<string> AnalyzeNutritionAsync(string promptOrDescription)
         {
-            await Task.Delay(1000);
-            
-            return $"Nutritional Analysis for: {recipeDescription}\n\n" +
-                   "• Estimated Calories: 350-450 per serving\n" +
-                   "• Protein: 15-20g\n" +
-                   "• Carbohydrates: 25-30g\n" +
-                   "• Fat: 12-18g\n" +
-                   "• Fiber: 5-8g\n" +
-                   "• Sodium: 400-600mg\n\n" +
-                   "This recipe provides a good balance of macronutrients and is suitable for a healthy diet.";
+            // If API key available, use real AI with the provided prompt
+            if (!string.IsNullOrWhiteSpace(_geminiApiKey))
+            {
+                return await CallGeminiTextAPI(promptOrDescription);
+            }
+
+            // Fallback: generate dynamic assessment text from prompt content
+            return GenerateFallbackHealthAssessment(promptOrDescription);
         }
 
         // Enhanced methods for Nutrition Analysis
@@ -1672,14 +1675,15 @@ Provide your recipe in the following JSON format:
             return generatedRecipe;
         }
 
-        private string CreateEnhancedRecipeGenerationPrompt(
+		private string CreateEnhancedRecipeGenerationPrompt(
             IEnumerable<string> ingredientNames, 
             string? dishName, 
             int servings, 
             string? customPreferences,
             IEnumerable<Recipe> existingRecipes)
         {
-            var ingredients = string.Join(", ", ingredientNames);
+			var ingredients = string.Join(", ", ingredientNames);
+			var ingredientsBulletList = string.Join("\n- ", ingredientNames);
             var preferences = string.IsNullOrWhiteSpace(customPreferences) 
                 ? "" 
                 : $"\n- Custom preferences: {customPreferences}";
@@ -1694,11 +1698,12 @@ Provide your recipe in the following JSON format:
                 ? $"\n\n⚠️ IMPORTANT: Avoid creating recipes similar to these existing recipes: {string.Join(", ", existingTitles.Take(10))}. Create a UNIQUE and DISTINCT recipe."
                 : "";
 
-            var prompt = $@"
+			var prompt = $@"
 You are a Master Chef and culinary expert with extensive knowledge of cooking techniques, flavor combinations, and recipe development.
 
 Create a COMPLETE, UNIQUE, and COOKABLE recipe based on the following requirements:
-- Available ingredients with quantities: {ingredients}
+- Available ingredients with quantities (pantry inventory):
+- {ingredientsBulletList}
 - Dish name: {(string.IsNullOrWhiteSpace(dishName) ? "(AI should suggest an appropriate name)" : dishName)}
 - Servings: {servings}{preferences}{avoidDuplicatesNote}
 
@@ -1939,6 +1944,12 @@ Lưu ý:
 
         private string CreateHealthAssessmentPrompt(string nutritionData)
         {
+            var template = _configuration?["Prompts:HealthAssessment"];
+            if (!string.IsNullOrWhiteSpace(template))
+            {
+                return template.Replace("{nutritionData}", nutritionData);
+            }
+
             return $@"
 Bạn là chuyên gia dinh dưỡng với 20 năm kinh nghiệm. Hãy phân tích thông tin dinh dưỡng sau và đưa ra đánh giá chuyên nghiệp:
 
@@ -1956,6 +1967,14 @@ Sử dụng ngôn ngữ thân thiện, dễ hiểu với emoji phù hợp.
 
         private string CreateNutritionalAdvicePrompt(string nutritionInfo, string userGoal)
         {
+            var template = _configuration?["Prompts:NutritionalAdvice"];
+            if (!string.IsNullOrWhiteSpace(template))
+            {
+                return template
+                    .Replace("{nutritionInfo}", nutritionInfo)
+                    .Replace("{userGoal}", userGoal);
+            }
+
             return $@"
 Bạn là chuyên gia dinh dưỡng cá nhân. Hãy đưa ra lời khuyên dinh dưỡng dựa trên:
 
