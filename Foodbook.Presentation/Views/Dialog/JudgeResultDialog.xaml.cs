@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Text.RegularExpressions;
 
 namespace Foodbook.Presentation.Views
 {
@@ -29,26 +30,72 @@ namespace Foodbook.Presentation.Views
             SuggestionsText.Text = "AI suggestions will appear here after analysis...";
         }
 
-        public void SetJudgeResult(int score, string overallRating, string comment, string cookingMethods, string flavors, string ingredients, string suggestions)
+        public void SetJudgeResult(double score, string overallRating, string comment, string cookingMethods, string flavors, string ingredients, string suggestions)
         {
-            ScoreText.Text = $"{score}/10";
+            ScoreText.Text = $"{score:0.0}/10";
             RatingText.Text = overallRating;
-            CommentText.Text = comment;
-            SuggestionsText.Text = suggestions;
+            CommentText.Text = NormalizeComment(comment);
+            SuggestionsText.Text = ToBulletedList(suggestions);
         }
 
-        public void SetJudgeResult(int score, string overallRating, string comment, int presentationScore, int colorScore, int textureScore, int platingScore, string healthNotes, string chefTips, string suggestions)
+        public void SetJudgeResult(double score, string overallRating, string comment, double presentationScore, double colorScore, double textureScore, double platingScore, string healthNotes, string chefTips, string suggestions)
         {
-            ScoreText.Text = $"{score}/10";
+            ScoreText.Text = $"{score:0.0}/10";
             RatingText.Text = overallRating;
-            CommentText.Text = comment;
-            PresentationScoreText.Text = $"{presentationScore}/10";
-            ColorScoreText.Text = $"{colorScore}/10";
-            TextureScoreText.Text = $"{textureScore}/10";
-            PlatingScoreText.Text = $"{platingScore}/10";
-            HealthNotesText.Text = healthNotes;
-            ChefTipsText.Text = chefTips;
-            SuggestionsText.Text = suggestions;
+            CommentText.Text = NormalizeComment(comment);
+            PresentationScoreText.Text = $"{presentationScore:0.0}/10";
+            ColorScoreText.Text = $"{colorScore:0.0}/10";
+            TextureScoreText.Text = $"{textureScore:0.0}/10";
+            PlatingScoreText.Text = $"{platingScore:0.0}/10";
+            HealthNotesText.Text = ToBulletedList(healthNotes);
+            ChefTipsText.Text = ToBulletedList(chefTips);
+            SuggestionsText.Text = ToBulletedList(suggestions);
+        }
+
+        private static string NormalizeComment(string text)
+        {
+            return FormatAsParagraphs(text);
+        }
+
+        private static string NormalizeParagraphs(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+            var normalized = text.Replace("\r\n", "\n").Replace("\r", "\n");
+            // Ensure sentences are separated properly if AI returns bullet-like separators
+            normalized = normalized.Replace(" • ", "\n• ");
+            return normalized.Trim();
+        }
+
+        private static string FormatAsParagraphs(string text)
+        {
+            var normalized = NormalizeParagraphs(text);
+            // If there's no line break at all, insert breaks after sentence-ending punctuation
+            if (!normalized.Contains("\n"))
+            {
+                normalized = Regex.Replace(normalized, @"(?<=[\.\!\?])\s+", "\n");
+            }
+            // Collapse multiple blank lines
+            normalized = Regex.Replace(normalized, "\n{3,}", "\n\n");
+            return normalized.Trim();
+        }
+
+        private static string ToBulletedList(string text)
+        {
+            var normalized = NormalizeParagraphs(text);
+            IEnumerable<string> lines;
+            if (!normalized.Contains("\n"))
+            {
+                // No explicit breaks: split into sentences for bullets
+                lines = Regex.Split(normalized, @"(?<=[\.\!\?])\s+")
+                    .Select(l => l.Trim());
+            }
+            else
+            {
+                lines = normalized.Split('\n').Select(l => l.Trim());
+            }
+            lines = lines.Where(l => !string.IsNullOrWhiteSpace(l))
+                .Select(l => l.StartsWith("•") || l.StartsWith("-") ? l : $"• {l}");
+            return string.Join("\n", lines);
         }
     }
 }
