@@ -17,5 +17,14 @@ namespace Foodbook.Business.Interfaces
         Task<string> GenerateHealthAssessmentAsync(string nutritionData);
         Task<string> GenerateNutritionalAdviceAsync(string nutritionInfo, string userGoal);
         Task<List<IngredientDto>> ExtractIngredientsFromTextAsync(string recipeText);
+
+        // Generates a recipe while avoiding duplicates against existing recipes
+        Task<Recipe> GenerateRecipeWithDeduplicationAsync(
+            IEnumerable<Data.Entities.Ingredient> availableIngredients,
+            string? dishName,
+            int servings,
+            string? customPreferences,
+            int userId,
+            IEnumerable<Recipe> existingRecipes);
     }
 }

@@ -198,9 +198,17 @@ namespace Foodbook.Presentation.ViewModels
                         CurrentUser = user;
                         return;
                     }
+
+                    // Fallback: lấy admin user nếu chưa đăng nhập để hiển thị thông tin
+                    var admin = await _authService.GetAdminUserAsync();
+                    if (admin != null)
+                    {
+                        CurrentUser = admin;
+                        return;
+                    }
                 }
 
-                // Không có user đăng nhập, set về null
+                // Không có user nào, set về null
                 CurrentUser = null;
             }
             catch
