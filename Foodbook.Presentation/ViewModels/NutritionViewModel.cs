@@ -59,23 +59,9 @@ namespace Foodbook.Presentation.ViewModels
 
             System.Diagnostics.Debug.WriteLine("Commands initialized successfully");
 
-            // Load initial data asynchronously but safely
-            System.Diagnostics.Debug.WriteLine("Starting LoadRecipesAsync...");
-            // Use Task.Run to avoid blocking the constructor and handle exceptions properly
-            Task.Run(async () =>
-            {
-                try
-                {
-                    await LoadRecipesAsync();
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Error loading recipes in constructor: {ex.Message}");
-                    // Don't rethrow - just log the error
-                }
-            });
-            
-            System.Diagnostics.Debug.WriteLine("=== NUTRITION VIEWMODEL CONSTRUCTOR COMPLETED ===");
+            // Defer recipe loading to when the Nutrition tab is selected to avoid
+            // concurrent DbContext operations during app startup.
+            System.Diagnostics.Debug.WriteLine("=== NUTRITION VIEWMODEL CONSTRUCTOR COMPLETED (deferred load) ===");
         }
 
         // Design-time / default constructor

@@ -149,6 +149,19 @@ namespace Foodbook.Business.Services
             }
         }
 
+        public async Task<User?> GetAdminUserAsync()
+        {
+            try
+            {
+                var admin = await _context.Users.FirstOrDefaultAsync(u => u.IsAdmin);
+                return admin;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
         private string HashPassword(string password)
         {
             using var sha256 = SHA256.Create();

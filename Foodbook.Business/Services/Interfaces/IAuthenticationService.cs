@@ -13,5 +13,6 @@ namespace Foodbook.Business.Interfaces
         Task<User?> GetCurrentUserAsync();
         Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword);
         Task<bool> ResetPasswordAsync(string email);
+        Task<User?> GetAdminUserAsync();
     }
 }

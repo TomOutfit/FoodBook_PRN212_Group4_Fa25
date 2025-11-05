@@ -324,6 +324,33 @@ namespace Foodbook.Business.Services
             return shoppingList;
         }
 
+        public async Task<ShoppingListResult> GenerateRandomShoppingListFromDatabaseAsync(int userId, int itemCount = 0)
+        {
+            // Pull user's pantry ingredients and create a simple list
+            var ingredients = await _context.Ingredients
+                .Where(i => i.UserId == userId)
+                .OrderBy(i => i.Name)
+                .ToListAsync();
+
+            if (!ingredients.Any())
+            {
+                throw new InvalidOperationException("No ingredients found for the current user.");
+            }
+
+            var random = new Random();
+            var selected = ingredients;
+            if (itemCount > 0 && itemCount < ingredients.Count)
+            {
+                selected = ingredients
+                    .OrderBy(_ => random.Next())
+                    .Take(itemCount)
+                    .ToList();
+            }
+
+            var names = selected.Select(i => i.Name).Where(n => !string.IsNullOrWhiteSpace(n)).Cast<string>();
+            return await GenerateShoppingListFromIngredientsAsync(names, userId);
+        }
+
         private string CategorizeIngredient(string ingredientName)
         {
             var name = ingredientName.ToLower();

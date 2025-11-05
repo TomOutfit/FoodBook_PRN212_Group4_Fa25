@@ -90,5 +90,40 @@ namespace Foodbook.Business.Services
             return await _context.Ingredients
                 .FirstOrDefaultAsync(i => i.Name.ToLower() == name.ToLower() && i.UserId == userId);
         }
+
+        public async Task DeductIngredientsFromPantryAsync(int userId, IDictionary<string, decimal> ingredientUsage)
+        {
+            if (ingredientUsage == null || ingredientUsage.Count == 0) return;
+
+            var names = ingredientUsage.Keys
+                .Where(k => !string.IsNullOrWhiteSpace(k))
+                .Select(k => k.Trim().ToLower())
+                .ToList();
+
+            if (!names.Any()) return;
+
+            var items = await _context.Ingredients
+                .Where(i => i.UserId == userId && names.Contains(i.Name.ToLower()))
+                .ToListAsync();
+
+            foreach (var item in items)
+            {
+                var key = item.Name.Trim().ToLower();
+                if (!ingredientUsage.TryGetValue(item.Name, out var usage))
+                {
+                    // Try case-insensitive match
+                    usage = ingredientUsage.FirstOrDefault(kv => kv.Key.Trim().ToLower() == key).Value;
+                }
+
+                if (usage > 0)
+                {
+                    var current = item.Quantity ?? 0m;
+                    var next = Math.Max(0m, current - usage);
+                    item.Quantity = next;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+        }
     }
 }

@@ -133,6 +133,55 @@ namespace Foodbook.Business.Services
             }
         }
 
+        public async Task<Recipe> GenerateRecipeWithDeduplicationAsync(
+            IEnumerable<Ingredient> availableIngredients,
+            string? dishName,
+            int servings,
+            string? customPreferences,
+            int userId,
+            IEnumerable<Recipe> existingRecipes)
+        {
+            var ingredientNames = availableIngredients
+                .Select(i => i.Name)
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Cast<string>()
+                .ToList();
+
+            var targetDishName = string.IsNullOrWhiteSpace(dishName) ? string.Empty : dishName.Trim();
+
+            // Try to generate a recipe
+            var recipe = await GenerateRecipeFromIngredientsAsync((IEnumerable<string>)ingredientNames, targetDishName, servings);
+
+            // Basic deduplication: if title matches existing, append a differentiator
+            if (existingRecipes != null)
+            {
+                var existingTitles = new HashSet<string>(existingRecipes
+                    .Where(r => !string.IsNullOrWhiteSpace(r.Title))
+                    .Select(r => r.Title!.Trim()), StringComparer.OrdinalIgnoreCase);
+
+                if (!string.IsNullOrWhiteSpace(recipe.Title) && existingTitles.Contains(recipe.Title.Trim()))
+                {
+                    var suffixIndex = 2;
+                    var baseTitle = recipe.Title!.Trim();
+                    while (existingTitles.Contains($"{baseTitle} ({suffixIndex})"))
+                    {
+                        suffixIndex++;
+                    }
+                    recipe.Title = $"{baseTitle} ({suffixIndex})";
+                }
+            }
+
+            // Optionally weave custom preferences into description
+            if (!string.IsNullOrWhiteSpace(customPreferences))
+            {
+                recipe.Description = (recipe.Description ?? string.Empty) +
+                    $"\n\nPreferences noted: {customPreferences}";
+            }
+
+            recipe.Servings = servings;
+            return recipe;
+        }
+
         public async Task<IEnumerable<string>> GetIngredientSubstitutionsAsync(string ingredientName)
         {
             // Simulate AI processing delay

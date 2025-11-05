@@ -11,11 +11,11 @@ namespace Foodbook.Presentation.Converters
         {
             if (value == null || parameter == null)
                 return Visibility.Collapsed;
-                
-            string stringValue = value.ToString();
-            string parameterValue = parameter.ToString();
-            
-            return stringValue.Equals(parameterValue, StringComparison.OrdinalIgnoreCase) 
+
+            var stringValue = value as string ?? value?.ToString() ?? string.Empty;
+            var parameterValue = parameter as string ?? parameter?.ToString() ?? string.Empty;
+
+            return string.Equals(stringValue, parameterValue, StringComparison.OrdinalIgnoreCase) 
                 ? Visibility.Visible 
                 : Visibility.Collapsed;
         }

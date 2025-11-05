@@ -11,5 +11,8 @@ namespace Foodbook.Business.Interfaces
         Task<IEnumerable<Ingredient>> SearchIngredientsAsync(string name);
         Task<IEnumerable<Ingredient>> GetSubstituteIngredientsAsync(string ingredientName);
         Task<Ingredient?> GetIngredientByNameAsync(string name, int userId);
+
+        // Deduct quantities from pantry for a given user
+        Task DeductIngredientsFromPantryAsync(int userId, IDictionary<string, decimal> ingredientUsage);
     }
 }
