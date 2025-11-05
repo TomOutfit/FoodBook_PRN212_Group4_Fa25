@@ -18,11 +18,7 @@ pipeline {
         DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1'
         DOTNET_NOLOGO = '1'
     }
-    
-    tools {
-        dotnetSDK 'dotnet-sdk-9.0'
-    }
-    
+
     stages {
         stage('Checkout') {
             steps {
@@ -243,3 +239,4 @@ EOF
         }
     }
 }
+
