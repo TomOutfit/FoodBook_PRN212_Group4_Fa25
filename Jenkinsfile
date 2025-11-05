@@ -18,7 +18,9 @@ pipeline {
         DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1'
         DOTNET_NOLOGO = '1'
     }
-
+    
+    // Sử dụng dotnet từ PATH của agent; không cấu hình tool trong Jenkins
+    
     stages {
         stage('Checkout') {
             steps {
@@ -33,12 +35,12 @@ pipeline {
             steps {
                 script {
                     echo '🧹 Đang dọn dẹp workspace...'
-                    sh '''
-                        dotnet clean "${SOLUTION_PATH}" --configuration "${BUILD_CONFIG}" --verbosity minimal
-                        rm -rf "${TEST_RESULTS_DIR}" || true
-                        rm -rf "${COVERAGE_DIR}" || true
-                        mkdir -p "${TEST_RESULTS_DIR}"
-                        mkdir -p "${COVERAGE_DIR}"
+                    bat '''
+                        dotnet clean "%SOLUTION_PATH%" --configuration "%BUILD_CONFIG%" --verbosity minimal
+                        if exist "%TEST_RESULTS_DIR%" rmdir /S /Q "%TEST_RESULTS_DIR%"
+                        if exist "%COVERAGE_DIR%" rmdir /S /Q "%COVERAGE_DIR%"
+                        mkdir "%TEST_RESULTS_DIR%"
+                        mkdir "%COVERAGE_DIR%"
                     '''
                 }
             }
@@ -48,7 +50,7 @@ pipeline {
             steps {
                 script {
                     echo '📦 Đang restore NuGet packages...'
-                    sh 'dotnet restore "${SOLUTION_PATH}" --verbosity minimal'
+                    bat 'dotnet restore "%SOLUTION_PATH%" --verbosity minimal'
                 }
             }
         }
@@ -57,7 +59,7 @@ pipeline {
             steps {
                 script {
                     echo '🔨 Đang build solution...'
-                    sh 'dotnet build "${SOLUTION_PATH}" --configuration "${BUILD_CONFIG}" --no-restore --verbosity minimal'
+                    bat 'dotnet build "%SOLUTION_PATH%" --configuration "%BUILD_CONFIG%" --no-restore --verbosity minimal'
                 }
             }
         }
@@ -66,25 +68,21 @@ pipeline {
             steps {
                 script {
                     echo '🧪 Đang chạy Unit Tests...'
-                    sh '''
-                        set -e
-                        dotnet test "${TEST_PROJECT_PATH}" \\
-                            --configuration "${BUILD_CONFIG}" \\
-                            --no-build \\
-                            --verbosity normal \\
-                            --logger "trx;LogFileName=TestResults.trx" \\
-                            --results-directory "${TEST_RESULTS_DIR}" \\
-                            --collect:"XPlat Code Coverage"
-
-                        # Đảm bảo có file JUnit (placeholder nếu không có test)
-                        if ! ls "${TEST_RESULTS_DIR}"/*.xml >/dev/null 2>&1; then
-                            cat > "${TEST_RESULTS_DIR}/junit.xml" << 'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="CookBook Tests" tests="0" failures="0" errors="0" skipped="0" time="0">
+                    bat '''
+                        dotnet test "%TEST_PROJECT_PATH%" ^
+                          --configuration "%BUILD_CONFIG%" ^
+                          --no-build ^
+                          --verbosity normal ^
+                          --logger "trx;LogFileName=TestResults.trx" ^
+                          --results-directory "%TEST_RESULTS_DIR%" ^
+                          --collect:"XPlat Code Coverage"
+                        powershell -NoProfile -Command ^
+                          "if (-not (Get-ChildItem -Path '%TEST_RESULTS_DIR%' -Filter '*.xml' -ErrorAction SilentlyContinue)) { New-Item -ItemType Directory -Force -Path '%TEST_RESULTS_DIR%' | Out-Null; @'
+<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<testsuite name=\"CookBook Tests\" tests=\"0\" failures=\"0\" errors=\"0\" skipped=\"0\" time=\"0\"> 
   <properties />
 </testsuite>
-EOF
-                        fi
+'@ | Out-File -FilePath '%TEST_RESULTS_DIR%\\junit.xml' -Encoding utf8 -Force }"
                     '''
                 }
             }
@@ -117,16 +115,11 @@ EOF
             steps {
                 script {
                     echo '📊 Đang xử lý Code Coverage...'
-                    sh '''
-                        # Tìm coverage file
-                        COVERAGE_FILE=$(find "${TEST_RESULTS_DIR}" -name "coverage.cobertura.xml" | head -1)
-                        
-                        if [ -f "$COVERAGE_FILE" ]; then
-                            echo "✅ Tìm thấy coverage file: $COVERAGE_FILE"
-                            cp "$COVERAGE_FILE" "${COVERAGE_DIR}/coverage.cobertura.xml"
-                        else
-                            echo "⚠️ Không tìm thấy coverage file"
-                        fi
+                    bat '''
+                        powershell -NoProfile -Command ^
+                          "$f = Get-ChildItem -Recurse -Path '%TEST_RESULTS_DIR%' -Filter 'coverage.cobertura.xml' | Select-Object -First 1; ^
+                           if ($f) { Write-Host '✅ Tìm thấy coverage file:' $f.FullName; New-Item -ItemType Directory -Force -Path '%COVERAGE_DIR%' | Out-Null; Copy-Item $f.FullName '%COVERAGE_DIR%\\coverage.cobertura.xml' -Force } ^
+                           else { Write-Host '⚠️ Không tìm thấy coverage file' }"
                     '''
                 }
             }
@@ -159,45 +152,15 @@ EOF
             steps {
                 script {
                     echo '📋 Đang tạo Test Report Summary...'
-                    sh '''
-                        # Tạo test summary
-                        TOTAL_TRX=$(ls -1 ${TEST_RESULTS_DIR}/*.trx 2>/dev/null | wc -l | sed 's/ //g')
-                        HAS_COVERAGE="No"
-                        if [ -f "${COVERAGE_DIR}/coverage.cobertura.xml" ]; then HAS_COVERAGE="Yes"; fi
-                        
-                        cat > "${TEST_RESULTS_DIR}/test-summary.txt" << EOF
-╔══════════════════════════════════════════════════════════════╗
-║         📊 BÁO CÁO KẾT QUẢ TEST CASE - COOKBOOK             ║
-╚══════════════════════════════════════════════════════════════╝
-
-Ngày chạy: $(date '+%d/%m/%Y %H:%M:%S')
-Build Number: ${BUILD_NUMBER}
-Branch: ${GIT_BRANCH}
-Commit: ${GIT_COMMIT}
-
-───────────────────────────────────────────────────────────────
-
-📈 TỔNG QUAN KẾT QUẢ:
-
-Số file TRX: ${TOTAL_TRX}
-Lưu ý: Nếu không có Test Case, vẫn coi là PASSED (0 test).
-
-───────────────────────────────────────────────────────────────
-
-📁 CÁC FILE BÁO CÁO:
-- Test Results (TRX): TestResults/*.trx
-- Test Results (JUnit): TestResults/*.xml
-- Code Coverage: CoverageReports/coverage.cobertura.xml (Available: ${HAS_COVERAGE})
-
-───────────────────────────────────────────────────────────────
-
-🔗 XEM CHI TIẾT:
-- Test Results: Xem tab "Test Result" bên trái
-- Code Coverage: Xem tab "Coverage Report" (nếu có) bên trái
-- Console Output: Xem "Console Output" để xem log chi tiết
-
-EOF
-                        cat "${TEST_RESULTS_DIR}/test-summary.txt"
+                    bat '''
+                        powershell -NoProfile -Command ^
+                          "$trx = @(Get-ChildItem -Path '%TEST_RESULTS_DIR%' -Filter '*.trx' -Recurse -ErrorAction SilentlyContinue).Count; ^
+                           $hasCov = Test-Path '%COVERAGE_DIR%\\coverage.cobertura.xml'; ^
+                           $hasCovText = if ($hasCov) { 'Yes' } else { 'No' }; ^
+                           $content = @\"\n╔══════════════════════════════════════════════════════════════╗\n║         📊 BÁO CÁO KẾT QUẢ TEST CASE - COOKBOOK             ║\n╚══════════════════════════════════════════════════════════════╝\n\nNgày chạy: $(Get-Date -Format 'dd/MM/yyyy HH:mm:ss')\nBuild Number: ${env:BUILD_NUMBER}\nBranch: ${env:GIT_BRANCH}\nCommit: ${env:GIT_COMMIT}\n\n───────────────────────────────────────────────────────────────\n\n📈 TỔNG QUAN KẾT QUẢ:\n\nSố file TRX: $trx\nLưu ý: Nếu không có Test Case, vẫn coi là PASSED (0 test).\n\n───────────────────────────────────────────────────────────────\n\n📁 CÁC FILE BÁO CÁO:\n- Test Results (TRX): TestResults/*.trx\n- Test Results (JUnit): TestResults/*.xml\n- Code Coverage: CoverageReports/coverage.cobertura.xml (Available: $hasCovText)\n\n───────────────────────────────────────────────────────────────\n\n🔗 XEM CHI TIẾT:\n- Test Results: Xem tab \"Test Result\" bên trái\n- Code Coverage: Xem tab \"Coverage Report\" (nếu có) bên trái\n- Console Output: Xem \"Console Output\" để xem log chi tiết\n\n\"@; ^
+                           New-Item -ItemType Directory -Force -Path '%TEST_RESULTS_DIR%' | Out-Null; ^
+                           $content | Out-File -FilePath '%TEST_RESULTS_DIR%\\test-summary.txt' -Encoding utf8 -Force; ^
+                           Get-Content '%TEST_RESULTS_DIR%\\test-summary.txt' | Write-Output"
                     '''
                 }
             }
@@ -239,4 +202,3 @@ EOF
         }
     }
 }
-
