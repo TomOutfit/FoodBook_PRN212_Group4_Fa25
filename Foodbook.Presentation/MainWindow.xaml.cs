@@ -181,17 +181,8 @@ public partial class MainWindow : Window
                 var authService = ServiceContainer.GetService<IAuthenticationService>();
                 await authService.LogoutAsync();
 
-                // Close main window and only show Login window
-                var loginWindow = new LoginWindow(authService)
-                {
-                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                    Topmost = true
-                };
-                // Switch main window reference
-                Application.Current.MainWindow = loginWindow;
-                loginWindow.Show();
-                // Close current window
-                Close();
+                // Exit the application immediately after successful logout
+                Application.Current.Shutdown();
             }
         }
         catch (Exception ex)
