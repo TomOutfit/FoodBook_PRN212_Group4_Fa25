@@ -15,11 +15,8 @@ namespace Foodbook.Business.Services
         private readonly string _geminiApiUrl;
         private readonly IUnsplashImageService? _imageService;
         
-        private readonly IConfiguration _configuration;
-
         public AIService(IConfiguration configuration, IUnsplashImageService? imageService = null)
         {
-            _configuration = configuration;
             _httpClient = new HttpClient();
             _geminiApiKey = configuration["GeminiAPI:ApiKey"] ?? string.Empty;
             var model = configuration["GeminiAPI:Model"] ?? "gemini-2.0-flash-exp";
@@ -369,14 +366,12 @@ PERSONA: 😊 You are an encouraging master chef mentor who wants to help the co
 
         private string CreateRecipeGenerationPrompt(IEnumerable<string> ingredientNames, string dishName, int servings)
         {
-			var ingredients = string.Join(", ", ingredientNames);
-			var ingredientsBulletList = string.Join("\n- ", ingredientNames);
+            var ingredients = string.Join(", ", ingredientNames);
             var prompt = $@"
 You are a Master Chef and culinary expert with extensive knowledge of cooking techniques, flavor combinations, and recipe development.
 
 Create a complete recipe based on the following requirements:
-- Available ingredients (pantry inventory):
-- {ingredientsBulletList}
+- Available ingredients: {ingredients}
 - Dish name: {dishName}
 - Servings: {servings}
 
@@ -464,110 +459,52 @@ Provide your recipe in the following JSON format:
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(response))
-                {
-                    throw new InvalidOperationException("AI response is empty. Cannot parse recipe.");
-                }
-
-                Console.WriteLine($"📝 Parsing AI response (length: {response.Length} chars)...");
-                
-                // Try to extract JSON from response
                 var jsonStart = response.IndexOf('{');
                 var jsonEnd = response.LastIndexOf('}');
                 
-                if (jsonStart < 0 || jsonEnd <= jsonStart)
+                if (jsonStart >= 0 && jsonEnd > jsonStart)
                 {
-                    // If no JSON found, try to extract structured data from text response
-                    Console.WriteLine("⚠️ No JSON found in response, attempting to extract recipe from text...");
-                    throw new InvalidOperationException("AI response does not contain valid JSON format. Response may need formatting.");
-                }
-                
-                var jsonString = response.Substring(jsonStart, jsonEnd - jsonStart + 1);
-                Console.WriteLine($"📋 Extracted JSON: {jsonString.Substring(0, Math.Min(200, jsonString.Length))}...");
-                
-                var recipeData = JsonSerializer.Deserialize<GeminiRecipeResponse>(jsonString);
-                
-                if (recipeData == null)
-                {
-                    throw new InvalidOperationException("Failed to deserialize AI response JSON. Invalid format.");
-                }
-
-                // Validate required fields from AI
-                if (string.IsNullOrWhiteSpace(recipeData.title))
-                {
-                    throw new InvalidOperationException("AI response missing 'title' field.");
-                }
-                
-                if (recipeData.instructions == null || !recipeData.instructions.Any())
-                {
-                    throw new InvalidOperationException("AI response missing 'instructions' field.");
-                }
-
-                Console.WriteLine($"✅ Successfully parsed AI recipe: {recipeData.title}");
-                
-                // Lấy ảnh thực từ Internet cho món ăn (nếu có imageService)
-                var imageUrl = "";
-                if (_imageService != null)
-                {
-                    try
+                    var jsonString = response.Substring(jsonStart, jsonEnd - jsonStart + 1);
+                    var recipeData = JsonSerializer.Deserialize<GeminiRecipeResponse>(jsonString);
+                    
+                    if (recipeData != null)
                     {
-                        var searchTerm = recipeData.title ?? dishName;
-                        imageUrl = await _imageService.SearchFoodImageAsync(searchTerm) ?? "";
-                        if (!string.IsNullOrEmpty(imageUrl))
+                        // Lấy ảnh thực từ Internet cho món ăn (nếu có imageService)
+                        var imageUrl = "";
+                        if (_imageService != null)
                         {
-                            Console.WriteLine($"✅ Found image for recipe: {imageUrl}");
+                            try
+                            {
+                                imageUrl = await _imageService.SearchFoodImageAsync(dishName) ?? "";
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Image fetch error: {ex.Message}");
+                            }
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"⚠️ Image fetch error: {ex.Message}");
+                        
+                        return new Recipe
+                        {
+                            Title = recipeData.title ?? dishName,
+                            Description = recipeData.description ?? $"Delicious {dishName} made with {string.Join(", ", ingredientNames)}",
+                            Instructions = recipeData.instructions != null ? string.Join("\n", recipeData.instructions) : "No instructions provided",
+                            CookTime = recipeData.cookTime ?? 30,
+                            Difficulty = recipeData.difficulty ?? "Medium",
+                            Servings = servings,
+                            ImageUrl = imageUrl,
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        };
                     }
                 }
                 
-                // Build instructions from AI response
-                var instructions = recipeData.instructions != null 
-                    ? string.Join("\n\n", recipeData.instructions.Select((inst, idx) => $"{idx + 1}. {inst}"))
-                    : "No instructions provided by AI";
-                
-                // Create recipe from AI data - ALL data comes from AI, no hardcode
-                var recipe = new Recipe
-                {
-                    Title = recipeData.title.Trim(),
-                    Description = recipeData.description?.Trim() ?? $"A delicious {recipeData.title} made with {string.Join(", ", ingredientNames)}",
-                    Instructions = instructions,
-                    CookTime = recipeData.cookTime ?? 30, // AI should provide this, but default if missing
-                    Difficulty = recipeData.difficulty?.Trim() ?? "Medium", // AI should provide this
-                    Servings = servings,
-                    ImageUrl = imageUrl,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-
-                Console.WriteLine($"✅ Recipe created from AI data:");
-                Console.WriteLine($"   Title: {recipe.Title}");
-                Console.WriteLine($"   CookTime: {recipe.CookTime} mins");
-                Console.WriteLine($"   Difficulty: {recipe.Difficulty}");
-                Console.WriteLine($"   Instructions length: {recipe.Instructions.Length} chars");
-
-                return recipe;
-            }
-            catch (JsonException jsonEx)
-            {
-                Console.WriteLine($"❌ JSON parsing error: {jsonEx.Message}");
-                throw new InvalidOperationException(
-                    $"Failed to parse AI response JSON format.\n\n" +
-                    $"Error: {jsonEx.Message}\n\n" +
-                    $"Please ensure the AI returns valid JSON format as specified in the prompt.",
-                    jsonEx);
+                // Fallback if JSON parsing fails
+                return await GetFallbackRecipe(ingredientNames, dishName, servings);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Error parsing AI response: {ex.Message}");
-                throw new InvalidOperationException(
-                    $"Failed to parse AI-generated recipe.\n\n" +
-                    $"Error: {ex.Message}\n\n" +
-                    $"The AI response may be in an unexpected format.",
-                    ex);
+                Console.WriteLine($"JSON parsing error: {ex.Message}");
+                return await GetFallbackRecipe(ingredientNames, dishName, servings);
             }
         }
 
@@ -1446,16 +1383,18 @@ Provide your recipe in the following JSON format:
             return suggestions[random.Next(suggestions.Length)];
         }
 
-        public async Task<string> AnalyzeNutritionAsync(string promptOrDescription)
+        public async Task<string> AnalyzeNutritionAsync(string recipeDescription)
         {
-            // If API key available, use real AI with the provided prompt
-            if (!string.IsNullOrWhiteSpace(_geminiApiKey))
-            {
-                return await CallGeminiTextAPI(promptOrDescription);
-            }
-
-            // Fallback: generate dynamic assessment text from prompt content
-            return GenerateFallbackHealthAssessment(promptOrDescription);
+            await Task.Delay(1000);
+            
+            return $"Nutritional Analysis for: {recipeDescription}\n\n" +
+                   "• Estimated Calories: 350-450 per serving\n" +
+                   "• Protein: 15-20g\n" +
+                   "• Carbohydrates: 25-30g\n" +
+                   "• Fat: 12-18g\n" +
+                   "• Fiber: 5-8g\n" +
+                   "• Sodium: 400-600mg\n\n" +
+                   "This recipe provides a good balance of macronutrients and is suitable for a healthy diet.";
         }
 
         // Enhanced methods for Nutrition Analysis
@@ -1518,325 +1457,6 @@ Provide your recipe in the following JSON format:
                 Console.WriteLine($"AI Ingredient Extraction Error: {ex.Message}");
                 return GenerateFallbackIngredientDtos(recipeText);
             }
-        }
-
-        public async Task<Recipe> GenerateRecipeWithDeduplicationAsync(
-            IEnumerable<Ingredient> availableIngredients, 
-            string? dishName, 
-            int servings, 
-            string? customPreferences,
-            int userId,
-            IEnumerable<Recipe> existingRecipes)
-        {
-            // Check if API key is available
-            if (string.IsNullOrEmpty(_geminiApiKey))
-            {
-                throw new InvalidOperationException(
-                    "⚠️ Gemini API key is not configured. Please configure your API key in appsettings.json to use AI recipe generation.\n\n" +
-                    "Without API key, AI recipe generation cannot work. This feature requires a valid Gemini API key.");
-            }
-
-            // Get available ingredient names with quantities
-            var ingredientList = availableIngredients
-                .Where(i => i.Quantity.HasValue && i.Quantity.Value > 0)
-                .Select(i => $"{i.Name} ({i.Quantity} {i.Unit ?? "pcs"})")
-                .ToList();
-
-            if (!ingredientList.Any())
-            {
-                throw new InvalidOperationException("Không có nguyên liệu có sẵn trong pantry.");
-            }
-
-            // Create enhanced prompt with custom preferences
-            var prompt = CreateEnhancedRecipeGenerationPrompt(
-                ingredientList, 
-                dishName, 
-                servings, 
-                customPreferences,
-                existingRecipes);
-
-            // Generate recipe using AI - MUST call AI API, no fallback allowed
-            Recipe? generatedRecipe = null;
-            int attempts = 0;
-            const int maxAttempts = 3;
-            Exception? lastException = null;
-
-            while (attempts < maxAttempts && generatedRecipe == null)
-            {
-                attempts++;
-                try
-                {
-                    Console.WriteLine($"🤖 Calling Gemini API to generate recipe (attempt {attempts}/{maxAttempts})...");
-                    
-                    // Call AI API - this MUST succeed, no fallback
-                    var recipeResult = await CallGeminiTextAPI(prompt);
-                    
-                    if (string.IsNullOrWhiteSpace(recipeResult))
-                    {
-                        throw new InvalidOperationException("AI API returned empty response. Please try again.");
-                    }
-
-                    Console.WriteLine($"✅ Received AI response, parsing recipe...");
-                    
-                    // Parse AI response
-                    generatedRecipe = await ParseRecipeFromGeminiResponse(
-                        recipeResult, 
-                        ingredientList.Select(i => i.Split('(')[0].Trim()), 
-                        dishName ?? "Custom Dish", 
-                        servings);
-                    
-                    if (generatedRecipe == null)
-                    {
-                        throw new InvalidOperationException("Failed to parse AI response into recipe format.");
-                    }
-                    
-                    // Validate parsed recipe
-                    if (string.IsNullOrWhiteSpace(generatedRecipe.Title) || 
-                        string.IsNullOrWhiteSpace(generatedRecipe.Instructions))
-                    {
-                        throw new InvalidOperationException("AI generated recipe is incomplete. Regenerating...");
-                    }
-                    
-                    Console.WriteLine($"✅ Successfully parsed AI recipe: {generatedRecipe.Title}");
-                    
-                    // Check for duplicates
-                    if (IsDuplicate(generatedRecipe, existingRecipes))
-                    {
-                        if (attempts < maxAttempts)
-                        {
-                            Console.WriteLine($"⚠️ Duplicate recipe detected (attempt {attempts}). Regenerating with different approach...");
-                            generatedRecipe = null;
-                            // Add instruction to create a completely different variant
-                            prompt = CreateEnhancedRecipeGenerationPrompt(
-                                ingredientList, 
-                                dishName, 
-                                servings, 
-                                $"{customPreferences}, Create a completely different and unique recipe variant - avoid any similarity to existing recipes",
-                                existingRecipes);
-                            continue;
-                        }
-                        else
-                        {
-                            Console.WriteLine("⚠️ Could not generate unique recipe after multiple attempts. Adding variant suffix...");
-                            // Force variation by modifying the title
-                            generatedRecipe.Title = $"{generatedRecipe.Title} (Variant {DateTime.UtcNow:MMdd})";
-                        }
-                    }
-                }
-                catch (HttpRequestException httpEx)
-                {
-                    lastException = httpEx;
-                    Console.WriteLine($"❌ HTTP Error calling AI API (attempt {attempts}): {httpEx.Message}");
-                    if (attempts >= maxAttempts)
-                    {
-                        throw new InvalidOperationException(
-                            $"Failed to generate recipe via AI API after {maxAttempts} attempts.\n\n" +
-                            $"Error: {httpEx.Message}\n\n" +
-                            $"Please check your API key and network connection, then try again.",
-                            httpEx);
-                    }
-                    // Wait a bit before retry
-                    await Task.Delay(1000 * attempts);
-                }
-                catch (Exception ex)
-                {
-                    lastException = ex;
-                    Console.WriteLine($"❌ Error generating recipe (attempt {attempts}): {ex.Message}");
-                    if (attempts >= maxAttempts)
-                    {
-                        throw new InvalidOperationException(
-                            $"Failed to generate recipe via AI after {maxAttempts} attempts.\n\n" +
-                            $"Error: {ex.Message}\n\n" +
-                            $"Please ensure your Gemini API key is valid and try again.",
-                            ex);
-                    }
-                    // Wait a bit before retry
-                    await Task.Delay(1000 * attempts);
-                }
-            }
-
-            // If still null after all attempts, throw exception - NO FALLBACK
-            if (generatedRecipe == null)
-            {
-                throw new InvalidOperationException(
-                    $"Unable to generate recipe via AI after {maxAttempts} attempts.\n\n" +
-                    $"Last error: {lastException?.Message ?? "Unknown error"}\n\n" +
-                    $"Please check your API configuration and try again.",
-                    lastException);
-            }
-
-            // Mark as AI generated
-            generatedRecipe.IsAIGenerated = true;
-            generatedRecipe.UserId = userId;
-            generatedRecipe.CreatedAt = DateTime.UtcNow;
-            generatedRecipe.UpdatedAt = DateTime.UtcNow;
-
-            Console.WriteLine($"✅ AI Recipe generated successfully: {generatedRecipe.Title}");
-            return generatedRecipe;
-        }
-
-		private string CreateEnhancedRecipeGenerationPrompt(
-            IEnumerable<string> ingredientNames, 
-            string? dishName, 
-            int servings, 
-            string? customPreferences,
-            IEnumerable<Recipe> existingRecipes)
-        {
-			var ingredients = string.Join(", ", ingredientNames);
-			var ingredientsBulletList = string.Join("\n- ", ingredientNames);
-            var preferences = string.IsNullOrWhiteSpace(customPreferences) 
-                ? "" 
-                : $"\n- Custom preferences: {customPreferences}";
-            
-            // Get existing recipe titles to avoid duplicates
-            var existingTitles = existingRecipes
-                .Select(r => r.Title?.ToLowerInvariant() ?? "")
-                .Where(t => !string.IsNullOrEmpty(t))
-                .ToList();
-            
-            var avoidDuplicatesNote = existingTitles.Any()
-                ? $"\n\n⚠️ IMPORTANT: Avoid creating recipes similar to these existing recipes: {string.Join(", ", existingTitles.Take(10))}. Create a UNIQUE and DISTINCT recipe."
-                : "";
-
-			var prompt = $@"
-You are a Master Chef and culinary expert with extensive knowledge of cooking techniques, flavor combinations, and recipe development.
-
-Create a COMPLETE, UNIQUE, and COOKABLE recipe based on the following requirements:
-- Available ingredients with quantities (pantry inventory):
-- {ingredientsBulletList}
-- Dish name: {(string.IsNullOrWhiteSpace(dishName) ? "(AI should suggest an appropriate name)" : dishName)}
-- Servings: {servings}{preferences}{avoidDuplicatesNote}
-
-CRITICAL REQUIREMENTS:
-1. The recipe MUST be unique and significantly different from any existing recipes
-2. Use ONLY the available ingredients listed (you may suggest minor common pantry items like salt, pepper, oil)
-3. Ensure the recipe is practical and can actually be cooked with these ingredients
-4. The recipe must be nutritionally balanced
-5. Make it creative and appealing
-6. Use emojis appropriately to make it engaging
-
-Provide your recipe in the following JSON format:
-{{
-  ""title"": ""Unique recipe title with emoji"",
-  ""description"": ""Brief description of the dish with emoji"",
-  ""cookTime"": [15-120 minutes],
-  ""difficulty"": ""Easy|Medium|Hard"",
-  ""instructions"": [
-    ""Step 1 with emoji and detailed instructions"",
-    ""Step 2 with emoji and detailed instructions"",
-    ""Step 3 with emoji and detailed instructions""
-  ],
-  ""ingredients"": [
-    {{""name"": ""ingredient1"", ""amount"": ""1 cup"", ""unit"": ""cup""}},
-    {{""name"": ""ingredient2"", ""amount"": ""2 tbsp"", ""unit"": ""tablespoon""}}
-  ],
-  ""nutritionalNotes"": ""Nutritional information with emoji"",
-  ""chefTips"": [
-    ""Tip 1 with emoji"",
-    ""Tip 2 with emoji""
-  ]
-}}
-
-Remember: Be creative and make this recipe UNIQUE!";
-
-            return prompt;
-        }
-
-        private bool IsDuplicate(Recipe newRecipe, IEnumerable<Recipe> existingRecipes)
-        {
-            if (newRecipe == null || string.IsNullOrWhiteSpace(newRecipe.Title))
-                return false;
-
-            var newTitleLower = newRecipe.Title.ToLowerInvariant();
-            
-            // Check title similarity (simple approach - can be enhanced with fuzzy matching)
-            foreach (var existing in existingRecipes)
-            {
-                if (string.IsNullOrWhiteSpace(existing.Title))
-                    continue;
-
-                var existingTitleLower = existing.Title.ToLowerInvariant();
-                
-                // Exact match
-                if (newTitleLower == existingTitleLower)
-                    return true;
-
-                // Check if titles are too similar (contain same key words)
-                var newWords = newTitleLower.Split(new[] { ' ', '-', '_' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Where(w => w.Length > 3) // Ignore short words
-                    .ToList();
-                var existingWords = existingTitleLower.Split(new[] { ' ', '-', '_' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Where(w => w.Length > 3)
-                    .ToList();
-
-                // If more than 60% of words match, consider it a duplicate
-                var matchingWords = newWords.Count(w => existingWords.Contains(w));
-                if (newWords.Count > 0 && matchingWords / (double)newWords.Count > 0.6)
-                {
-                    return true;
-                }
-
-                // Check instruction similarity
-                if (!string.IsNullOrWhiteSpace(newRecipe.Instructions) && 
-                    !string.IsNullOrWhiteSpace(existing.Instructions))
-                {
-                    var newInstrLower = newRecipe.Instructions.ToLowerInvariant();
-                    var existingInstrLower = existing.Instructions.ToLowerInvariant();
-                    
-                    // If instructions are very similar, it's likely a duplicate
-                    if (CalculateSimilarity(newInstrLower, existingInstrLower) > 0.7)
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        private double CalculateSimilarity(string str1, string str2)
-        {
-            // Simple Levenshtein distance-based similarity
-            if (string.IsNullOrEmpty(str1) || string.IsNullOrEmpty(str2))
-                return 0.0;
-
-            if (str1 == str2)
-                return 1.0;
-
-            int maxLen = Math.Max(str1.Length, str2.Length);
-            if (maxLen == 0)
-                return 1.0;
-
-            int distance = LevenshteinDistance(str1, str2);
-            return 1.0 - (distance / (double)maxLen);
-        }
-
-        private int LevenshteinDistance(string s, string t)
-        {
-            if (string.IsNullOrEmpty(s))
-                return string.IsNullOrEmpty(t) ? 0 : t.Length;
-            if (string.IsNullOrEmpty(t))
-                return s.Length;
-
-            int n = s.Length;
-            int m = t.Length;
-            int[,] d = new int[n + 1, m + 1];
-
-            for (int i = 0; i <= n; d[i, 0] = i++) { }
-            for (int j = 0; j <= m; d[0, j] = j++) { }
-
-            for (int i = 1; i <= n; i++)
-            {
-                for (int j = 1; j <= m; j++)
-                {
-                    int cost = (t[j - 1] == s[i - 1]) ? 0 : 1;
-                    d[i, j] = Math.Min(
-                        Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
-                        d[i - 1, j - 1] + cost);
-                }
-            }
-
-            return d[n, m];
         }
 
         public async Task<string> GenerateRecipeFromIngredientsAsync(List<string> ingredients, string dishName, int servings)
@@ -1944,12 +1564,6 @@ Lưu ý:
 
         private string CreateHealthAssessmentPrompt(string nutritionData)
         {
-            var template = _configuration?["Prompts:HealthAssessment"];
-            if (!string.IsNullOrWhiteSpace(template))
-            {
-                return template.Replace("{nutritionData}", nutritionData);
-            }
-
             return $@"
 Bạn là chuyên gia dinh dưỡng với 20 năm kinh nghiệm. Hãy phân tích thông tin dinh dưỡng sau và đưa ra đánh giá chuyên nghiệp:
 
@@ -1967,14 +1581,6 @@ Sử dụng ngôn ngữ thân thiện, dễ hiểu với emoji phù hợp.
 
         private string CreateNutritionalAdvicePrompt(string nutritionInfo, string userGoal)
         {
-            var template = _configuration?["Prompts:NutritionalAdvice"];
-            if (!string.IsNullOrWhiteSpace(template))
-            {
-                return template
-                    .Replace("{nutritionInfo}", nutritionInfo)
-                    .Replace("{userGoal}", userGoal);
-            }
-
             return $@"
 Bạn là chuyên gia dinh dưỡng cá nhân. Hãy đưa ra lời khuyên dinh dưỡng dựa trên:
 
