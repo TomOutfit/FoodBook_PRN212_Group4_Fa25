@@ -29,7 +29,7 @@
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
                     <Button x:Name="HamburgerButton" Content="☰" Width="28" Height="28" Margin="0,0,8,0" Background="Transparent" Foreground="White" BorderThickness="0" Click="HamburgerButton_Click"/>
                     <TextBlock Text="🍳" FontSize="18" Margin="0,0,8,0"/>
-                    <TextBlock Text="FoodBook" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock Text="{Binding DataContext.Loc_FoodBook, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" FontSize="16" FontWeight="Bold" Foreground="White"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,6,0">
                     <Button Content="⎯" Background="Transparent" Foreground="White" BorderThickness="0" Width="28" Height="28" Click="MinimizeButton_Click"/>
@@ -47,7 +47,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- Sidebar -->
-            <Border x:Name="Sidebar" Grid.Column="0" Background="#F7F9FB" BorderBrush="#E6E8EA" BorderThickness="0,0,1,0" Padding="16">
+            <Border x:Name="Sidebar" Grid.Column="0" Background="{DynamicResource SidebarBackgroundBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,1,0" Padding="16">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -62,16 +62,28 @@
                             <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding DataContext.SelectedTab, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="Dashboard">
-                                        <Setter Property="Background" Value="#FFFFFF"/>
-                                        <Setter Property="Foreground" Value="#0F172A"/>
-                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Background">
+                                            <Setter.Value>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                    <GradientStop Color="#4CAF50" Offset="0"/>
+                                                    <GradientStop Color="#43A047" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Setter Property="Foreground" Value="#FFFFFF"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#4CAF50" Direction="270" ShadowDepth="0" Opacity="0.5" BlurRadius="12"/>
+                                            </Setter.Value>
+                                        </Setter>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </Button.Style>
-                        <StackPanel Orientation="Horizontal" ToolTip="Dashboard">
+                        <StackPanel Orientation="Horizontal" ToolTip="{Binding DataContext.Loc_Dashboard, RelativeSource={RelativeSource AncestorType={x:Type Window}}}">
                             <TextBlock Text="🏠" Margin="0,0,10,0"/>
-                            <TextBlock Text="Dashboard" Visibility="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource SidebarVisibilityConverter}}"/>
+                            <TextBlock Text="{Binding DataContext.Loc_Dashboard, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Visibility="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource SidebarVisibilityConverter}}"/>
                         </StackPanel>
                     </Button>
 
@@ -80,16 +92,28 @@
                             <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding DataContext.SelectedTab, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="Recipes">
-                                        <Setter Property="Background" Value="#FFFFFF"/>
-                                        <Setter Property="Foreground" Value="#0F172A"/>
-                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Background">
+                                            <Setter.Value>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                    <GradientStop Color="#4CAF50" Offset="0"/>
+                                                    <GradientStop Color="#43A047" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Setter Property="Foreground" Value="#FFFFFF"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#4CAF50" Direction="270" ShadowDepth="0" Opacity="0.5" BlurRadius="12"/>
+                                            </Setter.Value>
+                                        </Setter>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </Button.Style>
-                        <StackPanel Orientation="Horizontal" ToolTip="My Recipes">
+                        <StackPanel Orientation="Horizontal" ToolTip="{Binding DataContext.Loc_MyRecipes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}">
                             <TextBlock Text="📖" Margin="0,0,10,0"/>
-                            <TextBlock Text="My Recipes" Visibility="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource SidebarVisibilityConverter}}"/>
+                            <TextBlock Text="{Binding DataContext.Loc_MyRecipes, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Visibility="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource SidebarVisibilityConverter}}"/>
                         </StackPanel>
                     </Button>
 
@@ -98,16 +122,28 @@
                             <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding DataContext.SelectedTab, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="Ingredients">
-                                        <Setter Property="Background" Value="#FFFFFF"/>
-                                        <Setter Property="Foreground" Value="#0F172A"/>
-                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Background">
+                                            <Setter.Value>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                    <GradientStop Color="#4CAF50" Offset="0"/>
+                                                    <GradientStop Color="#43A047" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Setter Property="Foreground" Value="#FFFFFF"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#4CAF50" Direction="270" ShadowDepth="0" Opacity="0.5" BlurRadius="12"/>
+                                            </Setter.Value>
+                                        </Setter>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </Button.Style>
-                        <StackPanel Orientation="Horizontal" ToolTip="Ingredients">
+                        <StackPanel Orientation="Horizontal" ToolTip="{Binding DataContext.Loc_Ingredients, RelativeSource={RelativeSource AncestorType={x:Type Window}}}">
                             <TextBlock Text="🥗" Margin="0,0,10,0"/>
-                            <TextBlock Text="Ingredients" Visibility="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource SidebarVisibilityConverter}}"/>
+                            <TextBlock Text="{Binding DataContext.Loc_Ingredients, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Visibility="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource SidebarVisibilityConverter}}"/>
                         </StackPanel>
                     </Button>
 
@@ -116,16 +152,28 @@
                             <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding DataContext.SelectedTab, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="AI">
-                                        <Setter Property="Background" Value="#FFFFFF"/>
-                                        <Setter Property="Foreground" Value="#0F172A"/>
-                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Background">
+                                            <Setter.Value>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                    <GradientStop Color="#4CAF50" Offset="0"/>
+                                                    <GradientStop Color="#43A047" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Setter Property="Foreground" Value="#FFFFFF"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#4CAF50" Direction="270" ShadowDepth="0" Opacity="0.5" BlurRadius="12"/>
+                                            </Setter.Value>
+                                        </Setter>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </Button.Style>
-                        <StackPanel Orientation="Horizontal" ToolTip="AI Chef">
+                        <StackPanel Orientation="Horizontal" ToolTip="{Binding DataContext.Loc_AI, RelativeSource={RelativeSource AncestorType={x:Type Window}}}">
                             <TextBlock Text="🤖" Margin="0,0,10,0"/>
-                            <TextBlock Text="AI Chef" Visibility="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource SidebarVisibilityConverter}}"/>
+                            <TextBlock Text="{Binding DataContext.Loc_AI, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Visibility="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource SidebarVisibilityConverter}}"/>
                         </StackPanel>
                     </Button>
 
@@ -134,16 +182,28 @@
                             <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding DataContext.SelectedTab, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="Analytics">
-                                        <Setter Property="Background" Value="#FFFFFF"/>
-                                        <Setter Property="Foreground" Value="#0F172A"/>
-                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Background">
+                                            <Setter.Value>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                    <GradientStop Color="#4CAF50" Offset="0"/>
+                                                    <GradientStop Color="#43A047" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Setter Property="Foreground" Value="#FFFFFF"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#4CAF50" Direction="270" ShadowDepth="0" Opacity="0.5" BlurRadius="12"/>
+                                            </Setter.Value>
+                                        </Setter>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </Button.Style>
-                        <StackPanel Orientation="Horizontal" ToolTip="Analytics">
+                        <StackPanel Orientation="Horizontal" ToolTip="{Binding DataContext.Loc_Analytics, RelativeSource={RelativeSource AncestorType={x:Type Window}}}">
                             <TextBlock Text="📊" Margin="0,0,10,0"/>
-                            <TextBlock Text="Analytics" Visibility="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource SidebarVisibilityConverter}}"/>
+                            <TextBlock Text="{Binding DataContext.Loc_Analytics, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Visibility="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource SidebarVisibilityConverter}}"/>
                         </StackPanel>
                     </Button>
 
@@ -152,22 +212,34 @@
                             <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding DataContext.SelectedTab, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="Settings">
-                                        <Setter Property="Background" Value="#FFFFFF"/>
-                                        <Setter Property="Foreground" Value="#0F172A"/>
-                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Background">
+                                            <Setter.Value>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                    <GradientStop Color="#4CAF50" Offset="0"/>
+                                                    <GradientStop Color="#43A047" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Setter Property="Foreground" Value="#FFFFFF"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect Color="#4CAF50" Direction="270" ShadowDepth="0" Opacity="0.5" BlurRadius="12"/>
+                                            </Setter.Value>
+                                        </Setter>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </Button.Style>
-                        <StackPanel Orientation="Horizontal" ToolTip="Settings">
+                        <StackPanel Orientation="Horizontal" ToolTip="{Binding DataContext.Loc_Settings, RelativeSource={RelativeSource AncestorType={x:Type Window}}}">
                             <TextBlock Text="⚙️" Margin="0,0,10,0"/>
-                            <TextBlock Text="Settings" Visibility="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource SidebarVisibilityConverter}}"/>
+                            <TextBlock Text="{Binding DataContext.Loc_Settings, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Visibility="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource SidebarVisibilityConverter}}"/>
                         </StackPanel>
                     </Button>
                     </StackPanel>
 
                     <!-- User Card / Logout -->
-                    <Border Grid.Row="2" Background="#FFFFFF" CornerRadius="12" Padding="16" BorderBrush="#E6E8EA" BorderThickness="0" Margin="0,12,0,0">
+                    <Border Grid.Row="2" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12" Padding="16" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0" Margin="0,12,0,0">
                         <Border.Effect>
                             <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="2" Opacity="0.06" BlurRadius="12"/>
                         </Border.Effect>
@@ -197,14 +269,14 @@
                             <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center"
                                         Visibility="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource SidebarVisibilityConverter}}">
                                 <TextBlock Text="{Binding DataContext.CurrentUser.Username, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" 
-                                           FontWeight="SemiBold" Foreground="#1F2937" FontSize="14"/>
+                                           FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14"/>
                                 <TextBlock Text="{Binding DataContext.CurrentUser.Email, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" 
-                                           Foreground="#6B7280" FontSize="11" Margin="0,2,0,0"/>
+                                           Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" Margin="0,2,0,0"/>
                             </StackPanel>
 
                             <!-- Logout button with hover effect -->
                             <Button Grid.Column="2" Width="32" Height="32" BorderThickness="0" 
-                                    ToolTip="Logout" Click="Logout_Click" Cursor="Hand"
+                                    ToolTip="{Binding DataContext.Loc_Logout, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Click="Logout_Click" Cursor="Hand"
                                     Background="Transparent" Padding="0">
                                 <Button.Style>
                                     <Style TargetType="Button">

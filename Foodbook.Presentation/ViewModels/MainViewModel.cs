@@ -63,7 +63,9 @@ namespace Foodbook.Presentation.ViewModels
         public string Loc_Ingredients => _localizationService?.GetString("Ingredients") ?? "Ingredients";
         public string Loc_Analytics => _localizationService?.GetString("Analytics") ?? "Analytics";
         public string Loc_Settings => _localizationService?.GetString("Settings") ?? "Settings";
-        public string Loc_AI => _localizationService?.GetString("AI Chef") ?? "AI Chef"; // Thêm Loc_AI
+        public string Loc_AI => _localizationService?.GetString("AI Chef") ?? "AI Chef";
+        public string Loc_FoodBook => _localizationService?.GetString("FoodBook") ?? "FoodBook";
+        public string Loc_Logout => _localizationService?.GetString("Logout") ?? "Logout";
         
         // Shell Commands
         public ICommand SelectTabCommand { get; }
@@ -234,6 +236,8 @@ namespace Foodbook.Presentation.ViewModels
             OnPropertyChanged(nameof(Loc_Analytics));
             OnPropertyChanged(nameof(Loc_Settings));
             OnPropertyChanged(nameof(Loc_AI));
+            OnPropertyChanged(nameof(Loc_FoodBook));
+            OnPropertyChanged(nameof(Loc_Logout));
         }
     }
 }
