@@ -10,7 +10,7 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Text="📊 Analytics Dashboard" FontSize="24" FontWeight="Bold" Foreground="#1F2937"/>
+            <TextBlock Text="📊 Analytics Dashboard" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
             <Button Grid.Column="1" Content="🔄 Refresh" Padding="12,6" Margin="8,0,0,0" Background="#4CAF50" Foreground="White" BorderThickness="0" Cursor="Hand" Command="{Binding RefreshDashboardCommand}"/>
         </Grid>
 
@@ -26,9 +26,9 @@
                     <DropShadowEffect Color="#4CAF50" Direction="270" ShadowDepth="4" Opacity="0.1" BlurRadius="10"/>
                 </Border.Effect>
                 <StackPanel HorizontalAlignment="Center">
-                    <TextBlock Text="🧺" FontSize="22" Foreground="#111827" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                    <TextBlock Text="🧺" FontSize="22" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
                     <TextBlock Text="{Binding PantryCoveragePercent, StringFormat={}{0:F0}%}" FontSize="26" FontWeight="Bold" Foreground="#16A34A" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Pantry Coverage" FontSize="13" Foreground="#6B7280" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Pantry Coverage" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
                     <Border Height="6" Background="#F3F4F6" CornerRadius="3" Margin="0,8,0,0">
                         <Border Background="#4CAF50" CornerRadius="3">
                             <Border.Width>
@@ -43,9 +43,9 @@
                     <DropShadowEffect Color="#F59E0B" Direction="270" ShadowDepth="4" Opacity="0.1" BlurRadius="10"/>
                 </Border.Effect>
                 <StackPanel HorizontalAlignment="Center">
-                    <TextBlock Text="🤝" FontSize="22" Foreground="#111827" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                    <TextBlock Text="🤝" FontSize="22" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
                     <TextBlock Text="{Binding AIEngagementPercent, StringFormat={}{0:F0}%}" FontSize="26" FontWeight="Bold" Foreground="#F59E0B" HorizontalAlignment="Center"/>
-                    <TextBlock Text="AI Engagement" FontSize="13" Foreground="#6B7280" HorizontalAlignment="Center"/>
+                    <TextBlock Text="AI Engagement" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
                     <Border Height="6" Background="#F3F4F6" CornerRadius="3" Margin="0,8,0,0">
                         <Border Background="#F59E0B" CornerRadius="3">
                             <Border.Width>
@@ -60,9 +60,9 @@
                     <DropShadowEffect Color="#EF4444" Direction="270" ShadowDepth="4" Opacity="0.1" BlurRadius="10"/>
                 </Border.Effect>
                 <StackPanel HorizontalAlignment="Center">
-                    <TextBlock Text="✅" FontSize="22" Foreground="#111827" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                    <TextBlock Text="✅" FontSize="22" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
                     <TextBlock Text="{Binding SuccessRate, StringFormat={}{0:F0}%}" FontSize="26" FontWeight="Bold" Foreground="#EF4444" HorizontalAlignment="Center"/>
-                    <TextBlock Text="AI Success Rate" FontSize="13" Foreground="#6B7280" HorizontalAlignment="Center"/>
+                    <TextBlock Text="AI Success Rate" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
                     <Border Height="6" Background="#F3F4F6" CornerRadius="3" Margin="0,8,0,0">
                         <Border Background="#EF4444" CornerRadius="3">
                             <Border.Width>
@@ -77,9 +77,9 @@
                     <DropShadowEffect Color="#8B5CF6" Direction="270" ShadowDepth="4" Opacity="0.1" BlurRadius="10"/>
                 </Border.Effect>
                 <StackPanel HorizontalAlignment="Center">
-                    <TextBlock Text="🤖" FontSize="22" Foreground="#111827" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                    <TextBlock Text="🤖" FontSize="22" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
                     <TextBlock Text="{Binding AIOperationsCount}" FontSize="26" FontWeight="Bold" Foreground="#8B5CF6" HorizontalAlignment="Center"/>
-                    <TextBlock Text="AI Activity" FontSize="13" Foreground="#6B7280" HorizontalAlignment="Center"/>
+                    <TextBlock Text="AI Activity" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
                     <Border Height="6" Background="#F3F4F6" CornerRadius="3" Margin="0,8,0,0">
                         <Border Background="#8B5CF6" CornerRadius="3" Width="64"/>
                     </Border>

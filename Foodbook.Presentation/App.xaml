@@ -32,7 +32,7 @@
         <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#17202B"/>
         <SolidColorBrush x:Key="DividerBrush" Color="#3B4A5E"/>
 
-        <!-- Brighter text on dark background so it doesn't sink into the backdrop -->
+        <!-- High contrast text on dark background for better readability -->
         <SolidColorBrush x:Key="TextPrimaryBrush" Color="#FFFFFF"/>
         <SolidColorBrush x:Key="TextSecondaryBrush" Color="#E2E8F0"/>
 

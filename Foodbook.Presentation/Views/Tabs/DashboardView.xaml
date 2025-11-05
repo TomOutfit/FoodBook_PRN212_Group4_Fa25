@@ -5,7 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
     <StackPanel>
-        <TextBlock Text="{Binding Loc_Dashboard}" FontSize="28" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,24"/>
+        <TextBlock Text="{Binding Loc_Dashboard}" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,24"/>
 
         <UniformGrid Columns="5" Margin="0,0,0,24" HorizontalAlignment="Stretch">
             <Border CornerRadius="12" Padding="20" Margin="4" Background="White">
@@ -16,8 +16,8 @@
                     <Border Width="48" Height="48" CornerRadius="24" Background="#F3E8FF" HorizontalAlignment="Center" Margin="0,0,0,12">
                         <TextBlock Text="🍽️" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <TextBlock Text="{Binding MyTotalRecipes}" FontSize="32" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Total Recipes" FontSize="14" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    <TextBlock Text="{Binding MyTotalRecipes}" FontSize="32" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Total Recipes" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                 </StackPanel>
             </Border>
 
@@ -29,8 +29,8 @@
                     <Border Width="48" Height="48" CornerRadius="24" Background="#F3E8FF" HorizontalAlignment="Center" Margin="0,0,0,12">
                         <TextBlock Text="🧺" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <TextBlock Text="{Binding TotalIngredients}" FontSize="32" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Pantry Ingredients" FontSize="14" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    <TextBlock Text="{Binding TotalIngredients}" FontSize="32" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Pantry Ingredients" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                 </StackPanel>
             </Border>
 
@@ -42,8 +42,8 @@
                     <Border Width="48" Height="48" CornerRadius="24" Background="#F3E8FF" HorizontalAlignment="Center" Margin="0,0,0,12">
                         <TextBlock Text="⏳" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <TextBlock Text="{Binding ExpiringSoonCount}" FontSize="32" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Expiring Soon (≤3 days)" FontSize="14" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    <TextBlock Text="{Binding ExpiringSoonCount}" FontSize="32" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Expiring Soon (≤3 days)" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                 </StackPanel>
             </Border>
 
@@ -55,8 +55,8 @@
                     <Border Width="48" Height="48" CornerRadius="24" Background="#F3E8FF" HorizontalAlignment="Center" Margin="0,0,0,12">
                         <TextBlock Text="⚠️" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <TextBlock Text="{Binding ExpiredCount}" FontSize="32" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Expired Items" FontSize="14" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    <TextBlock Text="{Binding ExpiredCount}" FontSize="32" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Expired Items" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                 </StackPanel>
             </Border>
 
@@ -68,8 +68,8 @@
                     <Border Width="48" Height="48" CornerRadius="24" Background="#F3E8FF" HorizontalAlignment="Center" Margin="0,0,0,12">
                         <TextBlock Text="🤖" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <TextBlock Text="{Binding AIOperationsCount}" FontSize="32" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center"/>
-                    <TextBlock Text="AI Operations" FontSize="14" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    <TextBlock Text="{Binding AIOperationsCount}" FontSize="32" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="AI Operations" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                 </StackPanel>
             </Border>
         </UniformGrid>
@@ -87,7 +87,7 @@
                 </Border.Effect>
                 <StackPanel>
                     <Grid Margin="0,0,0,20">
-                        <TextBlock Text="Pantry Summary" FontSize="18" FontWeight="Bold" Foreground="#1F2937"/>
+                        <TextBlock Text="Pantry Summary" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                         <ComboBox HorizontalAlignment="Right" Width="80" Height="32" FontSize="12" Background="#F8FAFC" BorderThickness="0">
                             <ComboBoxItem Content="Today" IsSelected="True"/>
                             <ComboBoxItem Content="Week"/>
@@ -106,21 +106,21 @@
                             <Border Width="80" Height="80" CornerRadius="40" Background="#F3E8FF" Margin="0,0,0,8">
                                 <TextBlock Text="{Binding PantryCoveragePercent, StringFormat={}{0}%}" FontSize="16" FontWeight="Bold" Foreground="#8B5CF6" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="In Stock" FontSize="12" Foreground="#6B7280" HorizontalAlignment="Center"/>
+                            <TextBlock Text="In Stock" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
                         </StackPanel>
 
                         <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                             <Border Width="80" Height="80" CornerRadius="40" Background="#F3E8FF" Margin="0,0,0,8">
                                 <TextBlock Text="{Binding ExpiringSoonCount}" FontSize="16" FontWeight="Bold" Foreground="#8B5CF6" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="Expiring Soon" FontSize="12" Foreground="#6B7280" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Expiring Soon" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
                         </StackPanel>
 
                         <StackPanel Grid.Column="2" HorizontalAlignment="Center">
                             <Border Width="80" Height="80" CornerRadius="40" Background="#F3F4F6" Margin="0,0,0,8">
                                 <TextBlock Text="{Binding ExpiredCount}" FontSize="16" FontWeight="Bold" Foreground="#9CA3AF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="Expired" FontSize="12" Foreground="#6B7280" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Expired" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Grid>
                 </StackPanel>
@@ -166,7 +166,7 @@
                 </Border.Effect>
                 <StackPanel>
                     <Grid Margin="0,0,0,20">
-                        <TextBlock Text="Top Ingredients" FontSize="18" FontWeight="Bold" Foreground="#1F2937"/>
+                        <TextBlock Text="Top Ingredients" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                         <TextBlock Text="View All" FontSize="12" Foreground="#8B5CF6" HorizontalAlignment="Right" VerticalAlignment="Center" Cursor="Hand"/>
                     </Grid>
                     <ItemsControl ItemsSource="{Binding TopIngredients}">

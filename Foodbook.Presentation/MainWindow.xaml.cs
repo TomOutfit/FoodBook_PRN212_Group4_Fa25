@@ -232,15 +232,17 @@ public partial class MainWindow : Window
 
             if (isNight)
             {
-                // Deep, contrasty palette for dark mode
+                // Deep, contrasty palette for dark mode with high contrast text colors
                 SetBrush("AppBackgroundBrush", "#0F172A");
                 SetBrush("SurfaceBrush", "#111827");
                 SetBrush("CardBackgroundBrush", "#1F2937");
                 SetBrush("SidebarBackgroundBrush", "#0B1220");
-                SetBrush("DividerBrush", "#334155");
-                SetBrush("TextPrimaryBrush", "#F8FAFC");
-                SetBrush("TextSecondaryBrush", "#CBD5E1");
-                SetBrush("AccentBrush", "#22C55E");
+                SetBrush("DividerBrush", "#475569");
+                // High contrast text colors for better readability on dark background
+                SetBrush("TextPrimaryBrush", "#FFFFFF"); // Pure white for maximum contrast
+                SetBrush("TextSecondaryBrush", "#E2E8F0"); // Light gray-blue for secondary text
+                // Vibrant accent colors that stand out
+                SetBrush("AccentBrush", "#22C55E"); // Bright green
                 SetBrush("AccentLowBrush", "#143C2A");
                 SetBrush("AccentHighBrush", "#86EFAC");
                 this.Background = (System.Windows.Media.Brush)Application.Current.Resources["AppBackgroundBrush"];
