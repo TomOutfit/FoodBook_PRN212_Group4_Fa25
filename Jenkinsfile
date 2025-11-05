@@ -1,182 +1,60 @@
 pipeline {
     agent any
 
-    options {
-        buildDiscarder(logRotator(numToKeepStr: '30'))
-        timestamps()
-        timeout(time: 30, unit: 'MINUTES')
-        // ❌ Bỏ ansiColor ở đây vì Jenkins mới không cho đặt trong options
-    }
-
     environment {
-        DOTNET_VERSION = '9.0'
-        SOLUTION_PATH = 'CookBook.sln'
-        TEST_PROJECT_PATH = 'Foodbook.Tests/Foodbook.Tests.csproj'
-        TEST_RESULTS_DIR = 'TestResults'
-        COVERAGE_DIR = 'CoverageReports'
-        BUILD_CONFIG = 'Release'
+        SOLUTION_PATH = "FoodBook_PRN212_Group4_Fa25.sln"
+        BUILD_CONFIG = "Release"
+        TEST_PROJECT = "FoodBook.Tests/FoodBook.Tests.csproj"
+        TEST_RESULTS_DIR = "TestResults"
     }
 
     stages {
-        stage('Checkout') {
+        stage('🧹 Clean') {
             steps {
-                echo '📥 Đang checkout source code...'
-                checkout scm
+                bat """
+                    dotnet clean "%SOLUTION_PATH%" --configuration "%BUILD_CONFIG%"
+                """
             }
         }
 
-        stage('Clean') {
+        stage('📦 Restore') {
             steps {
-                echo '🧹 Dọn dẹp workspace...'
-                ansiColor('xterm') {
-                    sh '''
-                        dotnet clean "$SOLUTION_PATH" --configuration "$BUILD_CONFIG" --verbosity minimal
-                        rm -rf "$TEST_RESULTS_DIR" || true
-                        rm -rf "$COVERAGE_DIR" || true
-                        mkdir -p "$TEST_RESULTS_DIR"
-                        mkdir -p "$COVERAGE_DIR"
-                    '''
-                }
+                bat """
+                    dotnet restore "%SOLUTION_PATH%"
+                """
             }
         }
 
-        stage('Restore') {
+        stage('🏗️ Build') {
             steps {
-                echo '📦 Đang restore NuGet packages...'
-                ansiColor('xterm') {
-                    sh "dotnet restore \"$SOLUTION_PATH\" --verbosity minimal"
-                }
+                bat """
+                    dotnet build "%SOLUTION_PATH%" --configuration "%BUILD_CONFIG%" --no-restore
+                """
             }
         }
 
-        stage('Build') {
+        stage('🧪 Run Unit Tests') {
             steps {
-                echo '🔨 Đang build solution...'
-                ansiColor('xterm') {
-                    sh "dotnet build \"$SOLUTION_PATH\" --configuration \"$BUILD_CONFIG\" --no-restore --verbosity minimal"
-                }
+                bat """
+                    if not exist "%TEST_RESULTS_DIR%" mkdir "%TEST_RESULTS_DIR%"
+                    dotnet test "%TEST_PROJECT%" --configuration "%BUILD_CONFIG%" --logger "trx;LogFileName=%TEST_RESULTS_DIR%\\junit.xml" --results-directory "%TEST_RESULTS_DIR%" --no-build
+                """
             }
         }
 
-        stage('Unit Tests') {
+        stage('📊 Publish Test Report') {
             steps {
-                echo '🧪 Đang chạy Unit Tests...'
-                script {
-                    def testDir = env.TEST_RESULTS_DIR
-                    def coverDir = env.COVERAGE_DIR
-                    def testProj = env.TEST_PROJECT_PATH
-
-                    if (fileExists(testProj)) {
-                        ansiColor('xterm') {
-                            sh """
-                                dotnet test "$testProj" \
-                                    --configuration "$BUILD_CONFIG" \
-                                    --no-build \
-                                    --verbosity normal \
-                                    --logger "trx;LogFileName=TestResults.trx" \
-                                    --logger "junit;LogFilePath=$testDir/junit.xml" \
-                                    --results-directory "$testDir" \
-                                    --collect:"XPlat Code Coverage"
-                            """
-                        }
-                    } else {
-                        echo "⚠️ Không có TestCase (Không tìm thấy project test: $testProj)"
-                    }
-                }
-            }
-            post {
-                always {
-                    // ✅ Sửa lại testResultsPattern -> testResults
-                    junit allowEmptyResults: true,
-                          testResults: "${TEST_RESULTS_DIR}/junit.xml"
-
-                    // Nếu plugin publishTestResults chưa có, có thể bỏ qua phần này
-                    publishTestResults(
-                        testResults: "${TEST_RESULTS_DIR}/**/*.trx",
-                        testResultsFormat: 'MS TRX',
-                        allowEmptyResults: true
-                    )
-                }
-            }
-        }
-
-        stage('Code Coverage') {
-            steps {
-                echo '📊 Đang xử lý Code Coverage...'
-                ansiColor('xterm') {
-                    sh '''
-                        COVERAGE_FILE=$(find "$TEST_RESULTS_DIR" -name "coverage.cobertura.xml" | head -1)
-                        if [ -f "$COVERAGE_FILE" ]; then
-                            echo "✅ Tìm thấy coverage file: $COVERAGE_FILE"
-                            cp "$COVERAGE_FILE" "$COVERAGE_DIR/coverage.cobertura.xml"
-                        else
-                            echo "⚠️ Không tìm thấy coverage file"
-                        fi
-                    '''
-                }
-            }
-            post {
-                always {
-                    publishCoverage adapters: [
-                        coberturaAdapter("${COVERAGE_DIR}/coverage.cobertura.xml")
-                    ],
-                    sourceFileResolver: sourceFiles('STORE_LAST_BUILD'),
-                    failUnhealthy: false,
-                    failUnstable: false
-                }
-            }
-        }
-
-        stage('Test Report Summary') {
-            steps {
-                echo '📋 Tạo Test Report Summary...'
-                ansiColor('xterm') {
-                    sh '''
-                        cat > "$TEST_RESULTS_DIR/test-summary.txt" << 'EOF'
-╔══════════════════════════════════════════════════════════════╗
-║         📊 BÁO CÁO KẾT QUẢ TEST CASE - FOODBOOK              ║
-╚══════════════════════════════════════════════════════════════╝
-
-Ngày chạy: $(date '+%d/%m/%Y %H:%M:%S')
-Build Number: ${BUILD_NUMBER}
-Branch: ${GIT_BRANCH}
-Commit: ${GIT_COMMIT}
-
-───────────────────────────────────────────────────────────────
-📈 TỔNG QUAN:
-Xem chi tiết trong Test Results và Coverage Report bên dưới.
-
-───────────────────────────────────────────────────────────────
-📁 CÁC FILE BÁO CÁO:
-- Test Results: TestResults/*.trx, junit.xml
-- Code Coverage: CoverageReports/coverage.cobertura.xml
-
-───────────────────────────────────────────────────────────────
-EOF
-                        cat "$TEST_RESULTS_DIR/test-summary.txt"
-                    '''
-                }
+                junit allowEmptyResults: true, testResults: "%TEST_RESULTS_DIR%\\junit.xml"
             }
         }
     }
 
     post {
-        always {
-            echo '📦 Lưu trữ artifacts...'
-            archiveArtifacts artifacts: "${TEST_RESULTS_DIR}/**/*", allowEmptyArchive: true
-            archiveArtifacts artifacts: "${COVERAGE_DIR}/**/*", allowEmptyArchive: true
-        }
-
         success {
-            echo '✅ BUILD THÀNH CÔNG! Xem Test Results và Coverage Report.'
+            echo "✅ Build & Tests successful!"
         }
-
         failure {
-            echo '❌ BUILD THẤT BẠI! Kiểm tra console log.'
-        }
-
-        unstable {
-            echo '⚠️ BUILD KHÔNG ỔN ĐỊNH (Cảnh báo hoặc test skip).'
+            echo "❌ Build failed. Check logs."
         }
     }
 }
