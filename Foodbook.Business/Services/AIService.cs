@@ -31,16 +31,16 @@ namespace Foodbook.Business.Services
 
             // Enhanced AI analysis with Evaluation Modes
             var random = new Random();
-            var score = random.Next(6, 11); // Score between 6-10
+            var score = Math.Round(random.NextDouble() * 10, 1); // 0.0 - 10.0
             
             // Get persona-based feedback based on evaluation mode
-            var (comments, suggestions, chefTips) = GetPersonaBasedFeedback(evaluationMode, score);
+            var (comments, suggestions, chefTips) = GetPersonaBasedFeedback(evaluationMode, (int)Math.Round(score));
             
             // Detailed analysis categories
-            var presentationScore = random.Next(6, 11);
-            var colorScore = random.Next(6, 11);
-            var textureScore = random.Next(6, 11);
-            var platingScore = random.Next(6, 11);
+            var presentationScore = Math.Round(random.NextDouble() * 10, 1);
+            var colorScore = Math.Round(random.NextDouble() * 10, 1);
+            var textureScore = Math.Round(random.NextDouble() * 10, 1);
+            var platingScore = Math.Round(random.NextDouble() * 10, 1);
             
             var ratings = new[] { "Excellent", "Good", "Fair", "Poor" };
             var overallRating = score >= 9 ? ratings[0] : score >= 7 ? ratings[1] : score >= 5 ? ratings[2] : ratings[3];
@@ -57,7 +57,7 @@ namespace Foodbook.Business.Services
                 ColorScore = colorScore,
                 TextureScore = textureScore,
                 PlatingScore = platingScore,
-                HealthNotes = GetHealthNotes(score),
+                HealthNotes = GetHealthNotes((int)Math.Round(score)),
                 ChefTips = chefTips.Take(2).ToList()
             };
         }
@@ -379,23 +379,23 @@ Analyze the uploaded dish image and provide a comprehensive culinary evaluation.
 5. **Overall Impression**: What's your first impression of this dish as a culinary expert?
 
 IMPORTANT: 
-- Look at the ACTUAL FOOD in the image, not just photo quality
+- Focus strictly on the culinary quality of the FOOD (not the photo aesthetics). Judge cooking technique, doneness, balance, freshness, ingredient quality. Photo quality must not influence the score.
 - Be specific about what you see (colors, textures, ingredients, techniques)
 - Use natural, conversational language with emojis
 - Make your feedback feel personal and genuine
 - Focus on culinary aspects that matter to taste and presentation
 
-Provide your analysis in the following JSON format:
+Provide your analysis in the following JSON format. All scores MUST be decimals with one decimal place (e.g., 7.8):
 {
-  ""score"": [1-10],
-  ""presentationScore"": [1-10],
-  ""colorScore"": [1-10],
-  ""textureScore"": [1-10],
-  ""platingScore"": [1-10],
+  ""score"": 7.8,
+  ""presentationScore"": 8.3,
+  ""colorScore"": 7.5,
+  ""textureScore"": 7.2,
+  ""platingScore"": 8.0,
   ""overallRating"": ""Excellent|Good|Fair|Poor"",
-  ""comment"": ""Your genuine reaction to this dish - what you see and think about it"",
+  ""comment"": ""Write cohesive paragraphs focusing on culinary evaluation (not photo quality)"",
   ""suggestions"": [""specific suggestion1"", ""specific suggestion2"", ""specific suggestion3""],
-  ""healthNotes"": ""Your assessment of the nutritional aspects you can observe"",
+  ""healthNotes"": ""Nutritional aspects you can infer from the food itself"",
   ""chefTips"": [""helpful tip1"", ""helpful tip2""]
 }";
 
@@ -703,9 +703,9 @@ Provide your recipe in the following JSON format:
             await Task.Delay(1000); // Simulate processing
             
             var random = new Random();
-            var score = random.Next(6, 11);
+            var score = Math.Round(random.NextDouble() * 10, 1);
             
-            var (comments, suggestions, chefTips) = GetPersonaBasedFeedback(evaluationMode, score);
+            var (comments, suggestions, chefTips) = GetPersonaBasedFeedback(evaluationMode, (int)Math.Round(score));
             
             return new ChefJudgeResult
             {
@@ -714,11 +714,11 @@ Provide your recipe in the following JSON format:
                 Comment = comments[random.Next(comments.Length)],
                 Suggestions = suggestions.Take(random.Next(3, 5)).ToList(),
                 OverallRating = score >= 9 ? "Excellent" : score >= 7 ? "Good" : score >= 5 ? "Fair" : "Poor",
-                PresentationScore = random.Next(6, 11),
-                ColorScore = random.Next(6, 11),
-                TextureScore = random.Next(6, 11),
-                PlatingScore = random.Next(6, 11),
-                HealthNotes = GetHealthNotes(score),
+                PresentationScore = Math.Round(random.NextDouble() * 10, 1),
+                ColorScore = Math.Round(random.NextDouble() * 10, 1),
+                TextureScore = Math.Round(random.NextDouble() * 10, 1),
+                PlatingScore = Math.Round(random.NextDouble() * 10, 1),
+                HealthNotes = GetHealthNotes((int)Math.Round(score)),
                 ChefTips = chefTips.Take(2).ToList()
             };
         }
@@ -729,22 +729,24 @@ Provide your recipe in the following JSON format:
             
             // Analyze image properties for more realistic scoring
             var imageAnalysis = AnalyzeImageProperties(imageData);
-            var score = CalculateRealisticScore(imageAnalysis, evaluationMode);
+            var scoreInt = CalculateRealisticScore(imageAnalysis, evaluationMode);
+            var random = new Random();
+            var scoreDouble = Math.Round(Math.Max(0, Math.Min(10, scoreInt + (random.NextDouble() - 0.5))), 1);
             
-            var (comments, suggestions, chefTips) = GetPersonaBasedFeedback(evaluationMode, score);
+            var (comments, suggestions, chefTips) = GetPersonaBasedFeedback(evaluationMode, scoreInt);
             
             return new ChefJudgeResult
             {
                 RecipeName = "Dish Analysis",
-                Score = score,
-                Comment = GetContextualComment(imageAnalysis, score, evaluationMode),
-                Suggestions = GetContextualSuggestions(imageAnalysis, score, evaluationMode),
-                OverallRating = score >= 9 ? "Excellent" : score >= 7 ? "Good" : score >= 5 ? "Fair" : "Poor",
-                PresentationScore = CalculatePresentationScore(imageAnalysis),
-                ColorScore = CalculateColorScore(imageAnalysis),
-                TextureScore = CalculateTextureScore(imageAnalysis),
-                PlatingScore = CalculatePlatingScore(imageAnalysis),
-                HealthNotes = GetContextualHealthNotes(imageAnalysis, score),
+                Score = scoreDouble,
+                Comment = GetContextualComment(imageAnalysis, scoreInt, evaluationMode),
+                Suggestions = GetContextualSuggestions(imageAnalysis, scoreInt, evaluationMode),
+                OverallRating = scoreDouble >= 9 ? "Excellent" : scoreDouble >= 7 ? "Good" : scoreDouble >= 5 ? "Fair" : "Poor",
+                PresentationScore = Math.Round(Math.Max(0, Math.Min(10, CalculatePresentationScore(imageAnalysis) + (random.NextDouble() - 0.5))), 1),
+                ColorScore = Math.Round(Math.Max(0, Math.Min(10, CalculateColorScore(imageAnalysis) + (random.NextDouble() - 0.5))), 1),
+                TextureScore = Math.Round(Math.Max(0, Math.Min(10, CalculateTextureScore(imageAnalysis) + (random.NextDouble() - 0.5))), 1),
+                PlatingScore = Math.Round(Math.Max(0, Math.Min(10, CalculatePlatingScore(imageAnalysis) + (random.NextDouble() - 0.5))), 1),
+                HealthNotes = GetContextualHealthNotes(imageAnalysis, scoreInt),
                 ChefTips = GetContextualChefTips(imageAnalysis, evaluationMode)
             };
         }
@@ -823,47 +825,42 @@ Provide your recipe in the following JSON format:
             baseScore += randomAdjustment;
             
             // Ensure score is within reasonable bounds
-            return Math.Max(2, Math.Min(10, baseScore));
+            var finalInt = Math.Max(2, Math.Min(10, baseScore));
+            return finalInt;
         }
 
         private int CalculatePresentationScore(ImageAnalysisResult analysis)
         {
-            var score = 4; // Start lower for realism
-            if (analysis.HasGoodPresentation) score += 3; // Most important for presentation
-            if (analysis.HasProfessionalPlating) score += 2; // Professional plating is key
-            if (analysis.HasGoodComposition) score += 1;
-            if (analysis.IsHighQuality) score += 1; // Better image = better assessment
-            return Math.Max(2, Math.Min(10, score));
+            var score = 0;
+            if (analysis.HasGoodPresentation) score += 6;
+            if (analysis.HasProfessionalPlating) score += 3;
+            if (analysis.HasAppetizingColors) score += 1;
+            return Math.Max(0, Math.Min(10, score));
         }
 
         private int CalculateColorScore(ImageAnalysisResult analysis)
         {
-            var score = 4; // Start lower for realism
-            if (analysis.HasAppetizingColors) score += 3; // Most important for food color
-            if (analysis.HasGoodContrast) score += 2; // Good contrast shows food colors well
-            if (analysis.AppearsWellLit) score += 1; // Good lighting shows true colors
-            if (analysis.IsHighQuality) score += 1; // Better image = better color assessment
-            return Math.Max(2, Math.Min(10, score));
+            var score = 0;
+            if (analysis.HasAppetizingColors) score += 7;
+            if (analysis.AppearsFresh) score += 3;
+            return Math.Max(0, Math.Min(10, score));
         }
 
         private int CalculateTextureScore(ImageAnalysisResult analysis)
         {
-            var score = 4; // Start lower for realism
-            if (analysis.AppearsFresh) score += 2; // Freshness affects texture perception
-            if (analysis.IsVeryHighQuality) score += 2; // High quality images show texture better
-            else if (analysis.IsHighQuality) score += 1;
-            if (analysis.HasGoodContrast) score += 1; // Good contrast shows texture details
-            return Math.Max(2, Math.Min(10, score));
+            var score = 0;
+            if (analysis.AppearsFresh) score += 7;
+            if (analysis.HasGoodPresentation) score += 2;
+            if (analysis.HasProfessionalPlating) score += 1;
+            return Math.Max(0, Math.Min(10, score));
         }
 
         private int CalculatePlatingScore(ImageAnalysisResult analysis)
         {
-            var score = 4; // Start lower for realism
-            if (analysis.HasProfessionalPlating) score += 3; // Most important for plating
-            if (analysis.HasGoodPresentation) score += 2; // Good presentation is key
-            if (analysis.HasGoodComposition) score += 1; // Composition affects plating
-            if (analysis.IsHighQuality) score += 1; // Better image = better plating assessment
-            return Math.Max(2, Math.Min(10, score));
+            var score = 0;
+            if (analysis.HasProfessionalPlating) score += 6;
+            if (analysis.HasGoodPresentation) score += 4;
+            return Math.Max(0, Math.Min(10, score));
         }
 
         private string GetContextualComment(ImageAnalysisResult analysis, int score, string evaluationMode)
@@ -960,16 +957,6 @@ Provide your recipe in the following JSON format:
                 baseComments.Add(encouragingComments[random.Next(encouragingComments.Length)]);
             }
             
-            // Image quality context
-            if (analysis.IsVeryHighQuality)
-            {
-                baseComments.Add("📸 The high-quality image really showcases your culinary work beautifully!");
-            }
-            else if (!analysis.IsHighQuality)
-            {
-                baseComments.Add("📷 A clearer photo would help better showcase your culinary skills!");
-            }
-            
             return string.Join(" ", baseComments);
         }
 
@@ -1050,12 +1037,6 @@ Provide your recipe in the following JSON format:
                     "🎨 Start with simple, clean presentations and build complexity"
                 };
                 suggestions.Add(basicSuggestions[random.Next(basicSuggestions.Length)]);
-            }
-            
-            // Image quality suggestions
-            if (!analysis.IsHighQuality)
-            {
-                suggestions.Add("📸 Take photos in natural lighting for better culinary evaluation and showcase");
             }
             
             // Mode-specific dynamic suggestions
@@ -1258,11 +1239,11 @@ Provide your recipe in the following JSON format:
             if (result == null) return false;
             
             // Check if scores are within valid range
-            if (result.Score < 1 || result.Score > 10) return false;
-            if (result.PresentationScore < 1 || result.PresentationScore > 10) return false;
-            if (result.ColorScore < 1 || result.ColorScore > 10) return false;
-            if (result.TextureScore < 1 || result.TextureScore > 10) return false;
-            if (result.PlatingScore < 1 || result.PlatingScore > 10) return false;
+            if (result.Score < 0 || result.Score > 10) return false;
+            if (result.PresentationScore < 0 || result.PresentationScore > 10) return false;
+            if (result.ColorScore < 0 || result.ColorScore > 10) return false;
+            if (result.TextureScore < 0 || result.TextureScore > 10) return false;
+            if (result.PlatingScore < 0 || result.PlatingScore > 10) return false;
             
             // Check if required fields are not empty
             if (string.IsNullOrEmpty(result.Comment)) return false;
