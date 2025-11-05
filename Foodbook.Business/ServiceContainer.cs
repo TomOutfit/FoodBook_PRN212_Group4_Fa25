@@ -3,6 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Foodbook.Data;
 using Foodbook.Business.Interfaces;
 using Foodbook.Business.Services;
+using Foodbook.Business.Repositories;
+using Foodbook.Business.Repositories.Interfaces;
 
 namespace Foodbook.Business
 {
@@ -25,6 +27,13 @@ namespace Foodbook.Business
             services.AddScoped<IShoppingListService, ShoppingListService>();
             services.AddScoped<INutritionService, NutritionService>();
             services.AddScoped<ILoggingService, LoggingService>();
+            
+            // Repositories
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IRecipeRepository, RecipeRepository>();
+            services.AddScoped<IIngredientRepository, IngredientRepository>();
+            services.AddScoped<IRatingRepository, RatingRepository>();
+            services.AddScoped<ILogEntryRepository, LogEntryRepository>();
             
             // SettingsService doesn't use DbContext, so register it as Singleton
             services.AddSingleton<ISettingsService, SettingsService>();
