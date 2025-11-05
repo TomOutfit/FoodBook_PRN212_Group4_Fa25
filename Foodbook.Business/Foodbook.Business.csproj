@@ -14,4 +14,8 @@
     <Page Include="LoginWindow.xaml" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="Foodbook.Business/**/*.cs" />
+  </ItemGroup>
+
 </Project>
