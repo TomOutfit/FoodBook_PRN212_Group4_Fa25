@@ -31,7 +31,7 @@ namespace Foodbook.Presentation.ViewModels
         
         // Search/Filter/Sort
         private string _searchText = string.Empty;
-        private string _sortBy = "Name A-Z";
+        private string _sortBy = "📝 Name A-Z";
         private string _selectedCategory = "All";
         
         // KPIs shown in header

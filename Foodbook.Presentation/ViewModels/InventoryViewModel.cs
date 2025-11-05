@@ -19,6 +19,7 @@ namespace Foodbook.Presentation.ViewModels
 
         private List<Ingredient> _allIngredients = new();
         private ObservableCollection<Ingredient> _ingredients = new();
+        private ObservableCollection<Ingredient> _pagedIngredients = new();
 
         private bool _isLoading;
         private string _errorMessage = string.Empty;
@@ -28,8 +29,15 @@ namespace Foodbook.Presentation.ViewModels
         private int _shoppingAlertsCount;
         private int _totalIngredients;
 
+        // Paging
+        private int _pageSize = 9;
+        private int _currentPage = 1;
+        private int _totalPages;
+        private ObservableCollection<int> _pageOptions = new();
+        private int _selectedPage = 1;
+
         // Sorting/Filtering
-        private string _ingredientSortBy = "Name A-Z";
+        private string _ingredientSortBy = "📝 Name A-Z";
         private string _selectedGroup = "All"; // All, Proteins, Grains, Vegetables, Spices
 
         // External context
@@ -37,9 +45,44 @@ namespace Foodbook.Presentation.ViewModels
 
         // Expose data
         public ObservableCollection<Ingredient> Ingredients { get => _ingredients; private set => SetProperty(ref _ingredients, value); }
+        public ObservableCollection<Ingredient> PagedIngredients { get => _pagedIngredients; private set => SetProperty(ref _pagedIngredients, value); }
         public int NearExpiryCount { get => _nearExpiryCount; private set => SetProperty(ref _nearExpiryCount, value); }
         public int ShoppingAlertsCount { get => _shoppingAlertsCount; private set => SetProperty(ref _shoppingAlertsCount, value); }
         public int TotalIngredients { get => _totalIngredients; private set => SetProperty(ref _totalIngredients, value); }
+
+        public int CurrentPage
+        {
+            get => _currentPage;
+            private set
+            {
+                if (SetProperty(ref _currentPage, value))
+                {
+                    _selectedPage = _currentPage;
+                    OnPropertyChanged(nameof(SelectedPage));
+                    UpdatePaging();
+                }
+            }
+        }
+
+        public int TotalPages { get => _totalPages; private set => SetProperty(ref _totalPages, value); }
+        public ObservableCollection<int> PageOptions { get => _pageOptions; private set => SetProperty(ref _pageOptions, value); }
+
+        public int SelectedPage
+        {
+            get => _selectedPage;
+            set
+            {
+                if (SetProperty(ref _selectedPage, value))
+                {
+                    if (_selectedPage >= 1 && _selectedPage <= Math.Max(1, TotalPages))
+                    {
+                        _currentPage = _selectedPage;
+                        OnPropertyChanged(nameof(CurrentPage));
+                        UpdatePaging();
+                    }
+                }
+            }
+        }
 
         public string IngredientSortBy
         {
@@ -65,6 +108,8 @@ namespace Foodbook.Presentation.ViewModels
         public ICommand NavigateToGrainsCommand { get; }
         public ICommand NavigateToVegetablesCommand { get; }
         public ICommand NavigateToSpicesCommand { get; }
+        public ICommand NextPageCommand { get; }
+        public ICommand PrevPageCommand { get; }
 
         public InventoryViewModel(IIngredientService ingredientService, ILoggingService loggingService)
         {
@@ -78,6 +123,8 @@ namespace Foodbook.Presentation.ViewModels
             NavigateToGrainsCommand = new RelayCommand(new Action(() => SetGroup("Grains")), () => true);
             NavigateToVegetablesCommand = new RelayCommand(new Action(() => SetGroup("Vegetables")), () => true);
             NavigateToSpicesCommand = new RelayCommand(new Action(() => SetGroup("Spices")), () => true);
+            NextPageCommand = new RelayCommand(new Action(() => { if (CurrentPage < TotalPages) CurrentPage += 1; }), () => true);
+            PrevPageCommand = new RelayCommand(new Action(() => { if (CurrentPage > 1) CurrentPage -= 1; }), () => true);
         }
 
         // Design-time: init commands as no-ops to avoid nulls
@@ -91,6 +138,8 @@ namespace Foodbook.Presentation.ViewModels
             NavigateToGrainsCommand = new RelayCommand(new Action(() => { }), () => true);
             NavigateToVegetablesCommand = new RelayCommand(new Action(() => { }), () => true);
             NavigateToSpicesCommand = new RelayCommand(new Action(() => { }), () => true);
+            NextPageCommand = new RelayCommand(new Action(() => { }), () => true);
+            PrevPageCommand = new RelayCommand(new Action(() => { }), () => true);
         }
 
         public async Task LoadIngredientsAsync()
@@ -113,6 +162,7 @@ namespace Foodbook.Presentation.ViewModels
 
                 _allIngredients = data?.ToList() ?? new List<Ingredient>();
                 ComputeKpis(_allIngredients);
+                ResetPaging();
                 ApplyTransforms();
             }
             catch (Exception ex)
@@ -173,12 +223,28 @@ namespace Foodbook.Presentation.ViewModels
             {
                 "📝 Name A-Z" or "Name A-Z" => query.OrderBy(i => i.Name),
                 "📝 Name Z-A" or "Name Z-A" => query.OrderByDescending(i => i.Name),
-                "📂 Category" or "Category" => query.OrderBy(i => i.Category).ThenBy(i => i.Name),
+                "📂 Category" or "Category" => query.OrderBy(i => i.Category ?? "").ThenBy(i => i.Name),
                 "📅 Date Added" or "Date Added" => query.OrderByDescending(i => i.CreatedAt),
                 _ => query.OrderBy(i => i.Name),
             };
 
             Ingredients = new ObservableCollection<Ingredient>(query);
+            ResetPaging();
+            UpdatePaging();
+        }
+
+        private void ResetPaging()
+        {
+            TotalPages = Math.Max(1, (int)Math.Ceiling((Ingredients.Count) / (double)_pageSize));
+            PageOptions = new ObservableCollection<int>(Enumerable.Range(1, TotalPages));
+            CurrentPage = 1;
+        }
+
+        private void UpdatePaging()
+        {
+            var skip = (CurrentPage - 1) * _pageSize;
+            var pageItems = Ingredients.Skip(skip).Take(_pageSize).ToList();
+            PagedIngredients = new ObservableCollection<Ingredient>(pageItems);
         }
 
         private static bool IsInGroup(Ingredient ingredient, string group)
