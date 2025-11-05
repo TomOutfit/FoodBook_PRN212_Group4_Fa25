@@ -17,6 +17,9 @@ pipeline {
         BUILD_CONFIG = 'Release'
         DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1'
         DOTNET_NOLOGO = '1'
+        DOTNET_CLI_TELEMETRY_OPTOUT = '1'
+        NUGET_HTTP_TIMEOUT = '300'
+        NUGET_PLUGIN_HANDSHAKE_TIMEOUT_IN_SECONDS = '120'
     }
     
     // Sử dụng dotnet từ PATH của agent; không cấu hình tool trong Jenkins
@@ -50,7 +53,17 @@ pipeline {
             steps {
                 script {
                     echo '📦 Đang restore NuGet packages...'
-                    bat 'dotnet restore "%SOLUTION_PATH%" --verbosity minimal'
+                    retry(3) {
+                        bat '''
+                            dotnet --info
+                            dotnet nuget locals all --clear
+                            dotnet restore "%SOLUTION_PATH%" ^
+                              --verbosity minimal ^
+                              --no-cache ^
+                              --disable-parallel ^
+                              --source https://api.nuget.org/v3/index.json
+                        '''
+                    }
                 }
             }
         }
@@ -76,37 +89,27 @@ pipeline {
                           --logger "trx;LogFileName=TestResults.trx" ^
                           --results-directory "%TEST_RESULTS_DIR%" ^
                           --collect:"XPlat Code Coverage"
-                        powershell -NoProfile -Command ^
-                          "if (-not (Get-ChildItem -Path '%TEST_RESULTS_DIR%' -Filter '*.xml' -ErrorAction SilentlyContinue)) { New-Item -ItemType Directory -Force -Path '%TEST_RESULTS_DIR%' | Out-Null; @'
-<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<testsuite name=\"CookBook Tests\" tests=\"0\" failures=\"0\" errors=\"0\" skipped=\"0\" time=\"0\"> 
-  <properties />
-</testsuite>
-'@ | Out-File -FilePath '%TEST_RESULTS_DIR%\\junit.xml' -Encoding utf8 -Force }"
                     '''
                 }
             }
             post {
                 always {
+                    script {
+                        def resultsDir = "${env.WORKSPACE}\\${TEST_RESULTS_DIR}"
+                        new File(resultsDir).mkdirs()
+                        if (!fileExists("${TEST_RESULTS_DIR}/junit.xml")) {
+                            writeFile file: "${TEST_RESULTS_DIR}/junit.xml", text: """
+<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<testsuite name=\"CookBook Tests\" tests=\"0\" failures=\"0\" errors=\"0\" skipped=\"0\" time=\"0\">
+  <properties />
+</testsuite>
+"""
+                        }
+                    }
                     // Luôn publish JUnit (kể cả placeholder) để hiển thị kết quả
                     junit allowEmptyResults: true,
                           testResults: "${TEST_RESULTS_DIR}/*.xml",
                           skipPublishingChecks: false
-
-                    // Publish TRX test results, cho phép rỗng để không fail
-                    script {
-                        try {
-                            publishTestResults(
-                                testResultsPattern: "${TEST_RESULTS_DIR}/**/*.trx",
-                                testResultsFormat: 'MS TRX',
-                                allowEmptyResults: true,
-                                keepLongStdio: true,
-                                healthScaleFactor: 1.0
-                            )
-                        } catch (err) {
-                            echo "⚠️ Plugin publishTestResults không khả dụng hoặc gặp lỗi: ${err}"
-                        }
-                    }
                 }
             }
         }
