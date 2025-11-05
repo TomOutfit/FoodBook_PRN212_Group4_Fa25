@@ -4,8 +4,8 @@ pipeline {
     options {
         buildDiscarder(logRotator(numToKeepStr: '30'))
         timestamps()
-        ansiColor('xterm')
         timeout(time: 30, unit: 'MINUTES')
+        // ❌ Bỏ ansiColor ở đây vì Jenkins mới không cho đặt trong options
     }
 
     environment {
@@ -28,27 +28,33 @@ pipeline {
         stage('Clean') {
             steps {
                 echo '🧹 Dọn dẹp workspace...'
-                sh '''
-                    dotnet clean "$SOLUTION_PATH" --configuration "$BUILD_CONFIG" --verbosity minimal
-                    rm -rf "$TEST_RESULTS_DIR" || true
-                    rm -rf "$COVERAGE_DIR" || true
-                    mkdir -p "$TEST_RESULTS_DIR"
-                    mkdir -p "$COVERAGE_DIR"
-                '''
+                ansiColor('xterm') {
+                    sh '''
+                        dotnet clean "$SOLUTION_PATH" --configuration "$BUILD_CONFIG" --verbosity minimal
+                        rm -rf "$TEST_RESULTS_DIR" || true
+                        rm -rf "$COVERAGE_DIR" || true
+                        mkdir -p "$TEST_RESULTS_DIR"
+                        mkdir -p "$COVERAGE_DIR"
+                    '''
+                }
             }
         }
 
         stage('Restore') {
             steps {
                 echo '📦 Đang restore NuGet packages...'
-                sh "dotnet restore \"$SOLUTION_PATH\" --verbosity minimal"
+                ansiColor('xterm') {
+                    sh "dotnet restore \"$SOLUTION_PATH\" --verbosity minimal"
+                }
             }
         }
 
         stage('Build') {
             steps {
                 echo '🔨 Đang build solution...'
-                sh "dotnet build \"$SOLUTION_PATH\" --configuration \"$BUILD_CONFIG\" --no-restore --verbosity minimal"
+                ansiColor('xterm') {
+                    sh "dotnet build \"$SOLUTION_PATH\" --configuration \"$BUILD_CONFIG\" --no-restore --verbosity minimal"
+                }
             }
         }
 
@@ -61,16 +67,18 @@ pipeline {
                     def testProj = env.TEST_PROJECT_PATH
 
                     if (fileExists(testProj)) {
-                        sh """
-                            dotnet test "$testProj" \
-                                --configuration "$BUILD_CONFIG" \
-                                --no-build \
-                                --verbosity normal \
-                                --logger "trx;LogFileName=TestResults.trx" \
-                                --logger "junit;LogFilePath=$testDir/junit.xml" \
-                                --results-directory "$testDir" \
-                                --collect:"XPlat Code Coverage"
-                        """
+                        ansiColor('xterm') {
+                            sh """
+                                dotnet test "$testProj" \
+                                    --configuration "$BUILD_CONFIG" \
+                                    --no-build \
+                                    --verbosity normal \
+                                    --logger "trx;LogFileName=TestResults.trx" \
+                                    --logger "junit;LogFilePath=$testDir/junit.xml" \
+                                    --results-directory "$testDir" \
+                                    --collect:"XPlat Code Coverage"
+                            """
+                        }
                     } else {
                         echo "⚠️ Không có TestCase (Không tìm thấy project test: $testProj)"
                     }
@@ -78,11 +86,13 @@ pipeline {
             }
             post {
                 always {
+                    // ✅ Sửa lại testResultsPattern -> testResults
                     junit allowEmptyResults: true,
-                          testResultsPattern: "${TEST_RESULTS_DIR}/junit.xml"
+                          testResults: "${TEST_RESULTS_DIR}/junit.xml"
 
+                    // Nếu plugin publishTestResults chưa có, có thể bỏ qua phần này
                     publishTestResults(
-                        testResultsPattern: "${TEST_RESULTS_DIR}/**/*.trx",
+                        testResults: "${TEST_RESULTS_DIR}/**/*.trx",
                         testResultsFormat: 'MS TRX',
                         allowEmptyResults: true
                     )
@@ -93,15 +103,17 @@ pipeline {
         stage('Code Coverage') {
             steps {
                 echo '📊 Đang xử lý Code Coverage...'
-                sh '''
-                    COVERAGE_FILE=$(find "$TEST_RESULTS_DIR" -name "coverage.cobertura.xml" | head -1)
-                    if [ -f "$COVERAGE_FILE" ]; then
-                        echo "✅ Tìm thấy coverage file: $COVERAGE_FILE"
-                        cp "$COVERAGE_FILE" "$COVERAGE_DIR/coverage.cobertura.xml"
-                    else
-                        echo "⚠️ Không tìm thấy coverage file"
-                    fi
-                '''
+                ansiColor('xterm') {
+                    sh '''
+                        COVERAGE_FILE=$(find "$TEST_RESULTS_DIR" -name "coverage.cobertura.xml" | head -1)
+                        if [ -f "$COVERAGE_FILE" ]; then
+                            echo "✅ Tìm thấy coverage file: $COVERAGE_FILE"
+                            cp "$COVERAGE_FILE" "$COVERAGE_DIR/coverage.cobertura.xml"
+                        else
+                            echo "⚠️ Không tìm thấy coverage file"
+                        fi
+                    '''
+                }
             }
             post {
                 always {
@@ -118,8 +130,9 @@ pipeline {
         stage('Test Report Summary') {
             steps {
                 echo '📋 Tạo Test Report Summary...'
-                sh '''
-                    cat > "$TEST_RESULTS_DIR/test-summary.txt" << 'EOF'
+                ansiColor('xterm') {
+                    sh '''
+                        cat > "$TEST_RESULTS_DIR/test-summary.txt" << 'EOF'
 ╔══════════════════════════════════════════════════════════════╗
 ║         📊 BÁO CÁO KẾT QUẢ TEST CASE - FOODBOOK              ║
 ╚══════════════════════════════════════════════════════════════╝
@@ -140,8 +153,9 @@ Xem chi tiết trong Test Results và Coverage Report bên dưới.
 
 ───────────────────────────────────────────────────────────────
 EOF
-                    cat "$TEST_RESULTS_DIR/test-summary.txt"
-                '''
+                        cat "$TEST_RESULTS_DIR/test-summary.txt"
+                    '''
+                }
             }
         }
     }
