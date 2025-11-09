@@ -46,10 +46,10 @@ pipeline {
                 echo "🧹 Cleaning workspace and creating result directories..."
                 bat '''
                     dotnet clean "%SOLUTION_PATH%" --configuration "%BUILD_CONFIG%" --verbosity minimal
-                    if exist "%TEST_RESULTS_DIR%" rmdir /S /Q "%TEST_RESULTS_DIR%"
-                    if exist "%COVERAGE_DIR%" rmdir /S /Q "%COVERAGE_DIR%"
-                    mkdir "%TEST_RESULTS_DIR%"
-                    mkdir "%COVERAGE_DIR%"
+                    if exist "TestResults" rmdir /S /Q "TestResults"
+                    if exist "CoverageReports" rmdir /S /Q "CoverageReports"
+                    mkdir "TestResults"
+                    mkdir "CoverageReports"
                 '''
             }
         }
@@ -99,9 +99,9 @@ pipeline {
                         --results-directory "%TEST_RESULTS_DIR%" ^
                         --verbosity normal ^
                         /p:CollectCoverage=true ^
-                        /p:CoverletOutput="%COVERAGE_DIR%/coverage.cobertura.xml" ^ 
+                        /p:CoverletOutput="%COVERAGE_DIR%/coverage.cobertura.xml" ^
                         /p:CoverletOutputFormat=cobertura
-                    
+
                     # Force success exit code (0) for Jenkins to ensure next stages run
                     EXIT /B 0
                 '''
@@ -115,7 +115,7 @@ pipeline {
                             Write-Host "🔍 DEBUG: Starting TRX conversion process..."
                             $trxFiles = Get-ChildItem -Path 'TestResults' -Filter '*.trx' -Recurse -ErrorAction SilentlyContinue
                             if ($trxFiles) {
-                                Write-Host "✅ Found TRX files: $($trxFiles.Count)"
+                                Write-Host "✅ Found TRX files in root: $($trxFiles.Count)"
                                 foreach ($file in $trxFiles) {
                                     Write-Host "  - $($file.FullName)"
                                     $xmlFileName = [System.IO.Path]::ChangeExtension($file.Name, '.xml')
@@ -153,7 +153,50 @@ pipeline {
                                     }
                                 }
                             } else {
-                                Write-Host "⚠️ No TRX files found in TestResults directory"
+                                Write-Host "⚠️ No TRX files found in root TestResults directory"
+                            }
+
+                            # Also check project-specific directory
+                            $projectTrxFiles = Get-ChildItem -Path 'Foodbook.Tests/TestResults' -Filter '*.trx' -Recurse -ErrorAction SilentlyContinue
+                            if ($projectTrxFiles) {
+                                Write-Host "✅ Found TRX files in project dir: $($projectTrxFiles.Count)"
+                                foreach ($file in $projectTrxFiles) {
+                                    Write-Host "  - $($file.FullName)"
+                                    $xmlFileName = [System.IO.Path]::ChangeExtension($file.Name, '.xml')
+                                    $xmlFilePath = Join-Path 'Foodbook.Tests/TestResults' $xmlFileName
+
+                                    $conversionSuccess = $false
+                                    try {
+                                        & trx2junit "$($file.FullName)" "$xmlFilePath" 2>&1 | Out-Null
+                                        if (Test-Path $xmlFilePath) {
+                                            Write-Host "    -> Successfully converted to: $xmlFilePath"
+                                            $conversionSuccess = $true
+                                        }
+                                    } catch {
+                                        Write-Host "🔍 DEBUG: Direct call failed for project file."
+                                    }
+
+                                    if (-not $conversionSuccess) {
+                                        try {
+                                            $toolPath = (Get-Command trx2junit -ErrorAction SilentlyContinue).Source
+                                            if ($toolPath) {
+                                                & "$toolPath" "$($file.FullName)" "$xmlFilePath" 2>&1 | Out-Null
+                                                if (Test-Path $xmlFilePath) {
+                                                    Write-Host "    -> Successfully converted using full path: $xmlFilePath"
+                                                    $conversionSuccess = $true
+                                                }
+                                            }
+                                        } catch {
+                                            Write-Host "🔍 DEBUG: Full path method failed for project file."
+                                        }
+                                    }
+
+                                    if (-not $conversionSuccess) {
+                                        Write-Host "    -> Conversion failed for project file: $($file.Name)"
+                                    }
+                                }
+                            } else {
+                                Write-Host "⚠️ No TRX files found in project directory"
                             }
                         } catch {
                             Write-Host "❌ PowerShell script error during conversion: $($_.Exception.Message). Continuing build..."
@@ -161,22 +204,36 @@ pipeline {
                         exit 0
                     '''
                     // Publish both TRX and converted XML files
-                    junit allowEmptyResults: true, testResults: "${TEST_RESULTS_DIR}/*.xml"
+                        junit allowEmptyResults: true, testResults: "${TEST_RESULTS_DIR}/*.xml"
+                        junit allowEmptyResults: true, testResults: "TestResults/*.xml"
 
                     // FIXED: Improved diagnostic log with better error handling
                     powershell '''
                         try {
                             $trxFiles = Get-ChildItem -Path 'TestResults' -Filter '*.trx' -Recurse -ErrorAction SilentlyContinue
                             if ($trxFiles) {
-                                Write-Host "✅ Found TRX files: $($trxFiles.Count)"
+                                Write-Host "✅ Found TRX files in root: $($trxFiles.Count)"
                             } else {
-                                Write-Host "⚠️ No TRX files found in TestResults directory"
+                                Write-Host "⚠️ No TRX files found in root TestResults directory"
                             }
                             $xmlFiles = Get-ChildItem -Path 'TestResults' -Filter '*.xml' -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'coverage.cobertura.xml' }
                             if ($xmlFiles) {
-                                Write-Host "✅ Found JUnit XML files: $($xmlFiles.Count)"
+                                Write-Host "✅ Found JUnit XML files in root: $($xmlFiles.Count)"
                             } else {
-                                Write-Host "⚠️ No JUnit XML files found"
+                                Write-Host "⚠️ No JUnit XML files found in root"
+                            }
+
+                            $testTrxFiles = Get-ChildItem -Path 'Foodbook.Tests/TestResults' -Filter '*.trx' -Recurse -ErrorAction SilentlyContinue
+                            if ($testTrxFiles) {
+                                Write-Host "✅ Found TRX files in project dir: $($testTrxFiles.Count)"
+                            } else {
+                                Write-Host "⚠️ No TRX files found in project directory"
+                            }
+                            $testXmlFiles = Get-ChildItem -Path 'Foodbook.Tests/TestResults' -Filter '*.xml' -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'coverage.cobertura.xml' }
+                            if ($testXmlFiles) {
+                                Write-Host "✅ Found JUnit XML files in project dir: $($testXmlFiles.Count)"
+                            } else {
+                                Write-Host "⚠️ No JUnit XML files found in project dir"
                             }
                         } catch {
                             Write-Host "❌ Diagnostic script error: $($_.Exception.Message). Continuing build..."
@@ -196,23 +253,39 @@ pipeline {
                         # 1. Check for the existence of the coverage files in the target directory
                         $copiedCobertura = 'CoverageReports/coverage.cobertura.xml'
                         $copiedOpencover = 'CoverageReports/coverage.opencover.xml'
-                        
+
                         if (Test-Path $copiedCobertura) {
-                            Write-Host "✅ Cobertura file ready: $((Get-Item $copiedCobertura).Length) bytes"
+                            Write-Host "✅ Cobertura file ready in root: $((Get-Item $copiedCobertura).Length) bytes"
                         } else {
-                            Write-Host '❌ Cobertura file not found in target directory.'
+                            Write-Host '❌ Cobertura file not found in root CoverageReports.'
                         }
 
                         if (Test-Path $copiedOpencover) {
-                            Write-Host "✅ OpenCover file ready: $((Get-Item $copiedOpencover).Length) bytes"
+                            Write-Host "✅ OpenCover file ready in root: $((Get-Item $copiedOpencover).Length) bytes"
                         } else {
-                            Write-Host '❌ OpenCover file not found in target directory.'
+                            Write-Host '❌ OpenCover file not found in root CoverageReports.'
+                        }
+
+                        # Also check project-specific directory
+                        $projectCobertura = 'Foodbook.Tests/CoverageReports/coverage.cobertura.xml'
+                        $projectOpencover = 'Foodbook.Tests/CoverageReports/coverage.opencover.xml'
+
+                        if (Test-Path $projectCobertura) {
+                            Write-Host "✅ Cobertura file ready in project dir: $((Get-Item $projectCobertura).Length) bytes"
+                        } else {
+                            Write-Host '❌ Cobertura file not found in project CoverageReports.'
+                        }
+
+                        if (Test-Path $projectOpencover) {
+                            Write-Host "✅ OpenCover file ready in project dir: $((Get-Item $projectOpencover).Length) bytes"
+                        } else {
+                            Write-Host '❌ OpenCover file not found in project CoverageReports.'
                         }
                         exit 0
                     '''
 
-                    def finalCoberturaFile = "${COVERAGE_DIR}/coverage.cobertura.xml"
-                    def finalOpencoverFile = "${COVERAGE_DIR}/coverage.opencover.xml"
+                    def finalCoberturaFile = "CoverageReports/coverage.cobertura.xml"
+                    def finalOpencoverFile = "CoverageReports/coverage.opencover.xml"
 
                     // Publish coverage reports with enhanced adapters
                     def adapters = []
@@ -239,8 +312,8 @@ pipeline {
             steps {
                 echo "📄 Generating enhanced HTML coverage reports..."
                 script {
-                    def finalCoberturaFile = "${COVERAGE_DIR}/coverage.cobertura.xml"
-                    def finalOpencoverFile = "${COVERAGE_DIR}/coverage.opencover.xml"
+                    def finalCoberturaFile = "CoverageReports/coverage.cobertura.xml"
+                    def finalOpencoverFile = "CoverageReports/coverage.opencover.xml"
 
                     // IMPROVED: Generate multiple report formats for beautiful visualization
                     def reportFiles = []
@@ -258,7 +331,7 @@ pipeline {
                         bat """
                             reportgenerator ^
                                 -reports:"${reportsArg}" ^
-                                -targetdir:"%COVERAGE_DIR%/HtmlReport" ^
+                                -targetdir:"CoverageReports/HtmlReport" ^
                                 -reporttypes:Html;HtmlChart;HtmlSummary ^
                                 -title:"CookBook Coverage Report" ^
                                 -tag:"${BUILD_NUMBER}" ^
@@ -269,7 +342,7 @@ pipeline {
                         bat """
                             reportgenerator ^
                                 -reports:"${reportsArg}" ^
-                                -targetdir:"%COVERAGE_DIR%/SummaryReport" ^
+                                -targetdir:"CoverageReports/SummaryReport" ^
                             -reporttypes:HtmlInline_AzurePipelines ^
                                 -title:"CookBook Test Summary" ^
                                 -tag:"${BUILD_NUMBER}"
@@ -309,7 +382,7 @@ pipeline {
                         publishHTML(
                             target: [
                                 allowMissing: false,
-                                directory: "${COVERAGE_DIR}/HtmlReport",
+                                directory: "CoverageReports/HtmlReport",
                                 indexPages: 'index.html',
                                 keepAll: true,
                                 reportName: 'Detailed HTML Coverage Report'
@@ -319,7 +392,7 @@ pipeline {
                         publishHTML(
                             target: [
                                 allowMissing: false,
-                                directory: "${COVERAGE_DIR}/SummaryReport",
+                                directory: "CoverageReports/SummaryReport",
                                 indexPages: 'index.html',
                                 keepAll: true,
                                 reportName: 'Coverage Summary Report'
@@ -337,7 +410,7 @@ pipeline {
         stage('Publish Artifacts') {
             steps {
                 echo "🚀 Preparing build artifacts for archiving..."
-                bat 'dotnet publish "%SOLUTION_PATH%" --configuration "%BUILD_CONFIG%" --no-build --output "%COVERAGE_DIR%/publish"'
+                bat 'dotnet publish "%SOLUTION_PATH%" --configuration "%BUILD_CONFIG%" --no-build --output "CoverageReports/publish"'
             }
         }
         
@@ -424,10 +497,10 @@ pipeline {
     post {
         always {
             echo "📦 Archiving test results and coverage data..."
-            archiveArtifacts artifacts: "${TEST_RESULTS_DIR}/**/*", allowEmptyArchive: true, fingerprint: true
-            archiveArtifacts artifacts: "${COVERAGE_DIR}/publish/**/*", allowEmptyArchive: true, fingerprint: true
-            archiveArtifacts artifacts: "${COVERAGE_DIR}/HtmlReport/**/*", allowEmptyArchive: true, fingerprint: true
-            archiveArtifacts artifacts: "${COVERAGE_DIR}/SummaryReport/**/*", allowEmptyArchive: true, fingerprint: true
+            archiveArtifacts artifacts: "TestResults/**/*", allowEmptyArchive: true, fingerprint: true
+            archiveArtifacts artifacts: "CoverageReports/publish/**/*", allowEmptyArchive: true, fingerprint: true
+            archiveArtifacts artifacts: "CoverageReports/HtmlReport/**/*", allowEmptyArchive: true, fingerprint: true
+            archiveArtifacts artifacts: "CoverageReports/SummaryReport/**/*", allowEmptyArchive: true, fingerprint: true
         }
 
         success {
