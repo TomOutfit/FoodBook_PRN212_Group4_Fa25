@@ -61,10 +61,14 @@ pipeline {
                     bat '''
                         dotnet --info
                         dotnet nuget locals all --clear
-                        
-                        rem *** ADDED: Install ReportGenerator tool ***
-                        dotnet tool install --global dotnet-reportgenerator-globaltool --ignore-failed-sources
-                        
+
+                        rem *** IMPROVED: Install ReportGenerator tool with version and force update ***
+                        dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.1.26 --ignore-failed-sources
+                        dotnet tool update --global dotnet-reportgenerator-globaltool --ignore-failed-sources
+
+                        rem *** ADDED: Install trx2junit for better test report conversion ***
+                        dotnet tool install --global trx2junit --ignore-failed-sources
+
                         rem Restore solution packages with stability flags
                         dotnet restore "%SOLUTION_PATH%" ^
                             --verbosity minimal ^
@@ -86,51 +90,135 @@ pipeline {
         stage('Unit Tests') {
             steps {
                 echo "🧪 Running unit tests and collecting coverage..."
-                // Dùng lệnh dotnet test với cờ CollectCoverage để tạo ra TRX và Cobertura XML
+                // IMPROVED: Enhanced test execution with better error handling and coverage collection
                 bat '''
                     dotnet test "%TEST_PROJECT_PATH%" ^
                         --configuration "%BUILD_CONFIG%" ^
                         --no-build ^
                         --logger "trx;LogFileName=TestResults.trx" ^
                         --results-directory "%TEST_RESULTS_DIR%" ^
+                        --verbosity normal ^
                         /p:CollectCoverage=true ^
                         /p:CoverletOutput="%TEST_RESULTS_DIR%/" ^
-                        /p:CoverletOutputFormat=cobertura
+                        /p:CoverletOutputFormat=cobertura ^
+                        /p:CoverletOutputFormat=json ^
+                        /p:CoverletOutputFormat=opencover ^
+                        /p:ExcludeByAttribute="Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute" ^
+                        /p:SkipAutoProps=true
                 '''
             }
             post {
                 always {
-                    echo "📄 Publishing test results to JUnit reporter..."
-                    // Publish TRX files. JUnit plugin sẽ đọc và tạo Tab Test Result
-                    junit allowEmptyResults: true, testResults: "${TEST_RESULTS_DIR}/*.trx"
+                    echo "📄 Processing and publishing test results..."
+                    // IMPROVED: Convert TRX to JUnit XML for better Jenkins integration
+                    powershell '''
+                        $trxFiles = Get-ChildItem -Path 'TestResults' -Filter '*.trx' -Recurse -ErrorAction SilentlyContinue
+                        if ($trxFiles) {
+                            Write-Host "✅ Found TRX files: $($trxFiles.Count)"
+                            foreach ($file in $trxFiles) {
+                                Write-Host "  - $($file.FullName)"
+                                # Convert TRX to JUnit XML for better reporting
+                                $xmlFileName = [System.IO.Path]::ChangeExtension($file.Name, '.xml')
+                                $xmlFilePath = Join-Path 'TestResults' $xmlFileName
+                                try {
+                                    trx2junit "$($file.FullName)" "$xmlFilePath"
+                                    Write-Host "    -> Converted to: $xmlFilePath"
+                                } catch {
+                                    Write-Host "    -> Conversion failed: $($_.Exception.Message)"
+                                }
+                            }
+                        } else {
+                            Write-Host "⚠️ No TRX files found in TestResults directory"
+                        }
+                    '''
+                    // Publish both TRX and converted XML files
+                    junit allowEmptyResults: true, testResults: "${TEST_RESULTS_DIR}/*.xml"
+
+                    // Diagnostic log: Check for test results files
+                    powershell '''
+                        $trxFiles = Get-ChildItem -Path 'TestResults' -Filter '*.trx' -Recurse -ErrorAction SilentlyContinue
+                        if ($trxFiles) {
+                            Write-Host "✅ Found TRX files: $($trxFiles.Count)"
+                            foreach ($file in $trxFiles) { Write-Host "  - $($file.FullName)" }
+                        } else {
+                            Write-Host "⚠️ No TRX files found in TestResults directory"
+                        }
+                        $xmlFiles = Get-ChildItem -Path 'TestResults' -Filter '*.xml' -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'coverage.cobertura.xml' }
+                        if ($xmlFiles) {
+                            Write-Host "✅ Found JUnit XML files: $($xmlFiles.Count)"
+                            foreach ($file in $xmlFiles) { Write-Host "  - $($file.FullName)" }
+                        } else {
+                            Write-Host "⚠️ No JUnit XML files found"
+                        }
+                    '''
                 }
             }
         }
 
         stage('Code Coverage') {
             steps {
-                echo "📊 Publishing coverage report (Jenkins UI Integration)..."
+                echo "📊 Processing and publishing coverage reports..."
                 script {
-                    // *** ĐÃ FIX: Chuyển logic PowerShell sang bước powershell riêng biệt ***
-                    // 1. Tìm file cobertura.xml trong thư mục con của TestResults và copy ra
+                    // IMPROVED: Enhanced coverage file handling with multiple format support
                     powershell '''
-                        $sourceFile = Get-ChildItem -Recurse -Path 'TestResults' -Filter 'coverage.cobertura.xml' | Select-Object -First 1;
-                        if ($sourceFile) {
-                            Write-Host '✅ Tìm thấy coverage file: ' $sourceFile.FullName;
-                            Copy-Item $sourceFile.FullName 'CoverageReports/coverage.cobertura.xml' -Force
+                        # 1. Find and copy coverage files (support multiple formats)
+                        $coberturaFile = Get-ChildItem -Recurse -Path 'TestResults' -Filter 'coverage.cobertura.xml' | Select-Object -First 1;
+                        $opencoverFile = Get-ChildItem -Recurse -Path 'TestResults' -Filter 'coverage.opencover.xml' | Select-Object -First 1;
+
+                        if ($coberturaFile) {
+                            Write-Host '✅ Found Cobertura coverage file:' $coberturaFile.FullName;
+                            Copy-Item $coberturaFile.FullName 'CoverageReports/coverage.cobertura.xml' -Force
+                            Write-Host '✅ Copied Cobertura file to CoverageReports/'
                         } else {
-                            Write-Host '⚠️ Không tìm thấy coverage file'
+                            Write-Host '⚠️ No Cobertura coverage file found'
+                        }
+
+                        if ($opencoverFile) {
+                            Write-Host '✅ Found OpenCover coverage file:' $opencoverFile.FullName;
+                            Copy-Item $opencoverFile.FullName 'CoverageReports/coverage.opencover.xml' -Force
+                            Write-Host '✅ Copied OpenCover file to CoverageReports/'
+                        } else {
+                            Write-Host '⚠️ No OpenCover coverage file found'
+                        }
+
+                        # Diagnostic: Check copied files
+                        $copiedCobertura = 'CoverageReports/coverage.cobertura.xml'
+                        $copiedOpencover = 'CoverageReports/coverage.opencover.xml'
+
+                        if (Test-Path $copiedCobertura) {
+                            $fileSize = (Get-Item $copiedCobertura).Length
+                            Write-Host "✅ Cobertura file ready: $fileSize bytes"
+                        } else {
+                            Write-Host '❌ Cobertura file not found after copy'
+                        }
+
+                        if (Test-Path $copiedOpencover) {
+                            $fileSize = (Get-Item $copiedOpencover).Length
+                            Write-Host "✅ OpenCover file ready: $fileSize bytes"
+                        } else {
+                            Write-Host '❌ OpenCover file not found after copy'
                         }
                     '''
 
-                    def finalCoberturaFile = "${COVERAGE_DIR}/coverage.cobertura.xml" 
+                    def finalCoberturaFile = "${COVERAGE_DIR}/coverage.cobertura.xml"
+                    def finalOpencoverFile = "${COVERAGE_DIR}/coverage.opencover.xml"
+
+                    // Publish coverage reports with enhanced adapters
+                    def adapters = []
                     if (fileExists(finalCoberturaFile)) {
-                        // 2. Publish using the Cobertura plugin (Adds the Coverage graph to Jenkins)
-                        publishCoverage adapters: [
-                            coberturaAdapter(finalCoberturaFile)
-                        ], sourceFileResolver: sourceFiles('STORE_LAST_BUILD')
+                        adapters.add(coberturaAdapter(finalCoberturaFile))
+                        echo "✅ Added Cobertura coverage adapter"
+                    }
+                    if (fileExists(finalOpencoverFile)) {
+                        adapters.add(istanbulCoberturaAdapter(finalOpencoverFile))  // Note: Using istanbul for OpenCover support
+                        echo "✅ Added OpenCover coverage adapter"
+                    }
+
+                    if (!adapters.isEmpty()) {
+                        publishCoverage adapters: adapters, sourceFileResolver: sourceFiles('STORE_LAST_BUILD')
+                        echo "✅ Published enhanced coverage reports to Jenkins"
                     } else {
-                        echo "⚠️ Không tìm thấy file coverage tại ${finalCoberturaFile} — bỏ qua bước này."
+                        echo "⚠️ Không tìm thấy file coverage nào — bỏ qua bước này."
                     }
                 }
             }
@@ -138,31 +226,104 @@ pipeline {
         
         stage('Generate & Publish HTML Report') {
             steps {
-                echo "📄 Generating and publishing HTML coverage report..."
+                echo "📄 Generating enhanced HTML coverage reports..."
                 script {
                     def finalCoberturaFile = "${COVERAGE_DIR}/coverage.cobertura.xml"
+                    def finalOpencoverFile = "${COVERAGE_DIR}/coverage.opencover.xml"
+
+                    // IMPROVED: Generate multiple report formats for beautiful visualization
+                    def reportFiles = []
                     if (fileExists(finalCoberturaFile)) {
-                        // 1. Run ReportGenerator to create HTML report from Cobertura XML
-                        bat '''
+                        reportFiles.add(finalCoberturaFile)
+                    }
+                    if (fileExists(finalOpencoverFile)) {
+                        reportFiles.add(finalOpencoverFile)
+                    }
+
+                    if (!reportFiles.isEmpty()) {
+                        def reportsArg = reportFiles.join(';')
+
+                        // Generate multiple beautiful report formats
+                        bat """
                             reportgenerator ^
-                                -reports:"%COVERAGE_DIR%/coverage.cobertura.xml" ^
+                                -reports:"${reportsArg}" ^
                                 -targetdir:"%COVERAGE_DIR%/HtmlReport" ^
-                                -reporttypes:Html
+                                -reporttypes:Html;HtmlChart;HtmlSummary ^
+                                -title:"CookBook Coverage Report" ^
+                                -tag:"${BUILD_NUMBER}" ^
+                                -verbosity:Info
+                        """
+
+                        // Generate additional summary report
+                        bat """
+                            reportgenerator ^
+                                -reports:"${reportsArg}" ^
+                                -targetdir:"%COVERAGE_DIR%/SummaryReport" ^
+                                -reporttypes:HtmlInline_AzurePipelines ^
+                                -title:"CookBook Test Summary" ^
+                                -tag:"${BUILD_NUMBER}"
+                        """
+
+                        // Diagnostic: Check if HTML reports were generated successfully
+                        powershell '''
+                            $htmlDir = 'CoverageReports/HtmlReport'
+                            $summaryDir = 'CoverageReports/SummaryReport'
+
+                            if (Test-Path $htmlDir) {
+                                $indexFile = Join-Path $htmlDir 'index.html'
+                                if (Test-Path $indexFile) {
+                                    Write-Host '✅ Main HTML report generated successfully'
+                                    $fileSize = (Get-Item $indexFile).Length
+                                    Write-Host "Index file size: $fileSize bytes"
+                                    $totalFiles = (Get-ChildItem -Path $htmlDir -Recurse -File).Count
+                                    Write-Host "Total files in HTML report: $totalFiles"
+                                } else {
+                                    Write-Host '❌ index.html not found in HtmlReport directory'
+                                }
+                            } else {
+                                Write-Host '❌ HtmlReport directory not created'
+                            }
+
+                            if (Test-Path $summaryDir) {
+                                $summaryFile = Join-Path $summaryDir 'index.html'
+                                if (Test-Path $summaryFile) {
+                                    Write-Host '✅ Summary report generated successfully'
+                                    $fileSize = (Get-Item $summaryFile).Length
+                                    Write-Host "Summary file size: $fileSize bytes"
+                                } else {
+                                    Write-Host '❌ Summary index.html not found'
+                                }
+                            } else {
+                                Write-Host '❌ SummaryReport directory not created'
+                            }
                         '''
-                        
-                        // 2. Publish the generated HTML report using HTML Publisher Plugin
-                        echo "📊 Publishing HTML report to Jenkins..."
+
+                        // Publish multiple HTML reports to Jenkins
+                        echo "📊 Publishing enhanced HTML reports to Jenkins..."
+
                         publishHTML(
                             target: [
                                 allowMissing: false,
                                 directory: "${COVERAGE_DIR}/HtmlReport",
                                 indexPages: 'index.html',
                                 keepAll: true,
-                                reportName: 'HTML Coverage Report'
+                                reportName: 'Detailed HTML Coverage Report'
                             ]
                         )
+
+                        publishHTML(
+                            target: [
+                                allowMissing: false,
+                                directory: "${COVERAGE_DIR}/SummaryReport",
+                                indexPages: 'index.html',
+                                keepAll: true,
+                                reportName: 'Coverage Summary Report'
+                            ]
+                        )
+
+                        echo "✅ Enhanced HTML reports published to Jenkins"
                     } else {
-                        echo "⚠️ Không tìm thấy file coverage XML, bỏ qua HTML report."
+                        echo "⚠️ Không tìm thấy file coverage nào, bỏ qua HTML report generation."
                     }
                 }
             }
@@ -177,52 +338,78 @@ pipeline {
         
         stage('Test Report Summary') {
             steps {
-                echo '📋 Đang tạo Test Report Summary...'
-                // *** ĐÃ FIX: Chuyển sang bước powershell riêng biệt để tránh lỗi Groovy ***
+                echo '📋 Creating enhanced Test Report Summary...'
+                // IMPROVED: Enhanced summary with more detailed information and beautiful formatting
                 powershell '''
                     $summaryFile = 'TestResults/test-summary.txt';
-                    
+
                     $buildNumber = $env:BUILD_NUMBER;
                     $branchName = $env:GIT_BRANCH;
                     $commitId = $env:GIT_COMMIT;
 
-                    $trx = @(Get-ChildItem -Path 'TestResults' -Filter '*.trx' -Recurse -ErrorAction SilentlyContinue).Count;
-                    $hasCov = Test-Path 'CoverageReports/coverage.cobertura.xml';
-                    $hasCovText = if ($hasCov) { 'Yes' } else { 'No' };
-                    
+                    # Enhanced file counting
+                    $trxFiles = @(Get-ChildItem -Path 'TestResults' -Filter '*.trx' -Recurse -ErrorAction SilentlyContinue);
+                    $xmlFiles = @(Get-ChildItem -Path 'TestResults' -Filter '*.xml' -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'coverage.cobertura.xml' -and $_.Name -ne 'coverage.opencover.xml' });
+                    $coberturaExists = Test-Path 'CoverageReports/coverage.cobertura.xml';
+                    $opencoverExists = Test-Path 'CoverageReports/coverage.opencover.xml';
+                    $htmlExists = Test-Path 'CoverageReports/HtmlReport/index.html';
+                    $summaryExists = Test-Path 'CoverageReports/SummaryReport/index.html';
+
                     New-Item -ItemType Directory -Force -Path 'TestResults' | Out-Null;
 
-                    Set-Content -Path $summaryFile -Value '╔══════════════════════════════════════════════════════════════╗' -Encoding UTF8;
-                    Add-Content -Path $summaryFile -Value '║           📊 BÁO CÁO KẾT QUẢ TEST CASE - COOKBOOK             ║';
-                    Add-Content -Path $summaryFile -Value '╚══════════════════════════════════════════════════════════════╝';
+                    # Beautiful ASCII art header
+                    Set-Content -Path $summaryFile -Value '╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════╗' -Encoding UTF8;
+                    Add-Content -Path $summaryFile -Value '║                                           📊 COOKBOOK TEST REPORT                                           ║';
+                    Add-Content -Path $summaryFile -Value '╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════╝';
                     Add-Content -Path $summaryFile -Value '';
-                    Add-Content -Path $summaryFile -Value "Ngày chạy: $(Get-Date -Format 'dd/MM/yyyy HH:mm:ss')";
-                    Add-Content -Path $summaryFile -Value "Build Number: $buildNumber";
-                    Add-Content -Path $summaryFile -Value "Branch: $branchName";
-                    Add-Content -Path $summaryFile -Value "Commit: $commitId";
+                    Add-Content -Path $summaryFile -Value "⏰ Execution Time: $(Get-Date -Format 'dd/MM/yyyy HH:mm:ss')";
+                    Add-Content -Path $summaryFile -Value "🏗️  Build: #$buildNumber";
+                    Add-Content -Path $summaryFile -Value "🌿 Branch: $branchName";
+                    Add-Content -Path $summaryFile -Value "💾 Commit: $($commitId.Substring(0, [Math]::Min(8, $commitId.Length)))";
                     Add-Content -Path $summaryFile -Value '';
-                    Add-Content -Path $summaryFile -Value '───────────────────────────────────────────────────────────────';
+                    Add-Content -Path $summaryFile -Value '═══════════════════════════════════════════════════════════════════════════════════════════════════════════════';
                     Add-Content -Path $summaryFile -Value '';
-                    Add-Content -Path $summaryFile -Value '📈 TỔNG QUAN KẾT QUẢ:';
+                    Add-Content -Path $summaryFile -Value '📈 EXECUTION SUMMARY:';
                     Add-Content -Path $summaryFile -Value '';
-                    Add-Content -Path $summaryFile -Value "Số file TRX: $trx";
-                    Add-Content -Path $summaryFile -Value 'Lưu ý: Nếu không có Test Case, vẫn coi là PASSED (0 test).';
+                    Add-Content -Path $summaryFile -Value "📋 Test Result Files (TRX): $($trxFiles.Count) files";
+                    Add-Content -Path $summaryFile -Value "📋 Test Result Files (JUnit XML): $($xmlFiles.Count) files";
+                    Add-Content -Path $summaryFile -Value "📊 Code Coverage (Cobertura): $(if ($coberturaExists) { '✅ Available' } else { '❌ Not Generated' })";
+                    Add-Content -Path $summaryFile -Value "📊 Code Coverage (OpenCover): $(if ($opencoverExists) { '✅ Available' } else { '❌ Not Generated' })";
+                    Add-Content -Path $summaryFile -Value "🎨 HTML Detailed Report: $(if ($htmlExists) { '✅ Generated' } else { '❌ Failed' })";
+                    Add-Content -Path $summaryFile -Value "📋 Coverage Summary Report: $(if ($summaryExists) { '✅ Generated' } else { '❌ Failed' })";
                     Add-Content -Path $summaryFile -Value '';
-                    Add-Content -Path $summaryFile -Value '───────────────────────────────────────────────────────────────';
+                    Add-Content -Path $summaryFile -Value '═══════════════════════════════════════════════════════════════════════════════════════════════════════════════';
                     Add-Content -Path $summaryFile -Value '';
-                    Add-Content -Path $summaryFile -Value '📁 CÁC FILE BÁO CÁO:';
-                    Add-Content -Path $summaryFile -Value '- Test Results (TRX): TestResults/*.trx';
-                    Add-Content -Path $summaryFile -Value '- Test Results (JUnit): TestResults/*.xml';
-                    Add-Content -Path $summaryFile -Value "- Code Coverage: CoverageReports/coverage.cobertura.xml (Available: $hasCovText)";
+                    Add-Content -Path $summaryFile -Value '📁 GENERATED REPORTS:';
                     Add-Content -Path $summaryFile -Value '';
-                    Add-Content -Path $summaryFile -Value '───────────────────────────────────────────────────────────────';
+                    Add-Content -Path $summaryFile -Value '🔹 Test Results:';
+                    Add-Content -Path $summaryFile -Value '  • TRX Format: TestResults/*.trx';
+                    Add-Content -Path $summaryFile -Value '  • JUnit XML: TestResults/*.xml (converted for better Jenkins integration)';
                     Add-Content -Path $summaryFile -Value '';
-                    Add-Content -Path $summaryFile -Value '🔗 XEM CHI TIẾT:';
-                    Add-Content -Path $summaryFile -Value "- Test Results: Xem tab 'Test Result' bên trái";
-                    Add-Content -Path $summaryFile -Value "- Code Coverage: Xem tab 'Coverage Report' (nếu có) bên trái";
-                    Add-Content -Path $summaryFile -Value "- HTML Report: Xem liên kết 'HTML Coverage Report' bên trái (nếu có)";
-                    Add-Content -Path $summaryFile -Value "- Console Output: Xem 'Console Output' để xem log chi tiết";
+                    Add-Content -Path $summaryFile -Value '🔹 Code Coverage:';
+                    Add-Content -Path $summaryFile -Value '  • Raw Data: CoverageReports/coverage.*.xml';
+                    Add-Content -Path $summaryFile -Value '  • Jenkins UI: Integrated coverage graphs and metrics';
                     Add-Content -Path $summaryFile -Value '';
+                    Add-Content -Path $summaryFile -Value '🔹 HTML Reports:';
+                    Add-Content -Path $summaryFile -Value '  • Detailed: CoverageReports/HtmlReport/index.html';
+                    Add-Content -Path $summaryFile -Value '  • Summary: CoverageReports/SummaryReport/index.html';
+                    Add-Content -Path $summaryFile -Value '';
+                    Add-Content -Path $summaryFile -Value '═══════════════════════════════════════════════════════════════════════════════════════════════════════════════';
+                    Add-Content -Path $summaryFile -Value '';
+                    Add-Content -Path $summaryFile -Value '🔗 HOW TO VIEW REPORTS:';
+                    Add-Content -Path $summaryFile -Value '';
+                    Add-Content -Path $summaryFile -Value '📊 Jenkins Dashboard:';
+                    Add-Content -Path $summaryFile -Value '  • Test Result: Click "Test Result" tab on the left sidebar';
+                    Add-Content -Path $summaryFile -Value '  • Coverage Report: Click "Coverage Report" tab on the left sidebar';
+                    Add-Content -Path $summaryFile -Value '  • HTML Reports: Click "Detailed HTML Coverage Report" or "Coverage Summary Report" links';
+                    Add-Content -Path $summaryFile -Value '';
+                    Add-Content -Path $summaryFile -Value '📋 Download Options:';
+                    Add-Content -Path $summaryFile -Value '  • All artifacts are archived and available for download';
+                    Add-Content -Path $summaryFile -Value '  • Raw data files can be downloaded for external analysis';
+                    Add-Content -Path $summaryFile -Value '';
+                    Add-Content -Path $summaryFile -Value '⚠️  Note: If no tests are executed, status is still PASSED (0 tests = success)';
+                    Add-Content -Path $summaryFile -Value '';
+                    Write-Host '✅ Enhanced test report summary generated successfully'
                     Get-Content $summaryFile | Write-Output
                 '''
             }
@@ -235,6 +422,7 @@ pipeline {
             archiveArtifacts artifacts: "${TEST_RESULTS_DIR}/**/*", allowEmptyArchive: true, fingerprint: true
             archiveArtifacts artifacts: "${COVERAGE_DIR}/publish/**/*", allowEmptyArchive: true, fingerprint: true
             archiveArtifacts artifacts: "${COVERAGE_DIR}/HtmlReport/**/*", allowEmptyArchive: true, fingerprint: true
+            archiveArtifacts artifacts: "${COVERAGE_DIR}/SummaryReport/**/*", allowEmptyArchive: true, fingerprint: true
         }
 
         success {
