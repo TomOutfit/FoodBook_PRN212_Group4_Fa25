@@ -213,7 +213,7 @@ pipeline {
                         echo "📊 Using coverage files: ${reportsArg}"
 
                         // Generate HTML report (Html and HtmlChart) - Cung cấp báo cáo chi tiết
-                        // Đã thay đổi ReportType thành HtmlInline_AzurePipelines cho báo cáo chi tiết
+                        // Sử dụng HtmlInline_AzurePipelines cho báo cáo chi tiết
                         bat """
                             reportgenerator ^
                                 -reports:"${reportsArg}" ^
@@ -231,7 +231,7 @@ pipeline {
                                 -reporttypes:HtmlSummary ^
                                 -title:"CookBook Coverage Summary" ^
                                 -tag:"${BUILD_NUMBER}" ^
-                                -verbosity:Info
+                            -verbosity:Info
                         """
 
                         // Publish multiple HTML reports to Jenkins
@@ -278,7 +278,7 @@ pipeline {
         stage('Test Report Summary') {
             steps {
                 echo '📋 Creating enhanced Test Report Summary...'
-                // ĐÃ SỬA: Thay thế toán tử ?? bằng if/else (chuẩn PS cũ)
+                // ĐÃ SỬA: Loại bỏ ký tự comment không hợp lệ (//) trong khối PowerShell
                 powershell '''
                     $summaryFile = 'TestResults/test-summary.txt';
 
@@ -290,7 +290,7 @@ pipeline {
                     $trxFiles = @(Get-ChildItem -Path 'TestResults' -Filter '*.trx' -Recurse -ErrorAction SilentlyContinue);
                     $xmlFiles = @(Get-ChildItem -Path 'TestResults' -Filter '*.xml' -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Name -notlike '*coverage*' });
                     $coberturaExists = Test-Path 'CoverageReports/coverage.cobertura.xml';
-                    $htmlExists = Test-Path 'CoverageReports/DetailedReport/index.html'; // Đã thay đổi đường dẫn
+                    $htmlExists = Test-Path 'CoverageReports/DetailedReport/index.html'; 
                     $summaryExists = Test-Path 'CoverageReports/SummaryReport/index.html';
 
                     New-Item -ItemType Directory -Force -Path 'TestResults' | Out-Null;
@@ -334,7 +334,7 @@ pipeline {
     post {
         always {
             echo "📦 Archiving test results and coverage data..."
-            // Đã thay đổi đường dẫn archieve Artifacts để khớp với tên thư mục mới
+            // Archiving artifacts
             archiveArtifacts artifacts: "TestResults/**/*", allowEmptyArchive: true, fingerprint: true
             archiveArtifacts artifacts: "CoverageReports/publish/**/*", allowEmptyArchive: true, fingerprint: true
             archiveArtifacts artifacts: "CoverageReports/DetailedReport/**/*", allowEmptyArchive: true, fingerprint: true
