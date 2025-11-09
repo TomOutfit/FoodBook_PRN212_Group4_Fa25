@@ -254,15 +254,19 @@ namespace Foodbook.Business.Services
                 nutrition.TotalCholesterol += ingredientNutrition.Cholesterol;
                 nutrition.TotalSaturatedFat += ingredientNutrition.SaturatedFat;
                 nutrition.TotalTransFat += ingredientNutrition.TransFat;
-            }
-
-            // Step 3: Generate AI-powered health assessment
-            nutrition.Rating = GenerateNutritionRating(nutrition);
-            nutrition.Alerts = GenerateHealthAlerts(nutrition);
-            nutrition.Recommendations = GenerateRecommendations(nutrition);
-            nutrition.AnalysisSummary = await GenerateAIAssessmentAsync(nutrition, recipeText);
-
-            return nutrition;
+                }
+    
+                // Calculate vitamins and minerals for parsed ingredients
+                nutrition.Vitamins = CalculateVitaminsForParsed(parsedIngredients);
+                nutrition.Minerals = CalculateMineralsForParsed(parsedIngredients);
+    
+                // Step 3: Generate AI-powered health assessment
+                nutrition.Rating = GenerateNutritionRating(nutrition);
+                nutrition.Alerts = GenerateHealthAlerts(nutrition);
+                nutrition.Recommendations = GenerateRecommendations(nutrition);
+                nutrition.AnalysisSummary = await GenerateAIAssessmentAsync(nutrition, recipeText);
+    
+                return nutrition;
         }
 
         private async Task<List<ParsedIngredient>> ParseRecipeTextWithAI(string recipeText)
@@ -312,14 +316,36 @@ namespace Foodbook.Business.Services
             if (text.Contains("nước tương") || text.Contains("soy sauce"))
             {
                 var quantity = ExtractQuantity(text, "nước tương", "soy sauce");
-                mockParsedIngredients.Add(new ParsedIngredient 
-                { 
-                    Name = "soy sauce", 
-                    Quantity = quantity, 
-                    Unit = "ml" 
+                mockParsedIngredients.Add(new ParsedIngredient
+                {
+                    Name = "soy sauce",
+                    Quantity = quantity,
+                    Unit = "ml"
                 });
             }
-            
+
+            if (text.Contains("khoai tây") || text.Contains("potato"))
+            {
+                var quantity = ExtractQuantity(text, "khoai tây", "potato");
+                mockParsedIngredients.Add(new ParsedIngredient
+                {
+                    Name = "potato",
+                    Quantity = quantity,
+                    Unit = "piece"
+                });
+            }
+
+            if (text.Contains("chuối") || text.Contains("banana"))
+            {
+                var quantity = ExtractQuantity(text, "chuối", "banana");
+                mockParsedIngredients.Add(new ParsedIngredient
+                {
+                    Name = "banana",
+                    Quantity = quantity,
+                    Unit = "piece"
+                });
+            }
+
             // Default fallback if no ingredients detected
             if (!mockParsedIngredients.Any())
             {
@@ -465,6 +491,9 @@ namespace Foodbook.Business.Services
                 var n when n.Contains("milk") => new IngredientNutrition { Calories = 42, Protein = 3.4m, Carbs = 5, Fat = 1, Fiber = 0, Sugar = 5, Sodium = 44, Cholesterol = 5, SaturatedFat = 0.6m, TransFat = 0 },
                 var n when n.Contains("oil") => new IngredientNutrition { Calories = 884, Protein = 0, Carbs = 0, Fat = 100, Fiber = 0, Sugar = 0, Sodium = 0, Cholesterol = 0, SaturatedFat = 14, TransFat = 0 },
                 var n when n.Contains("butter") => new IngredientNutrition { Calories = 717, Protein = 0.9m, Carbs = 0.1m, Fat = 81, Fiber = 0, Sugar = 0.1m, Sodium = 11, Cholesterol = 215, SaturatedFat = 51, TransFat = 3 },
+                var n when n.Contains("salt") => new IngredientNutrition { Calories = 0, Protein = 0, Carbs = 0, Fat = 0, Fiber = 0, Sugar = 0, Sodium = 39333, Cholesterol = 0, SaturatedFat = 0, TransFat = 0 }, // High sodium for salt
+                var n when n.Contains("banana") => new IngredientNutrition { Calories = 89, Protein = 1.1m, Carbs = 23, Fat = 0.3m, Fiber = 2.6m, Sugar = 12.2m, Sodium = 1, Cholesterol = 0, SaturatedFat = 0.1m, TransFat = 0 },
+                var n when n.Contains("nuts") || n.Contains("cashew") => new IngredientNutrition { Calories = 553, Protein = 18, Carbs = 30, Fat = 44, Fiber = 3.3m, Sugar = 5.9m, Sodium = 12, Cholesterol = 0, SaturatedFat = 7.8m, TransFat = 0 },
                 _ => new IngredientNutrition { Calories = 50, Protein = 2, Carbs = 8, Fat = 1, Fiber = 2, Sugar = 3, Sodium = 10, Cholesterol = 0, SaturatedFat = 0.2m, TransFat = 0 }
             };
 
@@ -789,10 +818,91 @@ namespace Foodbook.Business.Services
             var winner = comparison.Winner;
             var score1 = comparison.Nutrition1.Rating.OverallScore;
             var score2 = comparison.Nutrition2.Rating.OverallScore;
-            
+
             return $"{winner} has a better nutritional profile " +
-                   $"({Math.Max(score1, score2)} vs {Math.Min(score1, score2)} score). " +
-                   $"Consider the specific nutrient differences when making your choice.";
+                    $"({Math.Max(score1, score2)} vs {Math.Min(score1, score2)} score). " +
+                    $"Consider the specific nutrient differences when making your choice.";
+        }
+
+        private List<VitaminInfo> CalculateVitaminsForParsed(List<ParsedIngredient> ingredients)
+        {
+            var vitamins = new List<VitaminInfo>
+            {
+                new() { Name = "Vitamin A", Amount = 0, Unit = "mcg", DailyValue = 900, Benefits = "Eye health, immune function" },
+                new() { Name = "Vitamin C", Amount = 0, Unit = "mg", DailyValue = 90, Benefits = "Immune support, collagen synthesis" },
+                new() { Name = "Vitamin D", Amount = 0, Unit = "mcg", DailyValue = 20, Benefits = "Bone health, immune function" },
+                new() { Name = "Vitamin E", Amount = 0, Unit = "mg", DailyValue = 15, Benefits = "Antioxidant, skin health" },
+                new() { Name = "Vitamin K", Amount = 0, Unit = "mcg", DailyValue = 120, Benefits = "Blood clotting, bone health" }
+            };
+
+            // Calculate based on ingredients
+            foreach (var ingredient in ingredients)
+            {
+                var name = ingredient.Name.ToLower();
+                if (name.Contains("carrot") || name.Contains("spinach"))
+                {
+                    vitamins[0].Amount += 50; // Vitamin A
+                    vitamins[1].Amount += 20; // Vitamin C
+                }
+                if (name.Contains("broccoli") || name.Contains("tomato") || name.Contains("potato") || name.Contains("banana"))
+                {
+                    vitamins[1].Amount += 30; // Vitamin C
+                }
+                if (name.Contains("egg") || name.Contains("fish") || name.Contains("cá hồi"))
+                {
+                    vitamins[2].Amount += 5; // Vitamin D
+                }
+                if (name.Contains("oil") || name.Contains("nuts") || name.Contains("dầu olive") || name.Contains("hạt điều") || name.Contains("olive oil") || name.Contains("cashew"))
+                {
+                    vitamins[3].Amount += 10; // Vitamin E
+                }
+                if (name.Contains("spinach") || name.Contains("broccoli"))
+                {
+                    vitamins[4].Amount += 25; // Vitamin K
+                }
+            }
+
+            return vitamins;
+        }
+
+        private List<MineralInfo> CalculateMineralsForParsed(List<ParsedIngredient> ingredients)
+        {
+            var minerals = new List<MineralInfo>
+            {
+                new() { Name = "Calcium", Amount = 0, Unit = "mg", DailyValue = 1000, Benefits = "Bone health, muscle function" },
+                new() { Name = "Iron", Amount = 0, Unit = "mg", DailyValue = 18, Benefits = "Oxygen transport, energy production" },
+                new() { Name = "Magnesium", Amount = 0, Unit = "mg", DailyValue = 400, Benefits = "Muscle function, heart health" },
+                new() { Name = "Potassium", Amount = 0, Unit = "mg", DailyValue = 3500, Benefits = "Blood pressure, heart health" },
+                new() { Name = "Zinc", Amount = 0, Unit = "mg", DailyValue = 11, Benefits = "Immune function, wound healing" }
+            };
+
+            // Calculate based on ingredients
+            foreach (var ingredient in ingredients)
+            {
+                var name = ingredient.Name.ToLower();
+                if (name.Contains("cheese") || name.Contains("milk"))
+                {
+                    minerals[0].Amount += 200; // Calcium
+                }
+                if (name.Contains("beef") || name.Contains("spinach"))
+                {
+                    minerals[1].Amount += 3; // Iron
+                }
+                if (name.Contains("nuts") || name.Contains("spinach"))
+                {
+                    minerals[2].Amount += 50; // Magnesium
+                }
+                if (name.Contains("potato") || name.Contains("banana") || name.Contains("khoai tây") || name.Contains("chuối"))
+                {
+                    minerals[3].Amount += 400; // Potassium
+                }
+                if (name.Contains("beef") || name.Contains("chicken"))
+                {
+                    minerals[4].Amount += 2; // Zinc
+                }
+            }
+
+            return minerals;
         }
 
         // New methods for enhanced AI integration
