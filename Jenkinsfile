@@ -454,20 +454,22 @@ pipeline {
 
                         publishHTML(
                             target: [
-                                allowMissing: false,
-                                directory: "CoverageReports/HtmlReport",
-                                indexPages: 'index.html',
+                                allowMissing: true,
+                                alwaysLinkToLastBuild: true,
                                 keepAll: true,
+                                reportDir: "CoverageReports/HtmlReport",
+                                reportFiles: 'index.html',
                                 reportName: 'Detailed HTML Coverage Report'
                             ]
                         )
 
                         publishHTML(
                             target: [
-                                allowMissing: false,
-                                directory: "CoverageReports/SummaryReport",
-                                indexPages: 'index.html',
+                                allowMissing: true,
+                                alwaysLinkToLastBuild: true,
                                 keepAll: true,
+                                reportDir: "CoverageReports/SummaryReport",
+                                reportFiles: 'index.html',
                                 reportName: 'Coverage Summary Report'
                             ]
                         )
@@ -494,9 +496,9 @@ pipeline {
                 powershell '''
                     $summaryFile = 'TestResults/test-summary.txt';
 
-                    $buildNumber = $env:BUILD_NUMBER;
-                    $branchName = $env:GIT_BRANCH;
-                    $commitId = $env:GIT_COMMIT;
+                    $buildNumber = $env:BUILD_NUMBER ?? 'Unknown';
+                    $branchName = $env:GIT_BRANCH ?? 'Unknown';
+                    $commitId = $env:GIT_COMMIT ?? 'Unknown';
 
                     # Enhanced file counting
                     $trxFiles = @(Get-ChildItem -Path 'TestResults' -Filter '*.trx' -Recurse -ErrorAction SilentlyContinue);
