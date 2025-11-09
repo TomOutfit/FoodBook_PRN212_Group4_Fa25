@@ -113,7 +113,7 @@ pipeline {
                             if ($trxFiles) {
                                 Write-Host "✅ Found TRX files: $($trxFiles.Count)"
                                 foreach ($file in $trxFiles) {
-                                    Write-Host "  - $($file.FullName)"
+                                    Write-Host "  - $($file.FullName)"
                                     # Convert TRX to JUnit XML for better reporting
                                     $xmlFileName = [System.IO.Path]::ChangeExtension($file.Name, '.xml')
                                     $xmlFilePath = Join-Path 'TestResults' $xmlFileName
@@ -124,11 +124,11 @@ pipeline {
                                         # Method 1: Direct call (most common)
                                         & trx2junit "$($file.FullName)" "$xmlFilePath" 2>&1 | Out-Null
                                         if (Test-Path $xmlFilePath) {
-                                            Write-Host "    -> Successfully converted to: $xmlFilePath"
+                                            Write-Host "    -> Successfully converted to: $xmlFilePath"
                                             $conversionSuccess = $true
                                         }
                                     } catch {
-                                        Write-Host "    -> Direct call failed, trying alternative method..."
+                                        Write-Host "    -> Direct call failed, trying alternative method..."
                                     }
 
                                     if (-not $conversionSuccess) {
@@ -138,17 +138,17 @@ pipeline {
                                             if ($toolPath) {
                                                 & "$toolPath" "$($file.FullName)" "$xmlFilePath" 2>&1 | Out-Null
                                                 if (Test-Path $xmlFilePath) {
-                                                    Write-Host "    -> Successfully converted using full path: $xmlFilePath"
+                                                    Write-Host "    -> Successfully converted using full path: $xmlFilePath"
                                                     $conversionSuccess = $true
                                                 }
                                             }
                                         } catch {
-                                            Write-Host "    -> Full path method also failed"
+                                            Write-Host "    -> Full path method also failed"
                                         }
                                     }
 
                                     if (-not $conversionSuccess) {
-                                        Write-Host "    -> Conversion failed for: $($file.Name)"
+                                        Write-Host "    -> Conversion failed for: $($file.Name)"
                                         # Create a basic XML structure as fallback
                                         try {
                                             $fallbackXml = @"
@@ -160,9 +160,9 @@ pipeline {
 </testsuites>
 "@
                                             Set-Content -Path $xmlFilePath -Value $fallbackXml -Encoding UTF8
-                                            Write-Host "    -> Created fallback XML: $xmlFilePath"
+                                            Write-Host "    -> Created fallback XML: $xmlFilePath"
                                         } catch {
-                                            Write-Host "    -> Even fallback XML creation failed"
+                                            Write-Host "    -> Even fallback XML creation failed"
                                         }
                                     }
                                 }
@@ -170,9 +170,11 @@ pipeline {
                                 Write-Host "⚠️ No TRX files found in TestResults directory"
                             }
                         } catch {
-                            // **FIXED:** Removed 'exit 1' to prevent post-processing errors from failing a successful build
                             Write-Host "❌ PowerShell script error during conversion: $($_.Exception.Message). Continuing build..."
                         }
+                        
+                        # **CRITICAL FIX:** Ensure the powershell step exits with code 0 to prevent Jenkins failure
+                        exit 0
                     '''
                     // Publish both TRX and converted XML files
                     junit allowEmptyResults: true, testResults: "${TEST_RESULTS_DIR}/*.xml"
@@ -183,21 +185,23 @@ pipeline {
                             $trxFiles = Get-ChildItem -Path 'TestResults' -Filter '*.trx' -Recurse -ErrorAction SilentlyContinue
                             if ($trxFiles) {
                                 Write-Host "✅ Found TRX files: $($trxFiles.Count)"
-                                foreach ($file in $trxFiles) { Write-Host "  - $($file.FullName)" }
+                                foreach ($file in $trxFiles) { Write-Host "  - $($file.FullName)" }
                             } else {
                                 Write-Host "⚠️ No TRX files found in TestResults directory"
                             }
                             $xmlFiles = Get-ChildItem -Path 'TestResults' -Filter '*.xml' -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'coverage.cobertura.xml' }
                             if ($xmlFiles) {
                                 Write-Host "✅ Found JUnit XML files: $($xmlFiles.Count)"
-                                foreach ($file in $xmlFiles) { Write-Host "  - $($file.FullName)" }
+                                foreach ($file in $xmlFiles) { Write-Host "  - $($file.FullName)" }
                             } else {
                                 Write-Host "⚠️ No JUnit XML files found"
                             }
                         } catch {
-                            // **FIXED:** Removed 'exit 1' here as well.
                             Write-Host "❌ Diagnostic script error: $($_.Exception.Message). Continuing build..."
                         }
+                        
+                        # **CRITICAL FIX:** Ensure the powershell step exits with code 0 to prevent Jenkins failure
+                        exit 0
                     '''
                 }
             }
@@ -307,7 +311,7 @@ pipeline {
                             reportgenerator ^
                                 -reports:"${reportsArg}" ^
                                 -targetdir:"%COVERAGE_DIR%/SummaryReport" ^
-                                -reporttypes:HtmlInline_AzurePipelines ^
+                            -reporttypes:HtmlInline_AzurePipelines ^
                                 -title:"CookBook Test Summary" ^
                                 -tag:"${BUILD_NUMBER}"
                         """
@@ -407,11 +411,11 @@ pipeline {
 
                     # Beautiful ASCII art header
                     Set-Content -Path $summaryFile -Value '╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════╗' -Encoding UTF8;
-                    Add-Content -Path $summaryFile -Value '║                                           📊 COOKBOOK TEST REPORT                                           ║';
+                    Add-Content -Path $summaryFile -Value '║                                           📊 COOKBOOK TEST REPORT                                           ║';
                     Add-Content -Path $summaryFile -Value '╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════╝';
                     Add-Content -Path $summaryFile -Value '';
                     Add-Content -Path $summaryFile -Value "⏰ Execution Time: $(Get-Date -Format 'dd/MM/yyyy HH:mm:ss')";
-                    Add-Content -Path $summaryFile -Value "🏗️  Build: #$buildNumber";
+                    Add-Content -Path $summaryFile -Value "🏗️  Build: #$buildNumber";
                     Add-Content -Path $summaryFile -Value "🌿 Branch: $branchName";
                     Add-Content -Path $summaryFile -Value "💾 Commit: $($commitId.Substring(0, [Math]::Min(8, $commitId.Length)))";
                     Add-Content -Path $summaryFile -Value '';
@@ -431,31 +435,31 @@ pipeline {
                     Add-Content -Path $summaryFile -Value '📁 GENERATED REPORTS:';
                     Add-Content -Path $summaryFile -Value '';
                     Add-Content -Path $summaryFile -Value '🔹 Test Results:';
-                    Add-Content -Path $summaryFile -Value '  • TRX Format: TestResults/*.trx';
-                    Add-Content -Path $summaryFile -Value '  • JUnit XML: TestResults/*.xml (converted for better Jenkins integration)';
+                    Add-Content -Path $summaryFile -Value '  • TRX Format: TestResults/*.trx';
+                    Add-Content -Path $summaryFile -Value '  • JUnit XML: TestResults/*.xml (converted for better Jenkins integration)';
                     Add-Content -Path $summaryFile -Value '';
                     Add-Content -Path $summaryFile -Value '🔹 Code Coverage:';
-                    Add-Content -Path $summaryFile -Value '  • Raw Data: CoverageReports/coverage.*.xml';
-                    Add-Content -Path $summaryFile -Value '  • Jenkins UI: Integrated coverage graphs and metrics';
+                    Add-Content -Path $summaryFile -Value '  • Raw Data: CoverageReports/coverage.*.xml';
+                    Add-Content -Path $summaryFile -Value '  • Jenkins UI: Integrated coverage graphs and metrics';
                     Add-Content -Path $summaryFile -Value '';
                     Add-Content -Path $summaryFile -Value '🔹 HTML Reports:';
-                    Add-Content -Path $summaryFile -Value '  • Detailed: CoverageReports/HtmlReport/index.html';
-                    Add-Content -Path $summaryFile -Value '  • Summary: CoverageReports/SummaryReport/index.html';
+                    Add-Content -Path $summaryFile -Value '  • Detailed: CoverageReports/HtmlReport/index.html';
+                    Add-Content -Path $summaryFile -Value '  • Summary: CoverageReports/SummaryReport/index.html';
                     Add-Content -Path $summaryFile -Value '';
                     Add-Content -Path $summaryFile -Value '═══════════════════════════════════════════════════════════════════════════════════════════════════════════════';
                     Add-Content -Path $summaryFile -Value '';
                     Add-Content -Path $summaryFile -Value '🔗 HOW TO VIEW REPORTS:';
                     Add-Content -Path $summaryFile -Value '';
                     Add-Content -Path $summaryFile -Value '📊 Jenkins Dashboard:';
-                    Add-Content -Path $summaryFile -Value '  • Test Result: Click "Test Result" tab on the left sidebar';
-                    Add-Content -Path $summaryFile -Value '  • Coverage Report: Click "Coverage Report" tab on the left sidebar';
-                    Add-Content -Path $summaryFile -Value '  • HTML Reports: Click "Detailed HTML Coverage Report" or "Coverage Summary Report" links';
+                    Add-Content -Path $summaryFile -Value '  • Test Result: Click "Test Result" tab on the left sidebar';
+                    Add-Content -Path $summaryFile -Value '  • Coverage Report: Click "Coverage Report" tab on the left sidebar';
+                    Add-Content -Path $summaryFile -Value '  • HTML Reports: Click "Detailed HTML Coverage Report" or "Coverage Summary Report" links';
                     Add-Content -Path $summaryFile -Value '';
                     Add-Content -Path $summaryFile -Value '📋 Download Options:';
-                    Add-Content -Path $summaryFile -Value '  • All artifacts are archived and available for download';
-                    Add-Content -Path $summaryFile -Value '  • Raw data files can be downloaded for external analysis';
+                    Add-Content -Path $summaryFile -Value '  • All artifacts are archived and available for download';
+                    Add-Content -Path $summaryFile -Value '  • Raw data files can be downloaded for external analysis';
                     Add-Content -Path $summaryFile -Value '';
-                    Add-Content -Path $summaryFile -Value '⚠️  Note: If no tests are executed, status is still PASSED (0 tests = success)';
+                    Add-Content -Path $summaryFile -Value '⚠️  Note: If no tests are executed, status is still PASSED (0 tests = success)';
                     Add-Content -Path $summaryFile -Value '';
                     Write-Host '✅ Enhanced test report summary generated successfully'
                     Get-Content $summaryFile | Write-Output
