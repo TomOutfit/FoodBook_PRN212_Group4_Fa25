@@ -100,11 +100,7 @@ pipeline {
                         --verbosity normal ^
                         /p:CollectCoverage=true ^
                         /p:CoverletOutput="%TEST_RESULTS_DIR%/" ^
-                        /p:CoverletOutputFormat=cobertura ^
-                        /p:CoverletOutputFormat=json ^
-                        /p:CoverletOutputFormat=opencover ^
-                        /p:ExcludeByAttribute="Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute" ^
-                        /p:SkipAutoProps=true
+                        /p:CoverletOutputFormat=cobertura
                 '''
             }
             post {
