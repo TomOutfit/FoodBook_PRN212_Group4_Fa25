@@ -99,7 +99,7 @@ pipeline {
                         --results-directory "%TEST_RESULTS_DIR%" ^
                         --verbosity normal ^
                         /p:CollectCoverage=true ^
-                        /p:CoverletOutput="%COVERAGE_DIR%/coverage.cobertura.xml" ^
+                        /p:CoverletOutput="%WORKSPACE%/CoverageReports/coverage.cobertura.xml" ^
                         /p:CoverletOutputFormat=cobertura
 
                     REM Force success exit code (0) for Jenkins to ensure next stages run
