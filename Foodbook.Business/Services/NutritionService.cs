@@ -346,9 +346,9 @@ namespace Foodbook.Business.Services
                 });
             }
 
-            if (text.Contains("cá") || text.Contains("fish"))
+            if (text.Contains("cá") || text.Contains("fish") || text.Contains("cá hồi") || text.Contains("salmon"))
             {
-                var quantity = ExtractQuantity(text, "cá", "fish");
+                var quantity = ExtractQuantity(text, "cá", "fish", "cá hồi", "salmon");
                 mockParsedIngredients.Add(new ParsedIngredient
                 {
                     Name = "fish",
@@ -888,11 +888,11 @@ namespace Foodbook.Business.Services
                     vitamins[0].Amount += 50; // Vitamin A
                     vitamins[1].Amount += 20; // Vitamin C
                 }
-                if (name.Contains("broccoli") || name.Contains("tomato") || name.Contains("potato") || name.Contains("banana"))
+                if (name.Contains("broccoli") || name.Contains("tomato") || name.Contains("potato") || name.Contains("banana") || name.Contains("khoai tây") || name.Contains("chuối"))
                 {
                     vitamins[1].Amount += 30; // Vitamin C
                 }
-                if (name.Contains("egg") || name.Contains("fish") || name.Contains("cá hồi"))
+                if (name.Contains("egg") || name.Contains("fish") || name.Contains("cá hồi") || name.Contains("trứng") || name.Contains("cá"))
                 {
                     vitamins[2].Amount += 5; // Vitamin D
                 }
