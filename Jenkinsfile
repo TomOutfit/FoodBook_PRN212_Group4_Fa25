@@ -14,8 +14,7 @@ pipeline {
         SOLUTION_PATH = 'CookBook.sln'
         TEST_PROJECT_PATH = 'Foodbook.Tests/Foodbook.Tests.csproj'
         TEST_RESULTS_DIR = 'TestResults'
-        // GIỮ NGUYÊN COVERAGE_DIR cho các artifacts HTML (sẽ di chuyển file vào đó)
-        COVERAGE_DIR = 'CoverageReports' 
+        COVERAGE_DIR = 'CoverageReports' // Thư mục trung gian/artifact cho các báo cáo cuối cùng
         BUILD_CONFIG = 'Release'
 
         DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1'
@@ -91,7 +90,7 @@ pipeline {
         stage('Unit Tests') {
             steps {
                 echo "🧪 Running unit tests and collecting coverage..."
-                // **ĐÃ SỬA: Bắt Coverlet Output ra thư mục dự án test**
+                // Output Coverlet vào thư mục dự án test (Foodbook.Tests/CoverageReports)
                 bat '''
                     dotnet test "%TEST_PROJECT_PATH%" ^
                         --configuration "%BUILD_CONFIG%" ^
@@ -102,7 +101,6 @@ pipeline {
                         /p:CollectCoverage=true ^
                         /p:CoverletOutputFormat=cobertura ^
                         /p:CoverletOutput="%TEST_PROJECT_PATH%/CoverageReports/coverage.cobertura.xml" 
-                        // Note: Bắt buộc Coverlet output vào thư mục dự án test
                     
                     REM Force success exit code (0) for Jenkins to ensure next stages run
                     EXIT /B 0
@@ -153,7 +151,7 @@ pipeline {
                         }
                         exit 0
                     '''
-                    // Publish JUnit XML files (cả trong thư mục gốc và thư mục dự án nếu có)
+                    // Publish JUnit XML files
                     junit allowEmptyResults: true, testResults: "${TEST_RESULTS_DIR}/*.xml, Foodbook.Tests/TestResults/*.xml"
 
                     echo "✅ Test results published."
@@ -165,28 +163,20 @@ pipeline {
             steps {
                 echo "📊 Processing and publishing coverage reports..."
                 script {
-                    // **ĐÃ SỬA: Đã chuyển sang tìm kiếm trong thư mục dự án test**
+                    // Bước 1: Tìm kiếm file Cobertura trong thư mục dự án và copy ra thư mục chính
                     powershell '''
-                        # Chỉ kiểm tra vị trí file Cobertura đã được cố định
+                        # Đường dẫn Cobertura được tạo ra trong Unit Tests
                         $projectCobertura = 'Foodbook.Tests/CoverageReports/coverage.cobertura.xml'
-                        $foundFiles = @()
-                        $primaryFile = $null
+                        $targetPath = 'CoverageReports/coverage.cobertura.xml'
 
                         if (Test-Path $projectCobertura) {
-                            Write-Host "✅ Cobertura file found in project dir: $((Get-Item $projectCobertura).Length) bytes"
-                            $foundFiles += $projectCobertura
-                            $primaryFile = $projectCobertura
-                        } else {
-                            Write-Host '❌ Cobertura file not found in project CoverageReports.'
-                        }
-
-                        # Copy file Cobertura lên thư mục gốc COVERAGE_DIR để tiện cho ReportGenerator
-                        if ($primaryFile) {
-                            $targetPath = 'CoverageReports/coverage.cobertura.xml'
-                            Copy-Item -Path $primaryFile -Destination $targetPath -Force
+                            Write-Host "✅ Cobertura file found in project dir."
+                            # Copy file Coverlet lên thư mục gốc COVERAGE_DIR (chỉ định bởi biến môi trường)
+                            Copy-Item -Path $projectCobertura -Destination $targetPath -Force
                             Write-Host "✅ Copied coverage file to: $targetPath"
                             $env:PRIMARY_COVERAGE_FILE_FOR_REPORT = $targetPath
                         } else {
+                            Write-Host '❌ Cobertura file not found. ReportGenerator will likely fail.'
                             $env:PRIMARY_COVERAGE_FILE_FOR_REPORT = ''
                         }
 
@@ -199,8 +189,6 @@ pipeline {
                     if (coverageFile && fileExists(coverageFile)) {
                         def adapters = [coberturaAdapter(coverageFile)]
                         
-                        // 
-
                         publishCoverage adapters: adapters, sourceFileResolver: sourceFiles('STORE_LAST_BUILD')
                         echo "✅ Published enhanced coverage reports to Jenkins"
                     } else { 
@@ -217,31 +205,31 @@ pipeline {
                     def finalCoberturaFile = env.PRIMARY_COVERAGE_FILE_FOR_REPORT ?: "CoverageReports/coverage.cobertura.xml"
                     def reportFiles = []
                     
-                    // Kiểm tra file đã được copy lên thư mục gốc chưa
                     if (fileExists(finalCoberturaFile)) {
                         reportFiles.add(finalCoberturaFile)
-                        echo "📊 Using cobertura file: ${finalCoberturaFile}"
+                        echo "📊 Using coverage file: ${finalCoberturaFile}"
 
                         def reportsArg = reportFiles.join(';')
                         echo "📊 Using coverage files: ${reportsArg}"
 
-                        // Generate HTML report (Html and HtmlChart)
+                        // Generate HTML report (Html and HtmlChart) - Cung cấp báo cáo chi tiết
+                        // Đã thay đổi ReportType thành HtmlInline_AzurePipelines cho báo cáo chi tiết
                         bat """
                             reportgenerator ^
                                 -reports:"${reportsArg}" ^
-                                -targetdir:"CoverageReports/HtmlReport" ^
-                                -reporttypes:Html;HtmlChart ^
-                                -title:"CookBook Detailed Coverage Report" ^
+                                -targetdir:"CoverageReports/DetailedReport" ^
+                                -reporttypes:HtmlInline_AzurePipelines ^
+                                -title:"CookBook DETAILED Coverage Report" ^
                                 -tag:"${BUILD_NUMBER}" ^
                                 -verbosity:Info
                         """
-                        // Generate Summary report (HtmlSummary)
+                        // Generate Summary report (HtmlSummary) - Cung cấp tóm tắt nhanh
                         bat """
                             reportgenerator ^
                                 -reports:"${reportsArg}" ^
                                 -targetdir:"CoverageReports/SummaryReport" ^
                                 -reporttypes:HtmlSummary ^
-                                -title:"CookBook Test Summary" ^
+                                -title:"CookBook Coverage Summary" ^
                                 -tag:"${BUILD_NUMBER}" ^
                                 -verbosity:Info
                         """
@@ -249,26 +237,27 @@ pipeline {
                         // Publish multiple HTML reports to Jenkins
                         echo "📊 Publishing enhanced HTML reports to Jenkins..."
 
+                        // Báo cáo chi tiết (DetailedReport)
                         publishHTML(
                             target: [
-                                allowMissing: false, // Bắt buộc phải có index.html
+                                allowMissing: false, 
                                 alwaysLinkToLastBuild: true,
                                 keepAll: true,
-                                reportDir: "CoverageReports/HtmlReport",
+                                reportDir: "CoverageReports/DetailedReport",
                                 reportFiles: 'index.html',
-                                reportName: 'Detailed HTML Coverage Report'
+                                reportName: '1. Detailed Code Coverage Report'
                             ]
                         )
-                        // 
-
+                        
+                        // Báo cáo tóm tắt (SummaryReport)
                         publishHTML(
                             target: [
-                                allowMissing: true, 
+                                allowMissing: false, 
                                 alwaysLinkToLastBuild: true,
                                 keepAll: true,
                                 reportDir: "CoverageReports/SummaryReport",
                                 reportFiles: 'index.html',
-                                reportName: 'Coverage Summary Report (HtmlSummary)'
+                                reportName: '2. Coverage Summary Report'
                             ]
                         )
                         echo "✅ Enhanced HTML reports published to Jenkins"
@@ -301,7 +290,7 @@ pipeline {
                     $trxFiles = @(Get-ChildItem -Path 'TestResults' -Filter '*.trx' -Recurse -ErrorAction SilentlyContinue);
                     $xmlFiles = @(Get-ChildItem -Path 'TestResults' -Filter '*.xml' -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Name -notlike '*coverage*' });
                     $coberturaExists = Test-Path 'CoverageReports/coverage.cobertura.xml';
-                    $htmlExists = Test-Path 'CoverageReports/HtmlReport/index.html';
+                    $htmlExists = Test-Path 'CoverageReports/DetailedReport/index.html'; // Đã thay đổi đường dẫn
                     $summaryExists = Test-Path 'CoverageReports/SummaryReport/index.html';
 
                     New-Item -ItemType Directory -Force -Path 'TestResults' | Out-Null;
@@ -333,7 +322,7 @@ pipeline {
                     Add-Content -Path $summaryFile -Value '📊 Jenkins Dashboard:';
                     Add-Content -Path $summaryFile -Value '  • Test Result: Click "Test Result" tab on the left sidebar';
                     Add-Content -Path $summaryFile -Value '  • Coverage Report: Click "Coverage Report" tab on the left sidebar';
-                    Add-Content -Path $summaryFile -Value '  • HTML Reports: Click "Detailed HTML Coverage Report" or "Coverage Summary Report (HtmlSummary)" links';
+                    Add-Content -Path $summaryFile -Value '  • HTML Reports: Click "1. Detailed Code Coverage Report" or "2. Coverage Summary Report" links';
                     Add-Content -Path $summaryFile -Value '';
                     Write-Host '✅ Enhanced test report summary generated successfully'
                     Get-Content $summaryFile | Write-Output
@@ -345,9 +334,10 @@ pipeline {
     post {
         always {
             echo "📦 Archiving test results and coverage data..."
+            // Đã thay đổi đường dẫn archieve Artifacts để khớp với tên thư mục mới
             archiveArtifacts artifacts: "TestResults/**/*", allowEmptyArchive: true, fingerprint: true
             archiveArtifacts artifacts: "CoverageReports/publish/**/*", allowEmptyArchive: true, fingerprint: true
-            archiveArtifacts artifacts: "CoverageReports/HtmlReport/**/*", allowEmptyArchive: true, fingerprint: true
+            archiveArtifacts artifacts: "CoverageReports/DetailedReport/**/*", allowEmptyArchive: true, fingerprint: true
             archiveArtifacts artifacts: "CoverageReports/SummaryReport/**/*", allowEmptyArchive: true, fingerprint: true
         }
 
