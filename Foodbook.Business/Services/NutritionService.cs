@@ -335,6 +335,28 @@ namespace Foodbook.Business.Services
                 });
             }
 
+            if (text.Contains("trứng") || text.Contains("egg"))
+            {
+                var quantity = ExtractQuantity(text, "trứng", "egg");
+                mockParsedIngredients.Add(new ParsedIngredient
+                {
+                    Name = "egg",
+                    Quantity = quantity,
+                    Unit = "piece"
+                });
+            }
+
+            if (text.Contains("cá") || text.Contains("fish"))
+            {
+                var quantity = ExtractQuantity(text, "cá", "fish");
+                mockParsedIngredients.Add(new ParsedIngredient
+                {
+                    Name = "fish",
+                    Quantity = quantity,
+                    Unit = "g"
+                });
+            }
+
             if (text.Contains("chuối") || text.Contains("banana"))
             {
                 var quantity = ExtractQuantity(text, "chuối", "banana");
@@ -343,6 +365,28 @@ namespace Foodbook.Business.Services
                     Name = "banana",
                     Quantity = quantity,
                     Unit = "piece"
+                });
+            }
+
+            if (text.Contains("dầu olive") || text.Contains("olive oil"))
+            {
+                var quantity = ExtractQuantity(text, "dầu olive", "olive oil");
+                mockParsedIngredients.Add(new ParsedIngredient
+                {
+                    Name = "olive oil",
+                    Quantity = quantity,
+                    Unit = "ml"
+                });
+            }
+
+            if (text.Contains("hạt điều") || text.Contains("cashew"))
+            {
+                var quantity = ExtractQuantity(text, "hạt điều", "cashew");
+                mockParsedIngredients.Add(new ParsedIngredient
+                {
+                    Name = "cashew",
+                    Quantity = quantity,
+                    Unit = "g"
                 });
             }
 
