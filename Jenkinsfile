@@ -14,7 +14,8 @@ pipeline {
         SOLUTION_PATH = 'CookBook.sln'
         TEST_PROJECT_PATH = 'Foodbook.Tests/Foodbook.Tests.csproj'
         TEST_RESULTS_DIR = 'TestResults'
-        COVERAGE_DIR = 'CoverageReports'
+        // GIỮ NGUYÊN COVERAGE_DIR cho các artifacts HTML (sẽ di chuyển file vào đó)
+        COVERAGE_DIR = 'CoverageReports' 
         BUILD_CONFIG = 'Release'
 
         DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1'
@@ -23,8 +24,6 @@ pipeline {
         
         NUGET_HTTP_TIMEOUT = '300'
         NUGET_PLUGIN_HANDSHAKE_TIMEOUT_IN_SECONDS = '120'
-        // Thêm biến để đảm bảo ReportGenerator chạy đúng
-        // $WORKSPACE là biến hệ thống của Jenkins, không cần khai báo
     }
 
     stages {
@@ -92,7 +91,7 @@ pipeline {
         stage('Unit Tests') {
             steps {
                 echo "🧪 Running unit tests and collecting coverage..."
-                // **Tối ưu hóa đường dẫn Coverlet:** Chỉ định rõ thư mục đích là COVERAGE_DIR
+                // **ĐÃ SỬA: Bắt Coverlet Output ra thư mục dự án test**
                 bat '''
                     dotnet test "%TEST_PROJECT_PATH%" ^
                         --configuration "%BUILD_CONFIG%" ^
@@ -101,9 +100,10 @@ pipeline {
                         --results-directory "%TEST_RESULTS_DIR%" ^
                         --verbosity normal ^
                         /p:CollectCoverage=true ^
-                        /p:CoverletOutput="%COVERAGE_DIR%/coverage.cobertura.xml" ^
-                        /p:CoverletOutputFormat=cobertura
-
+                        /p:CoverletOutputFormat=cobertura ^
+                        /p:CoverletOutput="%TEST_PROJECT_PATH%/CoverageReports/coverage.cobertura.xml" 
+                        // Note: Bắt buộc Coverlet output vào thư mục dự án test
+                    
                     REM Force success exit code (0) for Jenkins to ensure next stages run
                     EXIT /B 0
                 '''
@@ -111,7 +111,6 @@ pipeline {
             post {
                 always {
                     echo "📄 Processing and publishing test results..."
-                    // Script PowerShell chuyển đổi TRX sang JUnit XML
                     powershell '''
                         try {
                             Write-Host "🔍 DEBUG: Starting TRX conversion process..."
@@ -133,7 +132,7 @@ pipeline {
                                 Write-Host "⚠️ No TRX files found in root TestResults directory"
                             }
                             
-                            # Do dotnet test có thể tạo thư mục con, nên chúng ta cần kiểm tra thêm thư mục dự án
+                            # Xử lý file TRX trong thư mục dự án (nếu có)
                             $projectTrxFiles = Get-ChildItem -Path 'Foodbook.Tests/TestResults' -Filter '*.trx' -Recurse -ErrorAction SilentlyContinue
                             if ($projectTrxFiles) {
                                 Write-Host "✅ Found TRX files in project dir: $($projectTrxFiles.Count)"
@@ -166,51 +165,45 @@ pipeline {
             steps {
                 echo "📊 Processing and publishing coverage reports..."
                 script {
-                    // Bước 1: Phát hiện file coverage bằng PowerShell và set ENV
+                    // **ĐÃ SỬA: Đã chuyển sang tìm kiếm trong thư mục dự án test**
                     powershell '''
-                        # Chỉ cần kiểm tra vị trí output chính được định nghĩa trong Unit Tests
-                        $rootCobertura = 'CoverageReports/coverage.cobertura.xml'
-                        
+                        # Chỉ kiểm tra vị trí file Cobertura đã được cố định
+                        $projectCobertura = 'Foodbook.Tests/CoverageReports/coverage.cobertura.xml'
                         $foundFiles = @()
                         $primaryFile = $null
 
-                        if (Test-Path $rootCobertura) {
-                            Write-Host "✅ Cobertura file found: $((Get-Item $rootCobertura).Length) bytes"
-                            $foundFiles += $rootCobertura
-                            $primaryFile = $rootCobertura
+                        if (Test-Path $projectCobertura) {
+                            Write-Host "✅ Cobertura file found in project dir: $((Get-Item $projectCobertura).Length) bytes"
+                            $foundFiles += $projectCobertura
+                            $primaryFile = $projectCobertura
                         } else {
-                            Write-Host '❌ Cobertura file not found in CoverageReports.'
+                            Write-Host '❌ Cobertura file not found in project CoverageReports.'
                         }
 
-                        # Set environment variable cho Groovy script
-                        if ($foundFiles.Count -gt 0) {
-                            $env:FOUND_COVERAGE_FILES = ($foundFiles -join ';')
-                            $env:PRIMARY_COVERAGE_FILE = $primaryFile
+                        # Copy file Cobertura lên thư mục gốc COVERAGE_DIR để tiện cho ReportGenerator
+                        if ($primaryFile) {
+                            $targetPath = 'CoverageReports/coverage.cobertura.xml'
+                            Copy-Item -Path $primaryFile -Destination $targetPath -Force
+                            Write-Host "✅ Copied coverage file to: $targetPath"
+                            $env:PRIMARY_COVERAGE_FILE_FOR_REPORT = $targetPath
                         } else {
-                            $env:FOUND_COVERAGE_FILES = ''
+                            $env:PRIMARY_COVERAGE_FILE_FOR_REPORT = ''
                         }
 
                         exit 0
                     '''
 
                     // Bước 2: Publish Coverage Report trên Jenkins UI
-                    def foundFiles = env.FOUND_COVERAGE_FILES?.split(';') ?: []
+                    def coverageFile = env.PRIMARY_COVERAGE_FILE_FOR_REPORT
                     
-                    // **ĐÃ SỬA LỖI TẠI ĐÂY**
-                    if (!foundFiles.isEmpty()) {
-                        def adapters = []
-                        foundFiles.each { filePath ->
-                            if (filePath.endsWith('.cobertura.xml')) {
-                                adapters.add(coberturaAdapter(filePath))
-                                echo "✅ Added Cobertura coverage adapter for: ${filePath}"
-                            }
-                        }
+                    if (coverageFile && fileExists(coverageFile)) {
+                        def adapters = [coberturaAdapter(coverageFile)]
+                        
+                        // 
 
-                        if (!adapters.isEmpty()) {
-                            publishCoverage adapters: adapters, sourceFileResolver: sourceFiles('STORE_LAST_BUILD')
-                            echo "✅ Published enhanced coverage reports to Jenkins"
-                        }
-                    } else { // <--- Khối ELSE cho IF lớn đã được đóng đúng
+                        publishCoverage adapters: adapters, sourceFileResolver: sourceFiles('STORE_LAST_BUILD')
+                        echo "✅ Published enhanced coverage reports to Jenkins"
+                    } else { 
                         echo "⚠️ Không tìm thấy file coverage nào — bỏ qua bước này."
                     }
                 }
@@ -221,18 +214,18 @@ pipeline {
             steps {
                 echo "📄 Generating enhanced HTML coverage reports..."
                 script {
-                    def finalCoberturaFile = "CoverageReports/coverage.cobertura.xml"
+                    def finalCoberturaFile = env.PRIMARY_COVERAGE_FILE_FOR_REPORT ?: "CoverageReports/coverage.cobertura.xml"
                     def reportFiles = []
                     
-                    // Chỉ cần kiểm tra file chính được tạo ra ở bước Unit Tests
+                    // Kiểm tra file đã được copy lên thư mục gốc chưa
                     if (fileExists(finalCoberturaFile)) {
                         reportFiles.add(finalCoberturaFile)
-                        echo "📊 Adding cobertura file: ${finalCoberturaFile}"
+                        echo "📊 Using cobertura file: ${finalCoberturaFile}"
 
                         def reportsArg = reportFiles.join(';')
                         echo "📊 Using coverage files: ${reportsArg}"
 
-                        // Generate HTML report (Html and HtmlSummary)
+                        // Generate HTML report (Html and HtmlChart)
                         bat """
                             reportgenerator ^
                                 -reports:"${reportsArg}" ^
@@ -242,7 +235,7 @@ pipeline {
                                 -tag:"${BUILD_NUMBER}" ^
                                 -verbosity:Info
                         """
-                        // Generate Summary report (Azure Pipelines format đẹp và gọn)
+                        // Generate Summary report (HtmlSummary)
                         bat """
                             reportgenerator ^
                                 -reports:"${reportsArg}" ^
@@ -266,6 +259,7 @@ pipeline {
                                 reportName: 'Detailed HTML Coverage Report'
                             ]
                         )
+                        // 
 
                         publishHTML(
                             target: [
@@ -288,7 +282,6 @@ pipeline {
         stage('Publish Artifacts') {
             steps {
                 echo "🚀 Preparing build artifacts for archiving..."
-                // Thực hiện publish cho ứng dụng web/API
                 bat 'dotnet publish "%SOLUTION_PATH%" --configuration "%BUILD_CONFIG%" --no-build --output "CoverageReports/publish"'
             }
         }
@@ -296,15 +289,15 @@ pipeline {
         stage('Test Report Summary') {
             steps {
                 echo '📋 Creating enhanced Test Report Summary...'
-                // Tạo file tóm tắt đẹp mắt (optional, nhưng hữu ích cho logs)
+                // ĐÃ SỬA: Thay thế toán tử ?? bằng if/else (chuẩn PS cũ)
                 powershell '''
                     $summaryFile = 'TestResults/test-summary.txt';
 
-                    $buildNumber = $env:BUILD_NUMBER ?? 'Unknown';
-                    $branchName = $env:GIT_BRANCH ?? 'Unknown';
-                    $commitId = $env:GIT_COMMIT ?? 'Unknown';
-                    
-                    # Kiểm tra sự tồn tại của các báo cáo
+                    $buildNumber = $env:BUILD_NUMBER; if (-not $buildNumber) { $buildNumber = 'Unknown' }
+                    $branchName = $env:GIT_BRANCH; if (-not $branchName) { $branchName = 'Unknown' }
+                    $commitId = $env:GIT_COMMIT; if (-not $commitId) { $commitId = 'Unknown' }
+
+                    # Enhanced file counting
                     $trxFiles = @(Get-ChildItem -Path 'TestResults' -Filter '*.trx' -Recurse -ErrorAction SilentlyContinue);
                     $xmlFiles = @(Get-ChildItem -Path 'TestResults' -Filter '*.xml' -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Name -notlike '*coverage*' });
                     $coberturaExists = Test-Path 'CoverageReports/coverage.cobertura.xml';
