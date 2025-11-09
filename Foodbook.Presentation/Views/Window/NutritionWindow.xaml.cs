@@ -1,4 +1,5 @@
 using System.Windows;
+using Foodbook.Presentation.ViewModels;
 
 namespace Foodbook.Presentation.Views
 {
@@ -7,6 +8,14 @@ namespace Foodbook.Presentation.Views
         public NutritionWindow()
         {
             InitializeComponent();
+        }
+
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is NutritionViewModel viewModel)
+            {
+                await viewModel.LoadRecipesAsync();
+            }
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
