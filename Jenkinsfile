@@ -248,59 +248,83 @@ pipeline {
             steps {
                 echo "📊 Processing and publishing coverage reports..."
                 script {
-                    // **FIXED: Logic simplified** since file is now created directly in CoverageReports/
+                    // **FIXED: Improved coverage file detection and publishing**
                     powershell '''
-                        # 1. Check for the existence of the coverage files in the target directory
-                        $copiedCobertura = 'CoverageReports/coverage.cobertura.xml'
-                        $copiedOpencover = 'CoverageReports/coverage.opencover.xml'
+                        # Check for coverage files in all possible locations
+                        $rootCobertura = 'CoverageReports/coverage.cobertura.xml'
+                        $rootOpencover = 'CoverageReports/coverage.opencover.xml'
+                        $projectCobertura = 'Foodbook.Tests/CoverageReports/coverage.cobertura.xml'
+                        $projectOpencover = 'Foodbook.Tests/CoverageReports/coverage.opencover.xml'
 
-                        if (Test-Path $copiedCobertura) {
-                            Write-Host "✅ Cobertura file ready in root: $((Get-Item $copiedCobertura).Length) bytes"
+                        $foundFiles = @()
+                        $primaryFile = $null
+
+                        # Check root directory first (primary location)
+                        if (Test-Path $rootCobertura) {
+                            Write-Host "✅ Cobertura file found in root: $((Get-Item $rootCobertura).Length) bytes"
+                            $foundFiles += $rootCobertura
+                            if (-not $primaryFile) { $primaryFile = $rootCobertura }
                         } else {
                             Write-Host '❌ Cobertura file not found in root CoverageReports.'
                         }
 
-                        if (Test-Path $copiedOpencover) {
-                            Write-Host "✅ OpenCover file ready in root: $((Get-Item $copiedOpencover).Length) bytes"
+                        if (Test-Path $rootOpencover) {
+                            Write-Host "✅ OpenCover file found in root: $((Get-Item $rootOpencover).Length) bytes"
+                            $foundFiles += $rootOpencover
                         } else {
                             Write-Host '❌ OpenCover file not found in root CoverageReports.'
                         }
 
-                        # Also check project-specific directory
-                        $projectCobertura = 'Foodbook.Tests/CoverageReports/coverage.cobertura.xml'
-                        $projectOpencover = 'Foodbook.Tests/CoverageReports/coverage.opencover.xml'
-
+                        # Check project directory as fallback
                         if (Test-Path $projectCobertura) {
-                            Write-Host "✅ Cobertura file ready in project dir: $((Get-Item $projectCobertura).Length) bytes"
+                            Write-Host "✅ Cobertura file found in project dir: $((Get-Item $projectCobertura).Length) bytes"
+                            $foundFiles += $projectCobertura
+                            if (-not $primaryFile) { $primaryFile = $projectCobertura }
                         } else {
                             Write-Host '❌ Cobertura file not found in project CoverageReports.'
                         }
 
                         if (Test-Path $projectOpencover) {
-                            Write-Host "✅ OpenCover file ready in project dir: $((Get-Item $projectOpencover).Length) bytes"
+                            Write-Host "✅ OpenCover file found in project dir: $((Get-Item $projectOpencover).Length) bytes"
+                            $foundFiles += $projectOpencover
                         } else {
                             Write-Host '❌ OpenCover file not found in project CoverageReports.'
                         }
+
+                        # Set environment variable for Groovy script
+                        if ($foundFiles.Count -gt 0) {
+                            Write-Host "📊 Found $($foundFiles.Count) coverage file(s)"
+                            $env:FOUND_COVERAGE_FILES = ($foundFiles -join ';')
+                            $env:PRIMARY_COVERAGE_FILE = $primaryFile
+                        } else {
+                            Write-Host "❌ No coverage files found anywhere"
+                            $env:FOUND_COVERAGE_FILES = ''
+                        }
+
                         exit 0
                     '''
 
-                    def finalCoberturaFile = "CoverageReports/coverage.cobertura.xml"
-                    def finalOpencoverFile = "CoverageReports/coverage.opencover.xml"
+                    // **FIXED: Use environment variables set by PowerShell to determine file availability**
+                    def foundFiles = env.FOUND_COVERAGE_FILES?.split(';') ?: []
+                    def primaryFile = env.PRIMARY_COVERAGE_FILE
 
-                    // Publish coverage reports with enhanced adapters
-                    def adapters = []
-                    if (fileExists(finalCoberturaFile)) {
-                        adapters.add(coberturaAdapter(finalCoberturaFile))
-                        echo "✅ Added Cobertura coverage adapter"
-                    }
-                    if (fileExists(finalOpencoverFile)) {
-                        adapters.add(istanbulCoberturaAdapter(finalOpencoverFile))  // Note: Using istanbul for OpenCover support
-                        echo "✅ Added OpenCover coverage adapter"
-                    }
+                    if (!foundFiles.isEmpty()) {
+                        // Publish coverage reports with enhanced adapters
+                        def adapters = []
+                        foundFiles.each { filePath ->
+                            if (filePath.endsWith('.cobertura.xml')) {
+                                adapters.add(coberturaAdapter(filePath))
+                                echo "✅ Added Cobertura coverage adapter for: ${filePath}"
+                            } else if (filePath.endsWith('.opencover.xml')) {
+                                adapters.add(istanbulCoberturaAdapter(filePath))
+                                echo "✅ Added OpenCover coverage adapter for: ${filePath}"
+                            }
+                        }
 
-                    if (!adapters.isEmpty()) {
-                        publishCoverage adapters: adapters, sourceFileResolver: sourceFiles('STORE_LAST_BUILD')
-                        echo "✅ Published enhanced coverage reports to Jenkins"
+                        if (!adapters.isEmpty()) {
+                            publishCoverage adapters: adapters, sourceFileResolver: sourceFiles('STORE_LAST_BUILD')
+                            echo "✅ Published enhanced coverage reports to Jenkins"
+                        }
                     } else {
                         echo "⚠️ Không tìm thấy file coverage nào — bỏ qua bước này."
                     }
