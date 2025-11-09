@@ -102,7 +102,7 @@ pipeline {
                         /p:CoverletOutput="%COVERAGE_DIR%/coverage.cobertura.xml" ^
                         /p:CoverletOutputFormat=cobertura
 
-                    # Force success exit code (0) for Jenkins to ensure next stages run
+                    REM Force success exit code (0) for Jenkins to ensure next stages run
                     EXIT /B 0
                 '''
             }
