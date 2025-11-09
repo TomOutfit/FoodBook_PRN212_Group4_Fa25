@@ -339,17 +339,56 @@ pipeline {
                     def finalCoberturaFile = "CoverageReports/coverage.cobertura.xml"
                     def finalOpencoverFile = "CoverageReports/coverage.opencover.xml"
 
+                    // DEBUG LOG: Check file existence and sizes
+                    echo "🔍 DEBUG: Checking coverage files..."
+                    if (fileExists(finalCoberturaFile)) {
+                        echo "✅ Cobertura file exists at: ${finalCoberturaFile}"
+                        bat "dir \"${finalCoberturaFile}\""
+                    } else {
+                        echo "❌ Cobertura file not found at: ${finalCoberturaFile}"
+                    }
+                    if (fileExists(finalOpencoverFile)) {
+                        echo "✅ OpenCover file exists at: ${finalOpencoverFile}"
+                        bat "dir \"${finalOpencoverFile}\""
+                    } else {
+                        echo "❌ OpenCover file not found at: ${finalOpencoverFile}"
+                    }
+
+                    // Check alternative locations
+                    def altCoberturaFile = "Foodbook.Tests/CoverageReports/coverage.cobertura.xml"
+                    def altOpencoverFile = "Foodbook.Tests/CoverageReports/coverage.opencover.xml"
+                    if (fileExists(altCoberturaFile)) {
+                        echo "⚠️  Alternative Cobertura file found at: ${altCoberturaFile}"
+                        bat "dir \"${altCoberturaFile}\""
+                    }
+                    if (fileExists(altOpencoverFile)) {
+                        echo "⚠️  Alternative OpenCover file found at: ${altOpencoverFile}"
+                        bat "dir \"${altOpencoverFile}\""
+                    }
+
                     // IMPROVED: Generate multiple report formats for beautiful visualization
                     def reportFiles = []
                     if (fileExists(finalCoberturaFile)) {
                         reportFiles.add(finalCoberturaFile)
+                        echo "📊 Adding root cobertura file: ${finalCoberturaFile}"
+                    } else if (fileExists(altCoberturaFile)) {
+                        reportFiles.add(altCoberturaFile)
+                        echo "📊 Adding project cobertura file: ${altCoberturaFile}"
                     }
                     if (fileExists(finalOpencoverFile)) {
                         reportFiles.add(finalOpencoverFile)
+                        echo "📊 Adding root opencover file: ${finalOpencoverFile}"
+                    } else if (fileExists(altOpencoverFile)) {
+                        reportFiles.add(altOpencoverFile)
+                        echo "📊 Adding project opencover file: ${altOpencoverFile}"
                     }
 
                     if (!reportFiles.isEmpty()) {
                         def reportsArg = reportFiles.join(';')
+                        echo "📊 Using coverage files: ${reportsArg}"
+
+                        // DEBUG LOG: Verify reportgenerator tool
+                        bat 'reportgenerator --version || echo "ReportGenerator not available"'
 
                         // Generate multiple beautiful report formats
                         bat """
@@ -359,7 +398,8 @@ pipeline {
                                 -reporttypes:Html;HtmlChart;HtmlSummary ^
                                 -title:"CookBook Coverage Report" ^
                                 -tag:"${BUILD_NUMBER}" ^
-                                -verbosity:Info
+                                -verbosity:Info ^
+                                || echo "ReportGenerator HTML generation failed"
                         """
 
                         // Generate additional summary report
@@ -369,36 +409,45 @@ pipeline {
                                 -targetdir:"CoverageReports/SummaryReport" ^
                             -reporttypes:HtmlInline_AzurePipelines ^
                                 -title:"CookBook Test Summary" ^
-                                -tag:"${BUILD_NUMBER}"
+                                -tag:"${BUILD_NUMBER}" ^
+                                || echo "ReportGenerator summary generation failed"
                         """
+                    } else {
+                        echo "❌ No coverage files found for HTML report generation in any location"
+                        echo "🔍 Searched locations:"
+                        echo "   - ${finalCoberturaFile}"
+                        echo "   - ${finalOpencoverFile}"
+                        echo "   - ${altCoberturaFile}"
+                        echo "   - ${altOpencoverFile}"
+                    }
 
-                        // Diagnostic: Check if HTML reports were generated successfully
-                        powershell '''
-                            $htmlDir = 'CoverageReports/HtmlReport'
-                            $summaryDir = 'CoverageReports/SummaryReport'
+                    // Diagnostic: Check if HTML reports were generated successfully
+                    powershell '''
+                        $htmlDir = 'CoverageReports/HtmlReport'
+                        $summaryDir = 'CoverageReports/SummaryReport'
 
-                            if (Test-Path $htmlDir) {
-                                $indexFile = Join-Path $htmlDir 'index.html'
-                                if (Test-Path $indexFile) {
-                                    Write-Host '✅ Main HTML report generated successfully'
-                                } else {
-                                    Write-Host '❌ index.html not found in HtmlReport directory'
-                                }
+                        if (Test-Path $htmlDir) {
+                            $indexFile = Join-Path $htmlDir 'index.html'
+                            if (Test-Path $indexFile) {
+                                Write-Host '✅ Main HTML report generated successfully'
                             } else {
-                                Write-Host '❌ HtmlReport directory not created'
+                                Write-Host '❌ index.html not found in HtmlReport directory'
                             }
+                        } else {
+                            Write-Host '❌ HtmlReport directory not created'
+                        }
 
-                            if (Test-Path $summaryDir) {
-                                $summaryFile = Join-Path $summaryDir 'index.html'
-                                if (Test-Path $summaryFile) {
-                                    Write-Host '✅ Summary report generated successfully'
-                                } else {
-                                    Write-Host '❌ Summary index.html not found'
-                                }
+                        if (Test-Path $summaryDir) {
+                            $summaryFile = Join-Path $summaryDir 'index.html'
+                            if (Test-Path $summaryFile) {
+                                Write-Host '✅ Summary report generated successfully'
                             } else {
-                                Write-Host '❌ SummaryReport directory not created'
+                                Write-Host '❌ Summary index.html not found'
                             }
-                        '''
+                        } else {
+                            Write-Host '❌ SummaryReport directory not created'
+                        }
+                    '''
 
                         // Publish multiple HTML reports to Jenkins
                         echo "📊 Publishing enhanced HTML reports to Jenkins..."
