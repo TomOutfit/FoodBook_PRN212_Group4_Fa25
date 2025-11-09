@@ -402,7 +402,7 @@ namespace Foodbook.Presentation.ViewModels
             System.Diagnostics.Debug.WriteLine("Analysis cleared and reset to default values");
         }
 
-        private async Task LoadRecipesAsync()
+        public async Task LoadRecipesAsync()
         {
             try
             {

@@ -9,7 +9,8 @@
         ResizeMode="CanResize"
         WindowStyle="None"
         AllowsTransparency="True"
-        Background="Transparent">
+        Background="Transparent"
+        Loaded="Window_Loaded">
 
     <Window.Resources>
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
