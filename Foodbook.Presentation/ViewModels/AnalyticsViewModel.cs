@@ -339,6 +339,7 @@ namespace Foodbook.Presentation.ViewModels
 
 			QuickMealsCount = recipes.Count(r =>
 				string.Equals(r.Category, "Quick Meals", StringComparison.OrdinalIgnoreCase)
+				|| string.Equals(r.Category, "Quick", StringComparison.OrdinalIgnoreCase)
 				|| r.CookTime > 0 && r.CookTime <= 30);
 
 			// Pantry coverage is computed in dashboard load where ingredients are available

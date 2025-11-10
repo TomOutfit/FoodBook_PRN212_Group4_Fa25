@@ -21,7 +21,7 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <Border Grid.Column="0" Background="White" CornerRadius="12" Padding="20" Margin="0,0,8,0">
+            <Border Grid.Column="0" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12" Padding="20" Margin="0,0,8,0">
                 <Border.Effect>
                     <DropShadowEffect Color="#4CAF50" Direction="270" ShadowDepth="4" Opacity="0.1" BlurRadius="10"/>
                 </Border.Effect>
@@ -38,7 +38,7 @@
                     </Border>
                 </StackPanel>
             </Border>
-            <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="20" Margin="8,0">
+            <Border Grid.Column="1" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12" Padding="20" Margin="8,0">
                 <Border.Effect>
                     <DropShadowEffect Color="#F59E0B" Direction="270" ShadowDepth="4" Opacity="0.1" BlurRadius="10"/>
                 </Border.Effect>
@@ -55,7 +55,7 @@
                     </Border>
                 </StackPanel>
             </Border>
-            <Border Grid.Column="2" Background="White" CornerRadius="12" Padding="20" Margin="8,0">
+            <Border Grid.Column="2" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12" Padding="20" Margin="8,0">
                 <Border.Effect>
                     <DropShadowEffect Color="#EF4444" Direction="270" ShadowDepth="4" Opacity="0.1" BlurRadius="10"/>
                 </Border.Effect>
@@ -72,7 +72,7 @@
                     </Border>
                 </StackPanel>
             </Border>
-            <Border Grid.Column="3" Background="White" CornerRadius="12" Padding="20" Margin="8,0,0,0">
+            <Border Grid.Column="3" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12" Padding="20" Margin="8,0,0,0">
                 <Border.Effect>
                     <DropShadowEffect Color="#8B5CF6" Direction="270" ShadowDepth="4" Opacity="0.1" BlurRadius="10"/>
                 </Border.Effect>
@@ -108,7 +108,7 @@
                 </Border.Effect>
                 <StackPanel>
                     <TextBlock Text="📊 Recipe Distribution" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,0,0,12" HorizontalAlignment="Center"/>
-                    <Grid Height="160" Margin="0,0,0,8">
+                    <Grid Height="120" Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
@@ -154,7 +154,7 @@
                 </Border.Effect>
                 <StackPanel>
                     <TextBlock Text="📈 Cooking Time Trend" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,0,0,12" HorizontalAlignment="Center"/>
-                    <Grid Height="160" Margin="0,0,0,8">
+                    <Grid Height="120" Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
@@ -219,7 +219,7 @@
                 </Border.Effect>
                 <StackPanel>
                     <TextBlock Text="🎯 Difficulty Levels" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,0,0,12" HorizontalAlignment="Center"/>
-                    <StackPanel Margin="0,0,0,16">
+                    <StackPanel Margin="0,0,0,8">
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="80"/>
@@ -278,7 +278,7 @@
                 </Border.Effect>
                 <StackPanel>
                     <TextBlock Text="📅 Monthly Activity" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,0,0,12" HorizontalAlignment="Center"/>
-                    <Grid Height="140" Margin="0,0,0,8">
+                    <Grid Height="200" Margin="0,0,0,8">
                         <Canvas>
                             <Polyline Stroke="White" StrokeThickness="3" StrokeLineJoin="Round">
                                 <Polyline.Points>

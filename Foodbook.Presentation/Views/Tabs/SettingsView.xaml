@@ -11,7 +11,7 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <Border Grid.Column="0" Background="White" CornerRadius="12" Padding="20" Margin="0,0,8,0">
+            <Border Grid.Column="0" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12" Padding="20" Margin="0,0,8,0">
                 <StackPanel>
                     <TextBlock Text="{Binding Loc_ApplicationSettings}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,16"/>
                     <StackPanel Margin="0,0,0,12">
@@ -38,7 +38,7 @@
                     <Button Content="{Binding Loc_Save}" Background="#4CAF50" Foreground="White" FontSize="14" FontWeight="SemiBold" Padding="16,12" BorderThickness="0" HorizontalAlignment="Stretch" Click="SaveSettings_Click"/>
                 </StackPanel>
             </Border>
-            <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="20" Margin="8,0,0,0">
+            <Border Grid.Column="1" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12" Padding="20" Margin="8,0,0,0">
                 <StackPanel>
                     <TextBlock Text="{Binding Loc_UserProfile}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,16"/>
                     <StackPanel Margin="0,0,0,12">
@@ -60,7 +60,7 @@
                 </StackPanel>
             </Border>
         </Grid>
-        <Border Background="White" CornerRadius="12" Padding="20" Margin="0,16,0,0">
+        <Border Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12" Padding="20" Margin="0,16,0,0">
             <StackPanel>
                 <TextBlock Text="{Binding Loc_AdvancedSettings}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,16"/>
                 <Grid>

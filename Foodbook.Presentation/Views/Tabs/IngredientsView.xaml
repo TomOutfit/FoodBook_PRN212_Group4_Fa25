@@ -5,7 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
     <StackPanel>
-        <Border Background="White" CornerRadius="20" Padding="32" Margin="0,0,0,24">
+        <Border Background="{DynamicResource CardBackgroundBrush}" CornerRadius="20" Padding="32" Margin="0,0,0,24">
             <Border.Effect>
                 <DropShadowEffect Color="#FF6B6B" Direction="270" ShadowDepth="8" Opacity="0.15" BlurRadius="20"/>
             </Border.Effect>
@@ -20,7 +20,7 @@
                             <TextBlock Text="🥘" FontSize="24" Foreground="White"/>
                         </Border>
                         <StackPanel>
-                            <TextBlock Text="Smart Inventory &amp; Meal Planner Hub" FontSize="36" FontWeight="Bold" Foreground="#1F2937"/>
+                            <TextBlock Text="Smart Inventory &amp; Meal Planner Hub" FontSize="36" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                             <TextBlock Text="Reduce waste, optimize shopping, and discover cook-now recipes (AI)" FontSize="16" Foreground="#6B7280" Margin="0,4,0,0"/>
                         </StackPanel>
                     </StackPanel>
@@ -32,23 +32,23 @@
                         </Grid.ColumnDefinitions>
                         <Border Grid.Column="0" Background="#FFEBEE" CornerRadius="12" Padding="16" Margin="0,0,12,0">
                             <StackPanel>
-                                <TextBlock Text="Near Expiration" FontWeight="Bold"/>
+                                <TextBlock Text="Near Expiration" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 <TextBlock Text="{Binding NearExpiryCount}" FontSize="22" FontWeight="Bold" Foreground="#EF4444"/>
-                                <TextBlock Text="Within 7 days" Foreground="#6B7280"/>
+                                <TextBlock Text="Within 7 days" Foreground="{DynamicResource TextSecondaryBrush}"/>
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="1" Background="#ECFDF5" CornerRadius="12" Padding="16" Margin="6,0,6,0">
                             <StackPanel>
-                                <TextBlock Text="Shopping Alerts" FontWeight="Bold"/>
+                                <TextBlock Text="Shopping Alerts" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 <TextBlock Text="{Binding ShoppingAlertsCount}" FontSize="22" FontWeight="Bold" Foreground="#10B981"/>
-                                <TextBlock Text="At/Below Min Qty" Foreground="#6B7280"/>
+                                <TextBlock Text="At/Below Min Qty" Foreground="{DynamicResource TextSecondaryBrush}"/>
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="2" Background="#EFF6FF" CornerRadius="12" Padding="16" Margin="12,0,0,0">
                             <StackPanel>
-                                <TextBlock Text="Total Items" FontWeight="Bold"/>
+                                <TextBlock Text="Total Items" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 <TextBlock Text="{Binding TotalIngredients}" FontSize="22" FontWeight="Bold" Foreground="#3B82F6"/>
-                                <TextBlock Text="In Stock" Foreground="#6B7280"/>
+                                <TextBlock Text="In Stock" Foreground="{DynamicResource TextSecondaryBrush}"/>
                             </StackPanel>
                         </Border>
                     </Grid>
@@ -74,7 +74,7 @@
             </Grid>
         </Border>
 
-        <Border Background="White" CornerRadius="20" Padding="32" Margin="0,0,0,24">
+        <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="20" Padding="32" Margin="0,0,0,24">
             <Border.Effect>
                 <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="4" Opacity="0.08" BlurRadius="16"/>
             </Border.Effect>
@@ -117,9 +117,9 @@
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
-                <Border Grid.Column="1" Background="#F8FAFC" CornerRadius="12" Padding="16,12">
+                <Border Grid.Column="1" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12" Padding="16,12">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Sort by:" FontSize="14" Foreground="#6B7280" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="Sort by:" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
                         <ComboBox SelectedValue="{Binding IngredientSortBy, Mode=TwoWay}" SelectedValuePath="Content" Width="160" Height="34" FontSize="14" Background="White" BorderThickness="0">
                             <ComboBoxItem Content="📝 Name A-Z"/>
                             <ComboBoxItem Content="📝 Name Z-A"/>
@@ -145,7 +145,7 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border Background="#FFFFFF" BorderBrush="#10B981" BorderThickness="2" CornerRadius="16" Padding="0" Margin="4" MinWidth="340" MaxWidth="360">
+                        <Border Background="{DynamicResource CardBackgroundBrush}" BorderBrush="#10B981" BorderThickness="2" CornerRadius="16" Padding="0" Margin="4" MinWidth="340" MaxWidth="360">
                             <Border.Effect>
                                 <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="4" Opacity="0.08" BlurRadius="12"/>
                             </Border.Effect>
@@ -156,32 +156,36 @@
                                 </Grid.ColumnDefinitions>
 
                                 <!-- Icon/Color panel (left) -->
-                                <Border Grid.Column="0" CornerRadius="16,0,0,16" Background="#F8FAFC">
+                                <Border Grid.Column="0" CornerRadius="16,0,0,16" Background="{DynamicResource CardBackgroundBrush}">
                                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <TextBlock Text="🥗" FontSize="36"/>
                                     </StackPanel>
                                 </Border>
 
                                 <!-- Content (right) -->
-                                <Border Grid.Column="1" Background="#FFFFFF" CornerRadius="0,16,16,0" Padding="12">
+                                <Border Grid.Column="1" Background="{DynamicResource SurfaceBrush}" CornerRadius="0,16,16,0" Padding="12">
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                            <TextBlock Text="{Binding Name}" FontSize="17" FontWeight="Bold" Foreground="#1F2937" TextWrapping="Wrap" MaxWidth="200"/>
+                                            <TextBlock Text="{Binding Name}" FontSize="17" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" MaxWidth="200"/>
                                         </StackPanel>
                                         <WrapPanel Margin="0,0,0,8">
                                             <StackPanel Orientation="Horizontal" Margin="0,0,8,4">
                                                 <TextBlock Text="📦" Margin="0,0,4,0" FontSize="11"/>
-                                                <TextBlock Text="{Binding Quantity, StringFormat={}{0}}" Foreground="#6B7280" FontSize="12"/>
+                                                <TextBlock Text="{Binding Quantity, StringFormat={}{0}}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/>
                                                 <TextBlock Text=" " FontSize="12"/>
-                                                <TextBlock Text="{Binding Unit}" Foreground="#6B7280" FontSize="12"/>
+                                                <TextBlock Text="{Binding Unit}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/>
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="0,0,8,4">
                                                 <TextBlock Text="📂" Margin="0,0,4,0" FontSize="11"/>
-                                                <TextBlock Text="{Binding Category}" Foreground="#6B7280" FontSize="12"/>
+                                                <TextBlock Text="{Binding Category, TargetNullValue='No Category'}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/>
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="0,0,8,4">
                                                 <TextBlock Text="⏳" Margin="0,0,4,0" FontSize="11"/>
-                                                <TextBlock Text="{Binding ExpiryDate, StringFormat={}{0:yyyy-MM-dd}}" Foreground="#6B7280" FontSize="12"/>
+                                                <TextBlock Text="{Binding ExpiryDate, StringFormat={}{0:yyyy-MM-dd}, TargetNullValue='No Expiry Date'}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,8,4">
+                                                <TextBlock Text="📍" Margin="0,0,4,0" FontSize="11"/>
+                                                <TextBlock Text="{Binding Location, TargetNullValue='No Location'}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/>
                                             </StackPanel>
                                         </WrapPanel>
                                         <StackPanel Orientation="Horizontal">
@@ -192,6 +196,14 @@
                                                 <TextBlock Text="{Binding Location, StringFormat={}Location: {0}}" Foreground="#92400E" FontWeight="SemiBold" FontSize="12"/>
                                             </Border>
                                         </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                            <Button Background="#3B82F6" Foreground="White" FontWeight="SemiBold" Padding="12,6" BorderThickness="0" Margin="0,0,8,0" FontSize="11" Command="{Binding DataContext.EditIngredientCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
+                                                <TextBlock Text="EDIT"/>
+                                            </Button>
+                                            <Button Background="#EF4444" Foreground="White" FontWeight="SemiBold" Padding="12,6" BorderThickness="0" FontSize="11" Command="{Binding DataContext.DeleteIngredientCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
+                                                <TextBlock Text="DELETE"/>
+                                            </Button>
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
                             </Grid>
@@ -201,12 +213,12 @@
             </ItemsControl>
             <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
                 <Button Style="{StaticResource PaginationButton}" Content="◄" Command="{Binding PrevPageCommand}" Margin="4,0"/>
-                <Border Background="White" CornerRadius="8" Padding="8,4" Margin="8,0" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1">
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="8" Padding="8,4" Margin="8,0" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="Page" Foreground="#6B7280" Margin="0,0,6,0"/>
+                        <TextBlock Text="Page" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,6,0"/>
                         <ComboBox Width="72" Height="28" ItemsSource="{Binding PageOptions}" SelectedItem="{Binding SelectedPage, Mode=TwoWay}" BorderThickness="0" Background="Transparent"/>
-                        <TextBlock Text="/" Foreground="#6B7280" Margin="6,0"/>
-                        <TextBlock Text="{Binding TotalPages}"/>
+                        <TextBlock Text="/" Foreground="{DynamicResource TextSecondaryBrush}" Margin="6,0"/>
+                        <TextBlock Text="{Binding TotalPages}" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     </StackPanel>
                 </Border>
                 <Button Style="{StaticResource PaginationButton}" Content="►" Command="{Binding NextPageCommand}" Margin="4,0"/>

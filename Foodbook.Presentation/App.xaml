@@ -26,11 +26,16 @@
         
         <!-- Dark Theme Palette (balanced for readability) -->
         <!-- Slightly lighter backgrounds to avoid overly dark UI, while keeping contrast -->
-        <SolidColorBrush x:Key="AppBackgroundBrush" Color="#151B26"/> <!-- slate ~850 -->
-        <SolidColorBrush x:Key="SurfaceBrush" Color="#19212E"/> <!-- top bar / surfaces -->
-        <SolidColorBrush x:Key="CardBackgroundBrush" Color="#223041"/> <!-- cards -->
-        <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#17202B"/>
-        <SolidColorBrush x:Key="DividerBrush" Color="#3B4A5E"/>
+        <!-- Color resources for use in GradientStop Color properties -->
+        <Color x:Key="AppBackgroundColor">#0F172A</Color>
+        <Color x:Key="SurfaceColor">#1F2937</Color>
+        <Color x:Key="CardBackgroundColor">#374151</Color>
+
+        <SolidColorBrush x:Key="AppBackgroundBrush" Color="{DynamicResource AppBackgroundColor}"/> <!-- slate ~850 -->
+        <SolidColorBrush x:Key="SurfaceBrush" Color="{DynamicResource SurfaceColor}"/> <!-- top bar / surfaces -->
+        <SolidColorBrush x:Key="CardBackgroundBrush" Color="{DynamicResource CardBackgroundColor}"/> <!-- cards -->
+        <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#FF17202B"/>
+        <SolidColorBrush x:Key="DividerBrush" Color="#FF3B4A5E"/>
 
         <!-- High contrast text on dark background for better readability -->
         <SolidColorBrush x:Key="TextPrimaryBrush" Color="#FFFFFF"/>

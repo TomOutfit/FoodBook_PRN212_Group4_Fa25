@@ -81,6 +81,9 @@ namespace Foodbook.Presentation.ViewModels
         public ICommand NextPageCommand => RecipeListVM.NextPageCommand;
         public ICommand ViewRecipeCommand => RecipeListVM.ViewRecipeCommand;
         public ICommand EditRecipeCommand => RecipeListVM.EditRecipeCommand;
+        public ICommand DeleteRecipeCommand => RecipeListVM.DeleteRecipeCommand;
+        public ICommand EditIngredientCommand => InventoryVM.EditIngredientCommand;
+        public ICommand DeleteIngredientCommand => InventoryVM.DeleteIngredientCommand;
 
         public MainViewModel(
             IRecipeService recipeService, 
@@ -171,6 +174,7 @@ namespace Foodbook.Presentation.ViewModels
                     break;
                 case "Analytics":
                     await AnalyticsVM.LoadAnalyticsDataAsync();
+                    await AnalyticsVM.LoadDashboardDataAsync();
                     break;
                 case "Settings":
                     await SettingsVM.LoadSettingsAsync();

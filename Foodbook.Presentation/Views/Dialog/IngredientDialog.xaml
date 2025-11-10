@@ -63,8 +63,9 @@
                 
                 <StackPanel Grid.Column="1" Margin="8,0,0,0">
                     <TextBlock Text="Unit *" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                    <ComboBox SelectedItem="{Binding Unit, UpdateSourceTrigger=PropertyChanged}"
-                              Padding="12" 
+                    <ComboBox x:Name="UnitComboBox"
+                              SelectedItem="{Binding Unit, UpdateSourceTrigger=PropertyChanged}"
+                              Padding="12"
                               FontSize="14">
                         <ComboBoxItem Content="gram"/>
                         <ComboBoxItem Content="kg"/>
@@ -81,8 +82,9 @@
 
             <!-- Category -->
             <TextBlock Text="Category" FontWeight="SemiBold" Margin="0,0,0,8"/>
-            <ComboBox SelectedItem="{Binding Category, UpdateSourceTrigger=PropertyChanged}"
-                      Padding="12" 
+            <ComboBox x:Name="CategoryComboBox"
+                      SelectedItem="{Binding Category, UpdateSourceTrigger=PropertyChanged}"
+                      Padding="12"
                       FontSize="14"
                       Margin="0,0,0,16">
                 <ComboBoxItem Content="Vegetables"/>
@@ -93,6 +95,14 @@
                 <ComboBoxItem Content="Spices"/>
                 <ComboBoxItem Content="Other"/>
             </ComboBox>
+
+            <!-- Location -->
+            <TextBlock Text="Location" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <TextBox x:Name="LocationTextBox"
+                     Text="{Binding Location, UpdateSourceTrigger=PropertyChanged}"
+                     Padding="12"
+                     FontSize="14"
+                     Margin="0,0,0,16"/>
         </StackPanel>
 
         <!-- Buttons -->
