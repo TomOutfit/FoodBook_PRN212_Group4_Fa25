@@ -11,8 +11,6 @@
         AllowsTransparency="False"
         ResizeMode="CanResize">
 
-    
-
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="40"/>
@@ -42,7 +40,7 @@
         <!-- Body -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition x:Name="SidebarColumn" Width="{Binding IsSidebarCollapsed, Converter={StaticResource SidebarWidthConverter}}"/>
+                <ColumnDefinition x:Name="SidebarColumn" Width="240"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
@@ -269,9 +267,9 @@
                             <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center"
                                         Visibility="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource SidebarVisibilityConverter}}">
                                 <TextBlock Text="{Binding DataContext.CurrentUser.Username, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" 
-                                           FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14"/>
-                                <TextBlock Text="{Binding DataContext.CurrentUser.Email, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" 
-                                           Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" Margin="0,2,0,0"/>
+                                           FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13"/>
+                                <TextBlock Text="{Binding DataContext.CurrentUser.Email, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}" FontSize="7" Margin="0,2,0,0"/>
                             </StackPanel>
 
                             <!-- Logout button with hover effect -->

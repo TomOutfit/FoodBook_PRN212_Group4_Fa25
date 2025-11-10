@@ -152,7 +152,7 @@ namespace Foodbook.Presentation.ViewModels
             ViewRecipeAnalyticsCommand = new RelayCommand(new Action(() => NavigateToAnalytics()), () => true);
             ViewRecipeCommand = new RelayCommand<Recipe>(async r => await OpenViewEditRecipeDialogAsync(r), r => r != null);
             EditRecipeCommand = new RelayCommand<Recipe>(async r => await OpenViewEditRecipeDialogAsync(r), r => r != null);
-            DeleteRecipeCommand = new RelayCommand<Recipe>(_ => { /* optionally call service to delete then refresh */ }, _ => true);
+            DeleteRecipeCommand = new RelayCommand<Recipe>(async r => await DeleteRecipeAsync(r), r => r != null);
             FilterByCategoryCommand = new RelayCommand<string>(async c => await FilterRecipesByCategoryAsync(c), _ => true);
         }
 
@@ -273,6 +273,24 @@ namespace Foodbook.Presentation.ViewModels
                 if (result == true && dialog.Recipe != null)
                 {
                     await _recipeService.UpdateRecipeAsync(dialog.Recipe);
+                    await LoadRecipesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = ex.Message;
+            }
+        }
+
+        private async Task DeleteRecipeAsync(Recipe recipe)
+        {
+            if (recipe == null) return;
+            try
+            {
+                var result = MessageBox.Show($"Are you sure you want to delete '{recipe.Title}'?", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (result == MessageBoxResult.Yes)
+                {
+                    await _recipeService.DeleteRecipeAsync(recipe.Id);
                     await LoadRecipesAsync();
                 }
             }

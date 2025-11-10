@@ -5,7 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
     <StackPanel>
-        <Border Background="White" CornerRadius="20" Padding="32" Margin="0,0,0,24">
+        <Border Background="{DynamicResource CardBackgroundBrush}" CornerRadius="20" Padding="32" Margin="0,0,0,24">
             <Border.Effect>
                 <DropShadowEffect Color="#4CAF50" Direction="270" ShadowDepth="8" Opacity="0.15" BlurRadius="20"/>
             </Border.Effect>
@@ -20,7 +20,7 @@
                             <TextBlock Text="🍽️" FontSize="24" Foreground="White"/>
                         </Border>
                         <StackPanel>
-                            <TextBlock Text="My Recipe Collection" FontSize="36" FontWeight="Bold" Foreground="#1F2937"/>
+                            <TextBlock Text="My Recipe Collection" FontSize="36" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                             <TextBlock Text="Discover, create, and manage your culinary masterpieces" FontSize="16" Foreground="#6B7280" Margin="0,4,0,0"/>
                         </StackPanel>
                     </StackPanel>
@@ -81,7 +81,7 @@
             </Grid>
         </Border>
 
-        <Border Background="White" CornerRadius="20" Padding="32" Margin="0,0,0,24">
+        <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="20" Padding="32" Margin="0,0,0,24">
             <Border.Effect>
                 <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="4" Opacity="0.08" BlurRadius="16"/>
             </Border.Effect>
@@ -90,7 +90,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Border Grid.Row="0" Background="#F8FAFC" CornerRadius="16" Padding="20,16" Margin="0,0,0,20">
+                <Border Grid.Row="0" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="16" Padding="20,16" Margin="0,0,0,20">
                     <Grid>
                         <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" FontSize="16" VerticalAlignment="Center" Padding="0,0,50,0"/>
                         <TextBlock Text="🔍 Search recipes, ingredients, or cooking methods..." Foreground="#9CA3AF" FontSize="16" VerticalAlignment="Center" IsHitTestVisible="False" Margin="0,0,50,0">
@@ -152,10 +152,10 @@
                             </Border>
                         </StackPanel>
                     </ScrollViewer>
-                    <Border Grid.Column="1" Background="#F8FAFC" CornerRadius="12" Padding="16,12">
+                    <Border Grid.Column="1" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12" Padding="16,12">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Sort by:" FontSize="14" Foreground="#6B7280" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                            <ComboBox SelectedValue="{Binding SortBy, Mode=TwoWay}" SelectedValuePath="Content" Width="160" Height="34" FontSize="14" Background="White" BorderThickness="0">
+                            <TextBlock Text="Sort by:" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <ComboBox SelectedValue="{Binding SortBy, Mode=TwoWay}" SelectedValuePath="Content" Width="160" Height="34" FontSize="14" Background="{DynamicResource CardBackgroundBrush}" BorderThickness="0">
                                 <ComboBoxItem Content="📝 Name A-Z"/>
                                 <ComboBoxItem Content="📝 Name Z-A"/>
                                 <ComboBoxItem Content="⏱️ Time (Low to High)"/>
@@ -183,7 +183,7 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border Background="#FFFFFF" BorderBrush="#FF8A00" BorderThickness="3" CornerRadius="16" Padding="0" Margin="4" MinWidth="340" MaxWidth="360">
+                        <Border Background="{DynamicResource CardBackgroundBrush}" BorderBrush="#FF8A00" BorderThickness="3" CornerRadius="16" Padding="0" Margin="4" MinWidth="340" MaxWidth="360">
                             <Border.Effect>
                                 <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="4" Opacity="0.08" BlurRadius="12"/>
                             </Border.Effect>
@@ -192,16 +192,16 @@
                                     <ColumnDefinition Width="140"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                
+
                                 <!-- Image Outside Card (Left Side) -->
                                 <Grid Grid.Column="0" Margin="0">
-                                    <Border CornerRadius="16,0,0,16" ClipToBounds="True" Background="#F8F9FA">
+                                    <Border CornerRadius="16,0,0,16" ClipToBounds="True" Background="{DynamicResource CardBackgroundBrush}">
                                         <Grid>
-                                            <Image Width="140" 
-                                                   Height="160" 
-                                                   Stretch="UniformToFill"
-                                                   VerticalAlignment="Stretch"
-                                                   HorizontalAlignment="Stretch">
+                                            <Image Width="140"
+                                                    Height="160"
+                                                    Stretch="UniformToFill"
+                                                    VerticalAlignment="Stretch"
+                                                    HorizontalAlignment="Stretch">
                                                 <Image.Source>
                                                     <Binding Path="ImageUrl" Converter="{StaticResource ImageUrlConverter}">
                                                         <Binding.FallbackValue>
@@ -211,11 +211,11 @@
                                                 </Image.Source>
                                             </Image>
                                             <!-- Placeholder icon if no image -->
-                                            <TextBlock Text="🍽️" 
-                                                       FontSize="48" 
-                                                       Foreground="#9CA3AF" 
-                                                       HorizontalAlignment="Center" 
-                                                       VerticalAlignment="Center">
+                                            <TextBlock Text="🍽️"
+                                                        FontSize="48"
+                                                        Foreground="{DynamicResource TextSecondaryBrush}"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -235,49 +235,72 @@
                                 </Grid>
 
                                 <!-- Content Card (Right Side) -->
-                                <Border Grid.Column="1" Background="#FFFFFF" CornerRadius="0,16,16,0" Padding="12">
+                                <Border Grid.Column="1" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="0,16,16,0" Padding="12">
                                     <StackPanel>
                                         <TextBlock Text="★★★★☆" Foreground="#FFB300" FontSize="12" Margin="0,0,0,4"/>
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                            <TextBlock Text="{Binding Title}" 
-                                                       FontSize="17" 
-                                                       FontWeight="Bold" 
-                                                       Foreground="#1F2937" 
+                                            <TextBlock Text="{Binding Title}"
+                                                       FontSize="17"
+                                                       FontWeight="Bold"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                                        TextWrapping="Wrap"
                                                        MaxWidth="180"
                                                        LineHeight="20"/>
-                                            <TextBlock Text="🤖" 
-                                                       FontSize="14" 
-                                                       Margin="4,0,0,0" 
-                                                       ToolTip="AI Generated Recipe" 
+                                            <TextBlock Text="🤖"
+                                                       FontSize="14"
+                                                       Margin="4,0,0,0"
+                                                       ToolTip="AI Generated Recipe"
                                                        Visibility="{Binding IsAIGenerated, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                         </StackPanel>
                                         <WrapPanel Margin="0,0,0,8">
                                             <StackPanel Orientation="Horizontal" Margin="0,0,8,4">
                                                 <TextBlock Text="⏱️" Margin="0,0,4,0" FontSize="11"/>
-                                                <TextBlock Text="{Binding CookTime, StringFormat={}{0}mins}" Foreground="#6B7280" FontSize="12"/>
+                                                <TextBlock Text="{Binding CookTime, StringFormat={}{0}mins}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/>
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="0,0,8,4">
                                                 <TextBlock Text="👥" Margin="0,0,4,0" FontSize="11"/>
-                                                <TextBlock Text="{Binding Servings, StringFormat={}{0} people}" Foreground="#6B7280" FontSize="12"/>
+                                                <TextBlock Text="{Binding Servings, StringFormat={}{0} people}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/>
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="0,0,8,4">
                                                 <TextBlock Text="🧩" Margin="0,0,4,0" FontSize="11"/>
-                                                <TextBlock Text="{Binding Difficulty, Converter={StaticResource StringCleanConverter}}" Foreground="#6B7280" FontSize="12"/>
+                                                <TextBlock Text="{Binding Difficulty, Converter={StaticResource StringCleanConverter}}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/>
                                             </StackPanel>
                                         </WrapPanel>
-                                        <Button Background="Transparent" 
-                                                BorderBrush="#FF8A00" 
-                                                Foreground="#FF8A00" 
-                                                FontWeight="SemiBold" 
-                                                Padding="12,8" 
-                                                BorderThickness="2" 
-                                                Margin="0,0,0,0" 
-                                                FontSize="12"
-                                                Command="{Binding DataContext.ViewRecipeCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                                CommandParameter="{Binding}">
-                                            <TextBlock Text="VIEW RECIPE"/>
-                                        </Button>
+                                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                            <Button Background="Transparent"
+                                                    BorderBrush="#FF8A00"
+                                                    Foreground="#FF8A00"
+                                                    FontWeight="SemiBold"
+                                                    Padding="12,8"
+                                                    BorderThickness="2"
+                                                    Margin="0,0,8,0"
+                                                    FontSize="12"
+                                                    Command="{Binding DataContext.ViewRecipeCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}">
+                                                <TextBlock Text="VIEW"/>
+                                            </Button>
+                                            <Button Background="#3B82F6"
+                                                    Foreground="White"
+                                                    FontWeight="SemiBold"
+                                                    Padding="12,8"
+                                                    BorderThickness="0"
+                                                    Margin="0,0,8,0"
+                                                    FontSize="12"
+                                                    Command="{Binding DataContext.EditRecipeCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}">
+                                                <TextBlock Text="EDIT"/>
+                                            </Button>
+                                            <Button Background="#EF4444"
+                                                    Foreground="White"
+                                                    FontWeight="SemiBold"
+                                                    Padding="12,8"
+                                                    BorderThickness="0"
+                                                    FontSize="12"
+                                                    Command="{Binding DataContext.DeleteRecipeCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}">
+                                                <TextBlock Text="DELETE"/>
+                                            </Button>
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
                             </Grid>
@@ -287,28 +310,28 @@
             </ItemsControl>
             <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
                 <Button Style="{StaticResource PaginationButton}" Content="◄" Command="{Binding PrevPageCommand}" Margin="4,0"/>
-                <Border Background="White" CornerRadius="8" Padding="8,4" Margin="8,0" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1">
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="8" Padding="8,4" Margin="8,0" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="Page" Foreground="#6B7280" Margin="0,0,6,0"/>
+                        <TextBlock Text="Page" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,6,0"/>
                         <ComboBox Width="72" Height="28" ItemsSource="{Binding PageOptions}" SelectedItem="{Binding SelectedPage, Mode=TwoWay}" BorderThickness="0" Background="Transparent"/>
-                        <TextBlock Text="/" Foreground="#6B7280" Margin="6,0"/>
-                        <TextBlock Text="{Binding TotalPages}"/>
+                        <TextBlock Text="/" Foreground="{DynamicResource TextSecondaryBrush}" Margin="6,0"/>
+                        <TextBlock Text="{Binding TotalPages}" Foreground="{DynamicResource TextSecondaryBrush}"/>
                     </StackPanel>
                 </Border>
                 <Button Style="{StaticResource PaginationButton}" Content="►" Command="{Binding NextPageCommand}" Margin="4,0"/>
             </StackPanel>
         </Grid>
 
-        <Border Background="White" CornerRadius="20" Padding="60" Margin="0,40,0,0" Visibility="{Binding Recipes.Count, Converter={StaticResource BooleanToVisibilityConverter}}">
+        <Border Background="{DynamicResource CardBackgroundBrush}" CornerRadius="20" Padding="60" Margin="0,40,0,0" Visibility="{Binding Recipes.Count, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Border.Effect>
                 <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="4" Opacity="0.08" BlurRadius="16"/>
             </Border.Effect>
             <StackPanel HorizontalAlignment="Center">
-                <Border Background="#F8FAFC" CornerRadius="50" Padding="30" Margin="0,0,0,24">
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="50" Padding="30" Margin="0,0,0,24">
                     <TextBlock Text="🍽️" FontSize="72" HorizontalAlignment="Center"/>
                 </Border>
-                <TextBlock Text="No recipes yet" FontSize="28" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                <TextBlock Text="Start building your culinary collection! Add your first recipe to get started." FontSize="16" Foreground="#6B7280" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,32"/>
+                <TextBlock Text="No recipes yet" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                <TextBlock Text="Start building your culinary collection! Add your first recipe to get started." FontSize="16" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,32"/>
                 <Button Background="#4CAF50" Foreground="White" FontSize="16" FontWeight="SemiBold" Padding="32,16" BorderThickness="0" Command="{Binding AddRecipeCommand}">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">

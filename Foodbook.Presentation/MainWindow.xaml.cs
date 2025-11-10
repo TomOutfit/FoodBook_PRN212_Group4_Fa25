@@ -74,20 +74,13 @@ public partial class MainWindow : Window
         if (DataContext is MainViewModel vm && vm.LoadSettingsCommand.CanExecute(null))
         {
             vm.LoadSettingsCommand.Execute(null);
-            
+
             // Refresh CurrentUser to ensure it's up-to-date after login
             await vm.LoadCurrentUserAsync();
-            
-            // Apply loaded settings immediately
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(100); // Small delay to ensure settings are loaded
-                Dispatcher.Invoke(() =>
-                {
-                    ApplyTheme(vm.SelectedTheme);
-                    ApplyLanguage(vm.SelectedLanguage);
-                });
-            });
+
+            // Apply loaded settings immediately - no background task or async dispatch
+            ApplyTheme(vm.SelectedTheme);
+            ApplyLanguage(vm.SelectedLanguage);
         }
     }
 
@@ -135,15 +128,28 @@ public partial class MainWindow : Window
     private void HamburgerButton_Click(object sender, RoutedEventArgs e)
     {
         _isSidebarOpen = !_isSidebarOpen;
+
+        // Look up the ColumnDefinition named "SidebarColumn" from XAML at runtime.
+        var sidebarColumn = FindName("SidebarColumn") as ColumnDefinition;
+
         if (_isSidebarOpen)
         {
-            SidebarColumn.Width = new GridLength(240);
-            Sidebar.Visibility = Visibility.Visible;
+            if (sidebarColumn != null)
+                sidebarColumn.Width = new GridLength(240);
+
+            var sidebar = FindName("Sidebar") as UIElement;
+            if (sidebar != null)
+                sidebar.Visibility = Visibility.Visible;
         }
         else
         {
-            SidebarColumn.Width = new GridLength(0);
-            Sidebar.Visibility = Visibility.Collapsed;
+            if (sidebarColumn != null)
+                sidebarColumn.Width = new GridLength(80);
+
+            // When closed, collapse the sidebar to free space
+            var sidebar = FindName("Sidebar") as UIElement;
+            if (sidebar != null)
+                sidebar.Visibility = Visibility.Collapsed;
         }
     }
 

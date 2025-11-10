@@ -102,6 +102,8 @@ namespace Foodbook.Presentation.ViewModels
         // Commands used by IngredientsView.xaml
         public ICommand LoadIngredientsCommand { get; }
         public ICommand AddIngredientCommand { get; }
+        public ICommand EditIngredientCommand { get; }
+        public ICommand DeleteIngredientCommand { get; }
         public ICommand ViewIngredientAnalyticsCommand { get; }
         public ICommand NavigateToAllIngredientsCommand { get; }
         public ICommand NavigateToProteinsCommand { get; }
@@ -117,6 +119,8 @@ namespace Foodbook.Presentation.ViewModels
 
             LoadIngredientsCommand = new RelayCommand(async () => await LoadIngredientsAsync(), () => true);
             AddIngredientCommand = new RelayCommand(async () => await OpenAddIngredientDialogAsync(), () => true);
+            EditIngredientCommand = new RelayCommand<Ingredient>(async i => await OpenEditIngredientDialogAsync(i), i => i != null);
+            DeleteIngredientCommand = new RelayCommand<Ingredient>(async i => await DeleteIngredientAsync(i), i => i != null);
             ViewIngredientAnalyticsCommand = new RelayCommand(new Action(() => NavigateToAnalytics()), () => true);
             NavigateToAllIngredientsCommand = new RelayCommand(new Action(() => SetGroup("All")), () => true);
             NavigateToProteinsCommand = new RelayCommand(new Action(() => SetGroup("Proteins")), () => true);
@@ -132,6 +136,8 @@ namespace Foodbook.Presentation.ViewModels
         {
             LoadIngredientsCommand = new RelayCommand(new Action(() => { }), () => true);
             AddIngredientCommand = new RelayCommand(new Action(() => { }), () => true);
+            EditIngredientCommand = new RelayCommand<Ingredient>(_ => { }, _ => true);
+            DeleteIngredientCommand = new RelayCommand<Ingredient>(_ => { }, _ => true);
             ViewIngredientAnalyticsCommand = new RelayCommand(new Action(() => { }), () => true);
             NavigateToAllIngredientsCommand = new RelayCommand(new Action(() => { }), () => true);
             NavigateToProteinsCommand = new RelayCommand(new Action(() => { }), () => true);
@@ -185,6 +191,44 @@ namespace Foodbook.Presentation.ViewModels
                 if (result == true && dialog.Ingredient != null)
                 {
                     await _ingredientService.AddIngredientAsync(dialog.Ingredient);
+                    await LoadIngredientsAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = ex.Message;
+            }
+        }
+
+        private async Task OpenEditIngredientDialogAsync(Ingredient ingredient)
+        {
+            if (ingredient == null) return;
+            try
+            {
+                var dialog = new IngredientDialog(ingredient);
+                dialog.Owner = Application.Current?.MainWindow;
+                var result = dialog.ShowDialog();
+                if (result == true && dialog.Ingredient != null)
+                {
+                    await _ingredientService.UpdateIngredientAsync(dialog.Ingredient);
+                    await LoadIngredientsAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = ex.Message;
+            }
+        }
+
+        private async Task DeleteIngredientAsync(Ingredient ingredient)
+        {
+            if (ingredient == null) return;
+            try
+            {
+                var result = MessageBox.Show($"Are you sure you want to delete '{ingredient.Name}'?", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (result == MessageBoxResult.Yes)
+                {
+                    await _ingredientService.DeleteIngredientAsync(ingredient.Id);
                     await LoadIngredientsAsync();
                 }
             }

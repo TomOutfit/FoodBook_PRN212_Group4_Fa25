@@ -11,14 +11,14 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <Border Grid.Column="0" Background="White" CornerRadius="12" Padding="20" Margin="0,0,8,0">
+            <Border Grid.Column="0" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12" Padding="20" Margin="0,0,8,0">
                 <StackPanel>
                     <TextBlock Text="🎯 AI Judge" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
                     <TextBlock Text="Upload a photo of your dish and get AI-powered feedback on presentation, technique, and suggestions for improvement." FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,16" Height="60"/>
                     <Button Content="📸 Upload Photo &amp; Judge" Background="#8B5CF6" Foreground="White" FontSize="14" FontWeight="SemiBold" Padding="16,12" BorderThickness="0" HorizontalAlignment="Stretch" Command="{Binding JudgeDishCommand}"/>
                 </StackPanel>
             </Border>
-            <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="20" Margin="8,0,0,0">
+            <Border Grid.Column="1" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12" Padding="20" Margin="8,0,0,0">
                 <StackPanel>
                     <TextBlock Text="👨‍🍳 AI Chef" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
                     <TextBlock Text="Let AI create custom recipes, analyze nutrition, and provide cooking guidance based on your preferences." FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,16" Height="60"/>
@@ -31,7 +31,7 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <Border Grid.Column="0" Background="White" CornerRadius="12" Padding="20" Margin="0,0,8,0">
+            <Border Grid.Column="0" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12" Padding="20" Margin="0,0,8,0">
                 <StackPanel>
                     <TextBlock Text="🛒 Smart Shopping List" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
                     <TextBlock Text="AI analyzes your recipes and creates an optimized shopping list with quantities and store layout suggestions." FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,12" Height="60"/>
@@ -41,7 +41,7 @@
                     <Button Content="📋 Generate Shopping List" Background="#F59E0B" Foreground="White" FontSize="14" FontWeight="SemiBold" Padding="16,12" BorderThickness="0" HorizontalAlignment="Stretch" Command="{Binding GenerateShoppingListCommand}"/>
                 </StackPanel>
             </Border>
-            <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="20" Margin="8,0,0,0">
+            <Border Grid.Column="1" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12" Padding="20" Margin="8,0,0,0">
                 <StackPanel>
                     <TextBlock Text="📊 Nutrition Analysis" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
                     <TextBlock Text="Get detailed nutritional information and health recommendations for your recipes using AI analysis." FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,16" Height="60"/>
