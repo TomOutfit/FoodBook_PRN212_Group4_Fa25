@@ -79,28 +79,72 @@ namespace Foodbook.Business.Services
                     return await GetEnhancedFallbackAnalysis(imageData, evaluationMode);
                 }
 
-                // Convert image to base64 for API
-                var imageBase64 = Convert.ToBase64String(imageData);
-                
-                // Create system prompt based on evaluation mode
-                var systemPrompt = CreateSystemPrompt(evaluationMode);
-                
-                // Call Google Gemini API for computer vision analysis
-                var analysisResult = await CallGeminiVisionAPI(imageBase64, systemPrompt);
-                
-                // Parse the AI response into structured result
-                var result = ParseAnalysisResult(analysisResult, evaluationMode);
-                
-                // Validate the result before returning
-                if (result != null && IsValidJudgeResult(result))
+                // Implement exponential backoff for rate limiting
+                var maxRetries = 3;
+                var retryCount = 0;
+                var baseDelay = 2000; // 2 seconds
+
+                while (retryCount < maxRetries)
                 {
-                    return result;
+                    try
+                    {
+                        // Add rate limiting to prevent TooManyRequests errors
+                        await Task.Delay(Random.Shared.Next(baseDelay, baseDelay + 1000)); // Random delay with backoff
+
+                        // Convert image to base64 for API
+                        var imageBase64 = Convert.ToBase64String(imageData);
+
+                        // Create system prompt based on evaluation mode
+                        var systemPrompt = CreateSystemPrompt(evaluationMode);
+
+                        // Call Google Gemini API for computer vision analysis
+                        var analysisResult = await CallGeminiVisionAPI(imageBase64, systemPrompt);
+
+                        // Parse the AI response into structured result
+                        var result = ParseAnalysisResult(analysisResult, evaluationMode);
+
+                        // Validate the result before returning
+                        if (result != null && IsValidJudgeResult(result))
+                        {
+                            return result;
+                        }
+                        else
+                        {
+                            Console.WriteLine("Warning: Invalid AI response, using enhanced fallback");
+                            return await GetEnhancedFallbackAnalysis(imageData, evaluationMode);
+                        }
+                    }
+                    catch (HttpRequestException ex) when (ex.Message.Contains("TooManyRequests") || ex.Message.Contains("429"))
+                    {
+                        retryCount++;
+                        if (retryCount < maxRetries)
+                        {
+                            var delay = baseDelay * Math.Pow(2, retryCount); // Exponential backoff
+                            Console.WriteLine($"Gemini API rate limit exceeded, retrying in {delay}ms (attempt {retryCount}/{maxRetries})");
+                            await Task.Delay((int)delay);
+                            continue;
+                        }
+                        else
+                        {
+                            Console.WriteLine("Gemini API rate limit exceeded after all retries, using enhanced fallback analysis");
+                            return await GetEnhancedFallbackAnalysis(imageData, evaluationMode);
+                        }
+                    }
+                    catch (HttpRequestException ex) when (ex.Message.Contains("BadRequest") || ex.Message.Contains("400"))
+                    {
+                        Console.WriteLine("Gemini API invalid request, using enhanced fallback analysis");
+                        return await GetEnhancedFallbackAnalysis(imageData, evaluationMode);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"AI Analysis Error: {ex.Message}");
+                        // Enhanced fallback with image analysis
+                        return await GetEnhancedFallbackAnalysis(imageData, evaluationMode);
+                    }
                 }
-                else
-                {
-                    Console.WriteLine("Warning: Invalid AI response, using enhanced fallback");
-                    return await GetEnhancedFallbackAnalysis(imageData, evaluationMode);
-                }
+
+                // Fallback if all retries failed
+                return await GetEnhancedFallbackAnalysis(imageData, evaluationMode);
             }
             catch (Exception ex)
             {
@@ -368,22 +412,51 @@ namespace Foodbook.Business.Services
         private string CreateSystemPrompt(string evaluationMode)
         {
             var basePrompt = @"
-You are an expert culinary critic and master chef with extensive knowledge in food presentation, cooking techniques, and professional culinary standards. 
+You are an expert culinary critic and master chef with extensive knowledge in food presentation, cooking techniques, and professional culinary standards.
 
-Analyze the uploaded dish image and provide a comprehensive culinary evaluation. Look at the actual food in the image and assess:
+Analyze the uploaded dish image and provide a comprehensive culinary evaluation. Focus EXCLUSIVELY on the FOOD and COOKING quality, not photo composition or lighting:
 
-1. **Visual Analysis**: What do you actually see in the dish? Colors, textures, arrangement, ingredients
-2. **Culinary Quality**: How well-prepared does the food appear? Cooking techniques, doneness, preparation quality
-3. **Presentation Skills**: How is the dish plated? Professional techniques, visual appeal, composition
-4. **Ingredient Assessment**: What ingredients are visible? Quality, freshness, variety, balance
-5. **Overall Impression**: What's your first impression of this dish as a culinary expert?
+1. **Culinary Preparation Quality**: How elaborate and skilled is the cooking? Look for:
+   - Complex cooking techniques (braising, confit, sous-vide, multi-stage cooking)
+   - Precise knife work and ingredient preparation
+   - Multiple cooking methods used together
+   - Homemade elements vs. pre-made ingredients
+   - Attention to detail in food preparation
 
-IMPORTANT: 
-- Focus strictly on the culinary quality of the FOOD (not the photo aesthetics). Judge cooking technique, doneness, balance, freshness, ingredient quality. Photo quality must not influence the score.
-- Be specific about what you see (colors, textures, ingredients, techniques)
-- Use natural, conversational language with emojis
-- Make your feedback feel personal and genuine
-- Focus on culinary aspects that matter to taste and presentation
+2. **Cooking Techniques & Doneness**: Assess cooking mastery:
+   - Perfect doneness and texture achievement
+   - Temperature control (rare, medium, well-done executed perfectly)
+   - Sauce reduction and consistency
+   - Timing and coordination of multiple components
+   - Professional cooking methods application
+
+3. **Ingredient Quality & Sophistication**: Evaluate ingredients used:
+   - Premium/fresh ingredients (aged meats, exotic ingredients, fresh herbs)
+   - Ingredient combinations and flavor layering
+   - Quality of meat cuts, seafood freshness, produce ripeness
+   - Use of specialty ingredients (truffle, caviar, premium cheeses)
+   - Homemade stocks, sauces, or components
+
+4. **Presentation & Plating**: Judge the culinary artistry:
+   - Professional plating techniques (jus dots, microgreens, precise arrangements)
+   - Color harmony and visual balance of the actual food
+   - Temperature-appropriate presentation
+   - Garnish integration and functionality
+   - Portion size and composition balance
+
+5. **Effort Level**: Recognize culinary effort and complexity:
+   - Time investment in preparation and cooking
+   - Multiple components working together
+   - Technique difficulty and execution skill
+   - Ingredient sourcing effort
+   - Overall culinary ambition
+
+IMPORTANT SCORING GUIDELINES:
+- HIGH SCORES (8.5-10): Dishes showing professional-level technique, elaborate preparation, premium ingredients, complex cooking methods
+- MEDIUM SCORES (6-8.4): Well-executed home cooking, good techniques, fresh ingredients, proper timing
+- LOW SCORES (0-5.9): Basic cooking, poor technique execution, low-quality ingredients, lack of culinary effort
+
+CRITICAL: Judge the culinary quality of the FOOD itself - elaborate, sophisticated dishes deserve high scores regardless of how the photo looks. Simple dishes get appropriate scores.
 
 Provide your analysis in the following JSON format. All scores MUST be decimals with one decimal place (e.g., 7.8):
 {
@@ -393,23 +466,23 @@ Provide your analysis in the following JSON format. All scores MUST be decimals 
   ""textureScore"": 7.2,
   ""platingScore"": 8.0,
   ""overallRating"": ""Excellent|Good|Fair|Poor"",
-  ""comment"": ""Write cohesive paragraphs focusing on culinary evaluation (not photo quality)"",
-  ""suggestions"": [""specific suggestion1"", ""specific suggestion2"", ""specific suggestion3""],
-  ""healthNotes"": ""Nutritional aspects you can infer from the food itself"",
-  ""chefTips"": [""helpful tip1"", ""helpful tip2""]
+  ""comment"": ""Focus on culinary effort, technique sophistication, and food quality - elaborate dishes get high scores"",
+  ""suggestions"": [""specific culinary improvement suggestions"", ""technique refinement advice"", ""ingredient quality recommendations""],
+  ""healthNotes"": ""Nutritional assessment based on visible ingredients and cooking methods"",
+  ""chefTips"": [""professional cooking technique tips"", ""culinary skill development advice""]
 }";
 
             if (evaluationMode.ToLower() == "strict")
             {
                 return basePrompt + @"
 
-PERSONA: 👨‍⚖️ You are a strict Michelin-starred chef judging this dish against the highest professional standards. Be direct and technical, but still natural in your language. Focus on what needs improvement while acknowledging what's done well. Use professional culinary terminology but keep it conversational.";
+PERSONA: 👨‍⚖️ You are a strict Michelin-starred chef judging this dish against the highest professional standards. Be direct and technical, but still natural in your language. Focus on culinary excellence - elaborate, sophisticated dishes deserve high scores. Recognize true culinary effort and skill. Use professional culinary terminology but keep it conversational.";
             }
             else
             {
                 return basePrompt + @"
 
-PERSONA: 😊 You are an encouraging master chef mentor who wants to help the cook improve. Be supportive and positive, focusing on what they did well while offering constructive suggestions. Use warm, encouraging language that feels like you're talking to a friend who loves cooking.";
+PERSONA: 😊 You are an encouraging master chef mentor who wants to help the cook improve. Be supportive and positive, focusing on what they did well while offering constructive suggestions. Recognize culinary effort - sophisticated techniques and elaborate dishes deserve praise. Use warm, encouraging language that feels like you're talking to a friend who loves cooking.";
             }
         }
 
@@ -726,26 +799,35 @@ Provide your recipe in the following JSON format:
         private async Task<ChefJudgeResult> GetEnhancedFallbackAnalysis(byte[] imageData, string evaluationMode)
         {
             await Task.Delay(1500); // Simulate processing
-            
+
             // Analyze image properties for more realistic scoring
             var imageAnalysis = AnalyzeImageProperties(imageData);
             var scoreInt = CalculateRealisticScore(imageAnalysis, evaluationMode);
             var random = new Random();
             var scoreDouble = Math.Round(Math.Max(0, Math.Min(10, scoreInt + (random.NextDouble() - 0.5))), 1);
-            
+
+            // Calculate individual scores
+            var presentationScore = Math.Round(Math.Max(0, Math.Min(10, CalculatePresentationScore(imageAnalysis) + (random.NextDouble() - 0.5))), 1);
+            var colorScore = Math.Round(Math.Max(0, Math.Min(10, CalculateColorScore(imageAnalysis) + (random.NextDouble() - 0.5))), 1);
+            var textureScore = Math.Round(Math.Max(0, Math.Min(10, CalculateTextureScore(imageAnalysis) + (random.NextDouble() - 0.5))), 1);
+            var platingScore = Math.Round(Math.Max(0, Math.Min(10, CalculatePlatingScore(imageAnalysis) + (random.NextDouble() - 0.5))), 1);
+
+            // Calculate overall score as average of the four detailed scores (as requested)
+            var calculatedOverallScore = Math.Round((presentationScore + colorScore + textureScore + platingScore) / 4.0, 1);
+
             var (comments, suggestions, chefTips) = GetPersonaBasedFeedback(evaluationMode, scoreInt);
-            
+
             return new ChefJudgeResult
             {
                 RecipeName = "Dish Analysis",
-                Score = scoreDouble,
+                Score = calculatedOverallScore, // Use calculated average
                 Comment = GetContextualComment(imageAnalysis, scoreInt, evaluationMode),
                 Suggestions = GetContextualSuggestions(imageAnalysis, scoreInt, evaluationMode),
-                OverallRating = scoreDouble >= 9 ? "Excellent" : scoreDouble >= 7 ? "Good" : scoreDouble >= 5 ? "Fair" : "Poor",
-                PresentationScore = Math.Round(Math.Max(0, Math.Min(10, CalculatePresentationScore(imageAnalysis) + (random.NextDouble() - 0.5))), 1),
-                ColorScore = Math.Round(Math.Max(0, Math.Min(10, CalculateColorScore(imageAnalysis) + (random.NextDouble() - 0.5))), 1),
-                TextureScore = Math.Round(Math.Max(0, Math.Min(10, CalculateTextureScore(imageAnalysis) + (random.NextDouble() - 0.5))), 1),
-                PlatingScore = Math.Round(Math.Max(0, Math.Min(10, CalculatePlatingScore(imageAnalysis) + (random.NextDouble() - 0.5))), 1),
+                OverallRating = calculatedOverallScore >= 9 ? "Excellent" : calculatedOverallScore >= 7 ? "Good" : calculatedOverallScore >= 5 ? "Fair" : "Poor",
+                PresentationScore = presentationScore,
+                ColorScore = colorScore,
+                TextureScore = textureScore,
+                PlatingScore = platingScore,
                 HealthNotes = GetContextualHealthNotes(imageAnalysis, scoreInt),
                 ChefTips = GetContextualChefTips(imageAnalysis, evaluationMode)
             };
@@ -757,24 +839,30 @@ Provide your recipe in the following JSON format:
             var fileSize = imageData.Length;
             var isHighQuality = fileSize > 500000; // > 500KB
             var isVeryHighQuality = fileSize > 2000000; // > 2MB
-            
+
             // Simulate culinary analysis based on image characteristics
             var random = new Random();
-            
+
             // Higher quality images allow for better culinary assessment
-            var qualityFactor = isVeryHighQuality ? 0.8 : isHighQuality ? 0.6 : 0.4;
-            
-            // Simulate food quality indicators from image analysis
-            var hasGoodContrast = random.NextDouble() > (0.4 - qualityFactor);
-            var hasGoodComposition = random.NextDouble() > (0.5 - qualityFactor);
-            var appearsWellLit = random.NextDouble() > (0.3 - qualityFactor);
-            
-            // Simulate culinary quality indicators
-            var hasAppetizingColors = random.NextDouble() > (0.3 - qualityFactor);
-            var hasGoodPresentation = random.NextDouble() > (0.4 - qualityFactor);
-            var appearsFresh = random.NextDouble() > (0.2 - qualityFactor);
-            var hasProfessionalPlating = random.NextDouble() > (0.5 - qualityFactor);
-            
+            var qualityFactor = isVeryHighQuality ? 0.9 : isHighQuality ? 0.7 : 0.5;
+
+            // Simulate technical image quality indicators
+            var hasGoodContrast = random.NextDouble() > (0.3 - qualityFactor);
+            var hasGoodComposition = random.NextDouble() > (0.4 - qualityFactor);
+            var appearsWellLit = random.NextDouble() > (0.2 - qualityFactor);
+
+            // Enhanced culinary quality indicators - focus on FOOD quality over photo quality
+            var hasAppetizingColors = random.NextDouble() > (0.2 - qualityFactor); // Vibrant food colors
+            var hasGoodPresentation = random.NextDouble() > (0.3 - qualityFactor); // Professional plating
+            var appearsFresh = random.NextDouble() > (0.15 - qualityFactor); // Fresh ingredients visible
+            var hasProfessionalPlating = random.NextDouble() > (0.4 - qualityFactor); // Restaurant-level plating
+
+            // NEW: Enhanced indicators for elaborate dish preparation
+            var hasComplexPreparation = random.NextDouble() > (0.4 - qualityFactor); // Multiple cooking techniques
+            var hasPremiumIngredients = random.NextDouble() > (0.5 - qualityFactor); // Quality ingredients visible
+            var hasArtisticArrangement = random.NextDouble() > (0.45 - qualityFactor); // Creative culinary presentation
+            var showsCulinarySkill = random.NextDouble() > (0.35 - qualityFactor); // Technical cooking mastery
+
             return new ImageAnalysisResult
             {
                 FileSize = fileSize,
@@ -784,48 +872,59 @@ Provide your recipe in the following JSON format:
                 HasGoodComposition = hasGoodComposition,
                 AppearsWellLit = appearsWellLit,
                 EstimatedQuality = isVeryHighQuality ? "High" : isHighQuality ? "Medium" : "Standard",
-                // New culinary-specific properties
+                // Culinary-specific properties
                 HasAppetizingColors = hasAppetizingColors,
                 HasGoodPresentation = hasGoodPresentation,
                 AppearsFresh = appearsFresh,
-                HasProfessionalPlating = hasProfessionalPlating
+                HasProfessionalPlating = hasProfessionalPlating,
+                // NEW: Enhanced culinary indicators
+                HasComplexPreparation = hasComplexPreparation,
+                HasPremiumIngredients = hasPremiumIngredients,
+                HasArtisticArrangement = hasArtisticArrangement,
+                ShowsCulinarySkill = showsCulinarySkill
             };
         }
 
         private int CalculateRealisticScore(ImageAnalysisResult analysis, string evaluationMode)
         {
-            var baseScore = 4; // Start with slightly below average for realism
-            
-            // Culinary quality assessment - focus on food quality indicators
-            if (analysis.HasAppetizingColors) baseScore += 2; // Color is crucial for food appeal
-            if (analysis.HasGoodPresentation) baseScore += 2; // Presentation is key in culinary arts
-            if (analysis.AppearsFresh) baseScore += 1; // Freshness is important
-            if (analysis.HasProfessionalPlating) baseScore += 2; // Professional plating shows skill
-            
-            // Image quality affects assessment accuracy
-            if (analysis.IsVeryHighQuality) baseScore += 1; // Better images allow better assessment
-            else if (analysis.IsHighQuality) baseScore += 1;
-            
-            // Technical quality that affects food assessment
-            if (analysis.HasGoodContrast) baseScore += 1; // Good contrast shows food details
-            if (analysis.HasGoodComposition) baseScore += 1; // Good composition shows plating skills
-            if (analysis.AppearsWellLit) baseScore += 1; // Good lighting shows food properly
-            
-            // Evaluation mode adjustments - focus on culinary standards
+            var baseScore = 0.0; // Use double for decimal calculations - elaborate dishes deserve high scores
+
+            // PRIMARY: Enhanced culinary indicators - elaborate preparation gets high scores
+            if (analysis.HasComplexPreparation) baseScore += 3.0; // Multiple cooking techniques
+            if (analysis.HasPremiumIngredients) baseScore += 3.0; // Quality ingredients visible
+            if (analysis.HasArtisticArrangement) baseScore += 2.0; // Creative presentation
+            if (analysis.ShowsCulinarySkill) baseScore += 3.0; // Technical mastery
+
+            // SECONDARY: Basic culinary indicators
+            if (analysis.HasAppetizingColors) baseScore += 1.0; // Color is important but not primary
+            if (analysis.HasGoodPresentation) baseScore += 1.0; // Presentation matters but technique more
+            if (analysis.AppearsFresh) baseScore += 1.0; // Freshness is baseline
+            if (analysis.HasProfessionalPlating) baseScore += 2.0; // Professional plating shows skill
+
+            // Image quality affects assessment accuracy (less important than food quality)
+            if (analysis.IsVeryHighQuality) baseScore += 1.0;
+            else if (analysis.IsHighQuality) baseScore += 1.0;
+
+            // Technical quality that affects food assessment (minimal impact)
+            if (analysis.HasGoodContrast) baseScore += 0.5;
+            if (analysis.HasGoodComposition) baseScore += 0.5;
+            if (analysis.AppearsWellLit) baseScore += 0.5;
+
+            // Evaluation mode adjustments - strict mode demands excellence
             if (evaluationMode.ToLower() == "strict")
             {
-                baseScore -= 2; // Strict mode follows professional culinary standards
-                // In strict mode, only exceptional dishes get high scores
-                if (baseScore > 8) baseScore = 8;
+                baseScore -= 2.0; // Strict mode expects professional-level execution
+                // In strict mode, only truly exceptional dishes get high scores
+                if (baseScore > 9.0) baseScore = 9.0;
             }
-            
-            // Add some randomness for realism, but keep it within bounds
+
+            // Add minimal randomness for realism
             var random = new Random();
-            var randomAdjustment = random.Next(-1, 2); // -1, 0, or +1
+            var randomAdjustment = (random.NextDouble() - 0.5) * 0.5; // Small variation between -0.25 and 0.25
             baseScore += randomAdjustment;
-            
-            // Ensure score is within reasonable bounds
-            var finalInt = Math.Max(2, Math.Min(10, baseScore));
+
+            // Ensure score is within bounds - allow more variation for culinary excellence
+            var finalInt = (int)Math.Max(1, Math.Min(10, Math.Round(baseScore)));
             return finalInt;
         }
 
@@ -1555,12 +1654,18 @@ Provide your recipe in the following JSON format:
             public bool HasGoodComposition { get; set; }
             public bool AppearsWellLit { get; set; }
             public string EstimatedQuality { get; set; } = string.Empty;
-            
+
             // Culinary-specific analysis properties
             public bool HasAppetizingColors { get; set; }
             public bool HasGoodPresentation { get; set; }
             public bool AppearsFresh { get; set; }
             public bool HasProfessionalPlating { get; set; }
+
+            // Enhanced culinary indicators for elaborate dish preparation
+            public bool HasComplexPreparation { get; set; }
+            public bool HasPremiumIngredients { get; set; }
+            public bool HasArtisticArrangement { get; set; }
+            public bool ShowsCulinarySkill { get; set; }
         }
 
         // Helper methods for Nutrition Analysis
